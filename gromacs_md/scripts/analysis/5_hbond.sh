@@ -7,6 +7,12 @@
 # ============================================================
 set -eu
 
+if [ -n "${GMX:-}" ]; then
+    gmx() { "${GMX}" "$@"; }
+elif command -v gmx.exe >/dev/null 2>&1; then
+    gmx() { gmx.exe "$@"; }
+fi
+
 # AChE 与肽之间氢键
 gmx hbond -s md.tpr -f md.xtc -n index.ndx -num hbond_ache_pep.xvg << EOF
 AChE

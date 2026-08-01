@@ -7,15 +7,28 @@
 # ============================================================
 set -eu
 
+if [ -n "${GMX:-}" ]; then
+    gmx() { "${GMX}" "$@"; }
+elif command -v gmx.exe >/dev/null 2>&1; then
+    gmx() { gmx.exe "$@"; }
+fi
+
+TESTING="${TESTING:-0}"
+if [ "${TESTING}" = "1" ]; then
+    NSKIP=1
+else
+    NSKIP=10
+fi
+
 # 使用整条轨迹, 复合物组 (Protein = AChE+肽)
 gmx sasa -s md.tpr -f md.xtc -n index.ndx -o sasa_complex.xvg \
-         -surface Protein -output Protein -nskip 10
+         -surface Protein -output Protein -nskip ${NSKIP}
 
 # 若需要每个单体分开 (AChE / 肽 各自的 SASA)
 gmx sasa -s md.tpr -f md.xtc -n index.ndx -o sasa_ache.xvg \
-         -surface AChE -output AChE -nskip 10
+         -surface AChE -output AChE -nskip ${NSKIP}
 gmx sasa -s md.tpr -f md.xtc -n index.ndx -o sasa_pep.xvg \
-         -surface Peptide -output Peptide -nskip 10
+         -surface Peptide -output Peptide -nskip ${NSKIP}
 
 echo "SASA 输出: sasa_complex.xvg (每 2 ns 一个点)"
 echo "收敛性: 可用每 100 ns 区间平均 (参照论文图3B)"

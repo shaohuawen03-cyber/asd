@@ -5,6 +5,12 @@
 # ============================================================
 set -eu
 
+if [ -n "${GMX:-}" ]; then
+    gmx() { "${GMX}" "$@"; }
+elif command -v gmx.exe >/dev/null 2>&1; then
+    gmx() { gmx.exe "$@"; }
+fi
+
 # 复合物骨架 RMSD (对齐到骨架, 论文图1A)
 gmx rms -s md.tpr -f md.xtc -n index.ndx -o rmsd_complex_bb.xvg -fit rot+trans << EOF
 Backbone

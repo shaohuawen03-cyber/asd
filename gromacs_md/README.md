@@ -28,8 +28,9 @@ gromacs_md/
 │   └── 5_md.mdp                 # 产物动力学 (300 K, 1 bar, 1000 ns)
 │   └── test/                    # ★ 测试参数 (NVT/NPT/MD 均 100 步)
 ├── scripts/
-│   ├── run_all.sh               # 全流程主脚本 (TESTING 切换正式/测试)
-│   └── analysis/                # 全部结果分析脚本
+│   ├── run_all.sh               # 全流程 MD 主脚本 (TESTING 切换正式/测试)
+│   ├── run_analysis.sh          # ★ 全流程自动化分析主脚本 (一键执行全部分析)
+│   └── analysis/                # 全部结果分析子脚本
 └── README.md
 ```
 
@@ -105,6 +106,15 @@ TESTING=1 ./run_all.sh ylsllqr
 
 ### 分析用法示例
 
+你可以直接在 `scripts/` 目录下执行**自动化总分析脚本**（一键运行 0-7 全套论文图表计算）：
+```bash
+# 测试模式(适用 100 步测试轨迹)
+TESTING=1 ./run_analysis.sh alllhrc
+
+# 正式模式(适用 1000 ns 完整轨迹)
+./run_analysis.sh alllhrc
+```
+也可以进入具体的工作目录手步执行单个脚本：
 ```bash
 cd ../md_alllhrc
 bash ../scripts/analysis/0_make_index.sh

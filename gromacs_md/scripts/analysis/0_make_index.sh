@@ -8,24 +8,34 @@
 # ============================================================
 set -eu
 
-# AChE 残基范围 (请按实际体系修改, 4ey6 构建体约 1-537 或 1-548)
-ACHERES="1-537"
-# 肽残基范围 (AChE 之后的连续编号)
-PEPRES="538-579"
+if [ -n "${GMX:-}" ]; then
+    gmx() { "${GMX}" "$@"; }
+elif command -v gmx.exe >/dev/null 2>&1; then
+    gmx() { gmx.exe "$@"; }
+fi
 
-gmx make_ndx -f neutral.gro -o index.ndx << EOF
+# AChE 残基范围 (请按实际体系修改, 4ey6 构建体约 1-537)
+ACHERES="${ACHERES:-1-537}"
+# 肽残基范围 (AChE 之后的连续编号)
+PEPRES="${PEPRES:-538-579}"
+
+TPR_FILE="md.tpr"
+if [ ! -f "${TPR_FILE}" ]; then
+    TPR_FILE="neutral.gro"
+fi
+
+echo ">> 使用结构文件: ${TPR_FILE} 生成分析索引组 (ACHERES=${ACHERES}, PEPRES=${PEPRES}) ..."
+
+gmx make_ndx -f "${TPR_FILE}" -o index.ndx << EOF
 ri ${ACHERES}
-name 6 AChE
+name 19 AChE
 ri ${PEPRES}
-name 7 Peptide
-a CA C N O
-name 8 Backbone
-ri ${ACHERES} & a CA C N O
-name 9 AChE_Backbone
-ri ${PEPRES} & a CA C N O
-name 10 Peptide_Backbone
-keep 1
+name 20 Peptide
+19 & 4
+name 21 AChE_Backbone
+20 & 4
+name 22 Peptide_Backbone
 q
 EOF
-echo "已生成 index.ndx, 包含组: Protein(AChE+肽), AChE, Peptide, Backbone,"
-echo "AChE_Backbone, Peptide_Backbone 等。请确认分组编号与残基范围正确。"
+
+echo ">> 已成功生成 index.ndx, 包含新增分析组: AChE, Peptide, AChE_Backbone, Peptide_Backbone。"
