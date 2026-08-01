@@ -110,10 +110,10 @@ ${GMX} pdb2gmx -f complex_clean.pdb -o complex.gro \
 # (pdb2gmx 默认 fc=1000; 若想精确复现可执行下面 sed)
 sed -i 's/1000/1255/g' posre*.itp 2>/dev/null || true
 
-# ---------- 3. 定义盒子(截角八面体) ----------
-echo "[3/10] 定义截角八面体盒子 ..."
+# ---------- 3. 定义三斜盒子 (triclinic, d = 1.0 nm) ----------
+echo "[3/10] 定义三斜盒子 (triclinic, -d 1.0 nm 节省溶剂化体积与计算耗时) ..."
 ${GMX} editconf -f complex.gro -o box.gro \
-       -c -bt octa -d 1.2
+       -c -bt triclinic -d 1.0
 
 # ---------- 4. 溶剂化 (TIP3P) ----------
 echo "[4/10] 加入 TIP3P 水分子 ..."

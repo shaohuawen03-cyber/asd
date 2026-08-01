@@ -20,17 +20,15 @@
 ```
 gromacs_md/
 ├── input/                       # 放置三个 *_complex.pdb
-├── mdp/                         # ★ 正式(生产)参数
-│   ├── 1_min.mdp                # 能量最小化 (2000 步, 重原子约束 3 kcal/mol/A^2)
-│   ├── 2_heat.mdp               # NVT 升温 (约束, 脚本自动做 50->300 K 梯度)
-│   ├── 3_equil_npt.mdp          # 恒压密度平衡 (约束, 1 ns)
-│   ├── 4_equil_npt_free.mdp     # 无约束预平衡 (1 ns)
-│   └── 5_md.mdp                 # 产物动力学 (300 K, 1 bar, 1000 ns)
-│   └── test/                    # ★ 测试参数 (NVT/NPT/MD 均 100 步)
+├── mdp/                         # ★ 正式(1000 ns 生产)参数
+│   ├── 100ns/                   # ★ 100 ns 正式模拟参数配置 (全新正式模拟)
+│   ├── test/                    # ★ 测试参数 (已更新同步为 100 ns 验证套件)
 ├── scripts/
-│   ├── run_all.sh               # 全流程 MD 主脚本 (TESTING 切换正式/测试)
-│   ├── run_analysis.sh          # ★ 全流程自动化分析主脚本 (一键执行全部分析)
+│   ├── run_all.ps1 / .sh        # 全流程 MD 主脚本 (支持 100 ns / 测试切换)
+│   ├── run_analysis.ps1 / .sh   # ★ 全流程自动化分析主脚本 (一键执行全部分析)
 │   └── analysis/                # 全部结果分析子脚本
+├── SCI_Methods_GROMACS_MD_Simulation.docx  # ★ 参照论文对标撰写的完整 SCI 方法学 Word 文档
+├── SCI_Methods_GROMACS_MD_Simulation.md    # ★ SCI 方法学对标 Markdown 文档
 └── README.md
 ```
 
