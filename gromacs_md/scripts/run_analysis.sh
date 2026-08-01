@@ -21,6 +21,19 @@ else
 fi
 export GMX="${GMX_CMD}"
 
+# 自动检测 python (在 Windows Anaconda 中执行程序名叫 python 而非 python3)
+if [ -n "${PYTHON:-}" ]; then
+    PY_CMD="${PYTHON}"
+elif command -v python >/dev/null 2>&1 && python -c "import sys" >/dev/null 2>&1; then
+    PY_CMD="python"
+elif command -v python3 >/dev/null 2>&1; then
+    PY_CMD="python3"
+else
+    PY_CMD="python"
+fi
+export PY_CMD
+python3() { "${PY_CMD}" "$@"; }
+
 SYS="${1:?用法: ./run_analysis.sh <前缀, 如 alllhrc>}"
 WORK="../md_${SYS}"
 

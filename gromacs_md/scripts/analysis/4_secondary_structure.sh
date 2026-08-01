@@ -12,6 +12,17 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
+if [ -n "${PYTHON:-}" ]; then
+    PY_CMD="${PYTHON}"
+elif command -v python >/dev/null 2>&1 && python -c "import sys" >/dev/null 2>&1; then
+    PY_CMD="python"
+elif command -v python3 >/dev/null 2>&1; then
+    PY_CMD="python3"
+else
+    PY_CMD="python"
+fi
+python3() { "${PY_CMD}" "$@"; }
+
 # 计算肽的二级结构随时间的分布
 if gmx dssp -h 2>&1 | grep -q -- "-sel "; then
     # GROMACS >= 2023 新版内置 dssp (支持 -sel Peptide -o .dat -num .xvg)
