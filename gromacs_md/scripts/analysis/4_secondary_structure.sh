@@ -12,22 +12,36 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
-for ana_dir in "/f/anaconda" "/f/Anaconda" "/f/anaconda3" "/c/anaconda" "/c/anaconda3" "/c/Anaconda3" "$HOME/anaconda3" "$HOME/Anaconda3"; do
+for ana_dir in "/mnt/f/anaconda" "/mnt/f/Anaconda" "/f/anaconda" "/f/Anaconda" "/mnt/c/anaconda3" "/c/anaconda3" "$HOME/anaconda3" "$HOME/Anaconda3"; do
     if [ -d "$ana_dir" ]; then
         export PATH="$ana_dir:$ana_dir/Scripts:$ana_dir/Library/bin:$PATH"
         break
     fi
 done
 
+PY_FOUND=""
 if [ -n "${PYTHON:-}" ]; then
-    PY="${PYTHON}"
-elif command -v python >/dev/null 2>&1; then
-    PY="python"
-elif command -v python3 >/dev/null 2>&1; then
-    PY="python3"
+    PY_FOUND="${PYTHON}"
 else
-    PY="python"
+    for cand in \
+        "/mnt/f/anaconda/python.exe" \
+        "/mnt/f/Anaconda/python.exe" \
+        "/mnt/c/anaconda3/python.exe" \
+        "/f/anaconda/python.exe" \
+        "/f/Anaconda/python.exe" \
+        "/c/anaconda3/python.exe" \
+        "python.exe" \
+        "python" \
+        "python3"; do
+        if command -v "$cand" >/dev/null 2>&1 || [ -x "$cand" ]; then
+            if "$cand" -c "import numpy" >/dev/null 2>&1; then
+                PY_FOUND="$cand"
+                break
+            fi
+        fi
+    done
 fi
+PY="${PY_FOUND:-python}"
 
 # 计算肽的二级结构随时间的分布
 if gmx dssp -h 2>&1 | grep -q -- "-sel "; then

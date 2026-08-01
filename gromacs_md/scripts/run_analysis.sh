@@ -21,26 +21,40 @@ else
 fi
 export GMX="${GMX_CMD}"
 
-# 自动将 Windows Anaconda / Miniconda 目录及其 C/C++ DLL 依赖库放入 PATH (解决 Git Bash 找不到 python 及底层库报错)
-for ana_dir in "/f/anaconda" "/f/Anaconda" "/f/anaconda3" "/c/anaconda" "/c/anaconda3" "/c/Anaconda3" "$HOME/anaconda3" "$HOME/Anaconda3"; do
+# 自动将 Windows Anaconda / Miniconda 目录 (含 WSL /mnt/f 映射) 放入 PATH
+for ana_dir in "/mnt/f/anaconda" "/mnt/f/Anaconda" "/f/anaconda" "/f/Anaconda" "/mnt/c/anaconda3" "/c/anaconda3" "$HOME/anaconda3" "$HOME/Anaconda3"; do
     if [ -d "$ana_dir" ]; then
         export PATH="$ana_dir:$ana_dir/Scripts:$ana_dir/Library/bin:$PATH"
         break
     fi
 done
 
-# 自动定位可用的 Python 解释器
+# 自动扫描并锁定已装有 MDAnalysis 的 Python 解释器 (兼容 WSL 下的 Windows /mnt/f/anaconda/python.exe)
+PY_FOUND=""
 if [ -n "${PYTHON:-}" ]; then
-    PY="${PYTHON}"
-elif command -v python >/dev/null 2>&1; then
-    PY="python"
-elif command -v python3 >/dev/null 2>&1; then
-    PY="python3"
+    PY_FOUND="${PYTHON}"
 else
-    PY="python"
+    for cand in \
+        "/mnt/f/anaconda/python.exe" \
+        "/mnt/f/Anaconda/python.exe" \
+        "/mnt/c/anaconda3/python.exe" \
+        "/f/anaconda/python.exe" \
+        "/f/Anaconda/python.exe" \
+        "/c/anaconda3/python.exe" \
+        "python.exe" \
+        "python" \
+        "python3"; do
+        if command -v "$cand" >/dev/null 2>&1 || [ -x "$cand" ]; then
+            if "$cand" -c "import MDAnalysis" >/dev/null 2>&1; then
+                PY_FOUND="$cand"
+                break
+            fi
+        fi
+    done
 fi
+PY="${PY_FOUND:-python}"
 export PY
-echo ">> [Python 环境] 采用解释器路径: $(command -v ${PY} 2>/dev/null || echo "${PY}")"
+echo ">> [Python 环境] 锁定已装有 MDAnalysis 库的解释器: ${PY}"
 
 SYS="${1:?用法: ./run_analysis.sh <前缀, 如 alllhrc>}"
 WORK="../md_${SYS}"
