@@ -21,18 +21,17 @@ else
 fi
 export GMX="${GMX_CMD}"
 
-# 自动检测 python (在 Windows Anaconda 中执行程序名叫 python 而非 python3)
+# 自动检测 python 命令变量 (避免 bash 递归函数)
 if [ -n "${PYTHON:-}" ]; then
-    PY_CMD="${PYTHON}"
-elif command -v python >/dev/null 2>&1 && python -c "import sys" >/dev/null 2>&1; then
-    PY_CMD="python"
+    PY="${PYTHON}"
+elif command -v python >/dev/null 2>&1; then
+    PY="python"
 elif command -v python3 >/dev/null 2>&1; then
-    PY_CMD="python3"
+    PY="python3"
 else
-    PY_CMD="python"
+    PY="python"
 fi
-export PY_CMD
-python3() { "${PY_CMD}" "$@"; }
+export PY
 
 SYS="${1:?用法: ./run_analysis.sh <前缀, 如 alllhrc>}"
 WORK="../md_${SYS}"
@@ -82,8 +81,8 @@ bash "${SCRIPTS_DIR}/5_hbond.sh"
 
 # 6. 非天然接触统计 (论文 3.3 图5/表1)
 echo "[6/8] 统计天然与非天然相互作用接触 (contacts.py) ..."
-if python3 -c "import MDAnalysis" >/dev/null 2>&1; then
-    python3 "${SCRIPTS_DIR}/contacts.py" -t md.tpr -f md.xtc
+if $PY -c "import MDAnalysis" >/dev/null 2>&1; then
+    $PY "${SCRIPTS_DIR}/contacts.py" -t md.tpr -f md.xtc
 else
     echo ">> [提示] 未检测到 Python MDAnalysis 库，跳过 contacts.py 计算。"
     echo ">>        如需执行，请通过命令: pip install -r ../scripts/analysis/requirements.txt 安装。"
@@ -91,16 +90,16 @@ fi
 
 # 7. 水介导桥连相互作用 (论文 3.4 图6/表2)
 echo "[7/8] 统计水介导桥连相互作用 (bridging_waters.py) ..."
-if python3 -c "import MDAnalysis" >/dev/null 2>&1; then
-    python3 "${SCRIPTS_DIR}/bridging_waters.py" -t md.tpr -f md.xtc
+if $PY -c "import MDAnalysis" >/dev/null 2>&1; then
+    $PY "${SCRIPTS_DIR}/bridging_waters.py" -t md.tpr -f md.xtc
 else
     echo ">> [提示] 未检测到 Python MDAnalysis 库，跳过 bridging_waters.py 计算。"
 fi
 
 # 8. 批量生成矢量/位图出版图与统计表 (plot_all.py)
 echo "[8/8] 批量绘制论文出版级图表 (SVG / PNG / PDF) ..."
-if python3 -c "import matplotlib, pandas" >/dev/null 2>&1; then
-    python3 "${SCRIPTS_DIR}/plot_all.py" --dir . --out ./figures
+if $PY -c "import matplotlib, pandas" >/dev/null 2>&1; then
+    $PY "${SCRIPTS_DIR}/plot_all.py" --dir . --out ./figures
 else
     echo ">> [提示] 未安装 pandas 或 matplotlib，跳过批量绘图。"
     echo ">>        如需生成 SVG/PNG/PDF 图，请执行: pip install pandas matplotlib"
