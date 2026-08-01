@@ -13,22 +13,15 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
-TESTING="${TESTING:-0}"
-if [ "${TESTING}" = "1" ]; then
-    NSKIP=1
-else
-    NSKIP=10
-fi
-
 # 使用整条轨迹, 复合物组 (Protein = AChE+肽)
 gmx sasa -s md.tpr -f md.xtc -n index.ndx -o sasa_complex.xvg \
-         -surface Protein -output Protein -skip ${NSKIP}
+         -surface Protein -output Protein
 
 # 若需要每个单体分开 (AChE / 肽 各自的 SASA)
 gmx sasa -s md.tpr -f md.xtc -n index.ndx -o sasa_ache.xvg \
-         -surface AChE -output AChE -skip ${NSKIP}
+         -surface AChE -output AChE
 gmx sasa -s md.tpr -f md.xtc -n index.ndx -o sasa_pep.xvg \
-         -surface Peptide -output Peptide -skip ${NSKIP}
+         -surface Peptide -output Peptide
 
 echo "SASA 输出: sasa_complex.xvg (每 2 ns 一个点)"
 echo "收敛性: 可用每 100 ns 区间平均 (参照论文图3B)"
