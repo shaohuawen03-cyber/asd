@@ -24,17 +24,27 @@ if [ ! -f "${TPR_FILE}" ]; then
     TPR_FILE="neutral.gro"
 fi
 
+# 自动检测该体系 tpr 中原有默认组的最大编号(如 16 或 18 等)
+LAST_IDX=$(echo "q" | gmx make_ndx -f "${TPR_FILE}" -o /dev/null 2>&1 | grep -E "^ *Group +[0-9]+" | tail -n 1 | awk '{print $2}' || true)
+LAST_IDX="${LAST_IDX:-16}"
+
+G1=$((LAST_IDX + 1))
+G2=$((LAST_IDX + 2))
+G3=$((LAST_IDX + 3))
+G4=$((LAST_IDX + 4))
+
 echo ">> 使用结构文件: ${TPR_FILE} 生成分析索引组 (ACHERES=${ACHERES}, PEPRES=${PEPRES}) ..."
+echo ">> 原系统最大组号: ${LAST_IDX}, 自动分配新增分组编号: ${G1}(AChE), ${G2}(Peptide), ${G3}(AChE_Backbone), ${G4}(Peptide_Backbone) ..."
 
 gmx make_ndx -f "${TPR_FILE}" -o index.ndx << EOF
 ri ${ACHERES}
-name 19 AChE
+name ${G1} AChE
 ri ${PEPRES}
-name 20 Peptide
-19 & 4
-name 21 AChE_Backbone
-20 & 4
-name 22 Peptide_Backbone
+name ${G2} Peptide
+${G1} & 4
+name ${G3} AChE_Backbone
+${G2} & 4
+name ${G4} Peptide_Backbone
 q
 EOF
 

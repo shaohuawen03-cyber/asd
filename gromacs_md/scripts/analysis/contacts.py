@@ -110,14 +110,15 @@ def main():
         for k, r in enumerate(pep_resids):
             fo.write(f"{r},{intra_by_res[:, k].mean():.2f}\n")
 
-    # ---- 表1: 最频繁非天然接触 (>10 次) ----
+    # ---- 表1: 最频繁非天然接触 (>10 次, 测试模式时自动适应为 10% 帧数) ----
+    min_freq = min(args.freq, max(1, int(u.trajectory.n_frames * 0.1)))
     with open("frequent_contacts.tsv", "w") as fo:
         fo.write("type\tres_i\tres_j\tcount\n")
         for (i, j), c in sorted(inter_freq.items(), key=lambda x: -x[1]):
-            if c >= args.freq:
+            if c >= min_freq:
                 fo.write(f"inter\t{i}\t{j}\t{c}\n")
         for (i, j), c in sorted(intra_freq.items(), key=lambda x: -x[1]):
-            if c >= args.freq:
+            if c >= min_freq:
                 fo.write(f"intra\t{i}\t{j}\t{c}\n")
 
     print("平均 每帧肽-AChE 接触对总数: %.1f" % inter_count.mean())
