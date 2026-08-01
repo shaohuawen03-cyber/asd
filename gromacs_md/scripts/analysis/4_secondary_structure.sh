@@ -20,8 +20,14 @@ else
     DSSP_CMD="do_dssp"
 fi
 
+if gmx help ${DSSP_CMD} 2>&1 | grep -q -- "-ssdump"; then
+    SC_FLAG="-ssdump"
+else
+    SC_FLAG="-sc"
+fi
+
 gmx ${DSSP_CMD} -s md.tpr -f md.xtc -n index.ndx \
-            -ssdump ss_pep.sc -o ss_pep.xpm << EOF
+            ${SC_FLAG} ss_pep.sc -o ss_pep.xpm << EOF
 Peptide
 EOF
 

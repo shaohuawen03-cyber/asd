@@ -24,7 +24,7 @@ def main():
     with open(src) as f:
         for line in f:
             line = line.strip()
-            if not line:
+            if not line or line.startswith("#") or line.startswith("@") or line.startswith(";"):
                 continue
             parts = line.split()
             if len(parts) < 2:
@@ -37,10 +37,14 @@ def main():
             times.append(t)
             seqs.append(ss)
 
+    if len(times) == 0:
+        print(">> 提示: 二级结构序列数据为空，跳过统计。")
+        return
+
     times = np.array(times)
     nres = len(seqs[0])
     t0, t1 = times[0], times[-1]
-    nwin = int(np.ceil((t1 - t0) / window))
+    nwin = max(1, int(np.ceil((t1 - t0) / window)))
 
     print(f"帧数: {len(times)}, 残基数: {nres}, 时间范围: {t0}-{t1} ns, 窗口: {window} ns -> {nwin} 窗")
 

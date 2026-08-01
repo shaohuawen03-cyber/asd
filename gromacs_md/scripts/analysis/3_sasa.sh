@@ -22,13 +22,13 @@ fi
 
 # 使用整条轨迹, 复合物组 (Protein = AChE+肽)
 gmx sasa -s md.tpr -f md.xtc -n index.ndx -o sasa_complex.xvg \
-         -surface Protein -output Protein -nskip ${NSKIP}
+         -surface Protein -output Protein -skip ${NSKIP}
 
 # 若需要每个单体分开 (AChE / 肽 各自的 SASA)
 gmx sasa -s md.tpr -f md.xtc -n index.ndx -o sasa_ache.xvg \
-         -surface AChE -output AChE -nskip ${NSKIP}
+         -surface AChE -output AChE -skip ${NSKIP}
 gmx sasa -s md.tpr -f md.xtc -n index.ndx -o sasa_pep.xvg \
-         -surface Peptide -output Peptide -nskip ${NSKIP}
+         -surface Peptide -output Peptide -skip ${NSKIP}
 
 echo "SASA 输出: sasa_complex.xvg (每 2 ns 一个点)"
 echo "收敛性: 可用每 100 ns 区间平均 (参照论文图3B)"
