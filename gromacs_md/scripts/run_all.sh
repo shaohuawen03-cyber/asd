@@ -54,6 +54,9 @@ if [ "${INTERACTIVE_TER}" = "1" ]; then
     TER_FLAG="-ter"
 fi
 
+# 3. GPU 加速参数 (默认开启 -nb gpu; 若需自定义可传入 GPU_FLAGS="-nb gpu -pme gpu")
+GPU_FLAGS="${GPU_FLAGS:--nb gpu}"
+
 # ---------- 自动检测/校验 GROMACS 命令 ----------
 if command -v gmx.exe >/dev/null 2>&1; then
     GMX="gmx.exe"
@@ -134,7 +137,7 @@ EOF
 echo "[7/10] 能量最小化 ..."
 ${GMX} grompp -f "${MDP}/1_min.mdp" -c neutral.gro -r neutral.gro \
        -p topol.top -n index.ndx -o em.tpr -maxwarn 2
-${GMX} mdrun -deffnm em -v
+${GMX} mdrun -deffnm em -v ${GPU_FLAGS}
 
 # ---------- 7. 升温 0->300K (NVT, 约束) ----------
 # ---------- 7. 升温 0->300K (NVT, 约束, 梯度共 1.0 ns) ----------
@@ -147,7 +150,7 @@ for T in 100 150 200 250 300; do
     sed -i "s/^ref_t.*/ref_t = ${T} ${T}/; s/^gen_temp.*/gen_temp = ${T}/" "heat_${T}.mdp"
     ${GMX} grompp -f "heat_${T}.mdp" -c "${prev}.gro" -r neutral.gro \
            -p topol.top -n index.ndx -o "heat_${T}.tpr" -maxwarn 2
-    ${GMX} mdrun -deffnm "heat_${T}" -v
+    ${GMX} mdrun -deffnm "heat_${T}" -v ${GPU_FLAGS}
     prev="heat_${T}"
 done
 
@@ -155,19 +158,19 @@ done
 echo "[9/10] 恒压密度平衡 NPT (约束) ..."
 ${GMX} grompp -f "${MDP}/3_equil_npt.mdp" -c "${prev}.gro" -r neutral.gro \
        -p topol.top -n index.ndx -o equil_npt.tpr -maxwarn 2
-${GMX} mdrun -deffnm equil_npt -v
+${GMX} mdrun -deffnm equil_npt -v ${GPU_FLAGS}
 
 # ---------- 9. 无约束预平衡 (1 ns) ----------
 echo "[10/10] 无约束预平衡 NPT (1 ns) ..."
 ${GMX} grompp -f "${MDP}/4_equil_npt_free.mdp" -c equil_npt.gro -r equil_npt.gro \
        -p topol.top -n index.ndx -o equil_free.tpr -maxwarn 2
-${GMX} mdrun -deffnm equil_free -v
+${GMX} mdrun -deffnm equil_free -v ${GPU_FLAGS}
 
 # ---------- 10. 产物动力学 (1000 ns) ----------
 echo "[11/11] 产物动力学 NPT (300 K, 1 bar, 1000 ns) ..."
 ${GMX} grompp -f "${MDP}/5_md.mdp" -c equil_free.gro -r equil_free.gro \
        -p topol.top -n index.ndx -o md.tpr -maxwarn 2
-${GMX} mdrun -deffnm md -v -cpi md.cpt
+${GMX} mdrun -deffnm md -v -cpi md.cpt ${GPU_FLAGS}
 
 echo "========== 体系 ${SYS} 模拟完成 =========="
 echo "产物轨迹: md.xtc (每 0.2 ns 一帧, 共 5000 帧)"
