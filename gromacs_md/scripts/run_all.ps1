@@ -14,11 +14,12 @@ param(
 $ErrorActionPreference = "Stop"
 
 if ($Testing -or $env:TESTING -eq "1") {
-    Write-Host ">> [TESTING MODE] 100-step short MD test workflow" -ForegroundColor Yellow
+    Write-Host ">> [100 ns Formal Simulation Mode] Running 100 ns Production MD Workflow (mdp/100ns)" -ForegroundColor Yellow
     $env:TESTING = "1"
 } else {
-    Write-Host ">> [PRODUCTION MODE] 1000 ns production MD workflow" -ForegroundColor Cyan
+    Write-Host ">> [1000 ns Formal Simulation Mode] Running 1000 ns Production MD Workflow (mdp)" -ForegroundColor Cyan
     $env:TESTING = "0"
 }
 
-& bash ".\run_all.sh" $System
+# 使用正斜杠 "./run_all.sh" 避免 Windows 反斜杠被转义移除
+& bash "./run_all.sh" $System

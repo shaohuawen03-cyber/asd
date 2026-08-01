@@ -17,18 +17,16 @@ set -eu
 SYS="${1:?用法: ./run_all.sh <前缀, 如 alllhrc>}"
 WORK="../md_${SYS}"                 # 输出工作目录 (避免污染 input/)
 
-# ---------- 模式选择 ----------
-#  TESTING=1  -> 使用 mdp/test 目录 (NVT/NPT/MD 均为 100 步, 快速验证流程跑通)
-#  TESTING=0  -> 使用正式 mdp 目录 (完整 1000 ns 产物动力学, 生产用)
-#  用法:  TESTING=1 ./run_all.sh alllhrc   (测试)
-#          ./run_all.sh alllhrc            (正式)
-TESTING="${TESTING:-0}"
-if [ "${TESTING}" = "1" ]; then
-    MDP="../mdp/test"
-    echo ">> 测试模式: 使用 mdp/test (NVT/NPT/MD = 100 步)"
+# ---------- 模拟参数配置 ----------
+#   SIM_MODE="100ns"   -> 100 ns 正式产物动力学模拟 (默认配置: mdp/100ns)
+#   SIM_MODE="1000ns"  -> 1000 ns 正式产物动力学模拟 (mdp)
+SIM_MODE="${SIM_MODE:-100ns}"
+if [ "${SIM_MODE}" = "100ns" ] || [ "${TESTING}" = "1" ]; then
+    MDP="../mdp/100ns"
+    echo ">> [100 ns 正式生产模拟] 使用 mdp/100ns (NVT梯度 1.0 ns -> NPT 2.0 ns -> MD 100 ns -> 5,000 帧)"
 else
     MDP="../mdp"
-    echo ">> 正式模式: 使用 mdp (完整 1000 ns 产物动力学)"
+    echo ">> [1000 ns 正式生产模拟] 使用 mdp (完整 1000 ns 产物动力学)"
 fi
 
 INPUT="../input/${SYS}_complex.pdb"
@@ -139,29 +137,19 @@ ${GMX} grompp -f "${MDP}/1_min.mdp" -c neutral.gro -r neutral.gro \
 ${GMX} mdrun -deffnm em -v
 
 # ---------- 7. 升温 0->300K (NVT, 约束) ----------
-# 正式模式: 50->300 K 梯度, 每段 0.2 ns, 共约 1 ns (论文 2.3)
-# 测试模式: 仅 1 段 100 步, 快速验证
-if [ "${TESTING}" = "1" ]; then
-    echo "[8/10] 升温 NVT (测试, 100 步) ..."
-    cp "${MDP}/2_heat.mdp" heat.mdp
-    ${GMX} grompp -f heat.mdp -c em.gro -r neutral.gro \
-           -p topol.top -n index.ndx -o heat.tpr -maxwarn 2
-    ${GMX} mdrun -deffnm heat -v
-    prev="heat"
-else
-    echo "[8/10] 升温 (NVT, 50->300 K 梯度, 每段 0.2 ns, 共约 1 ns) ..."
-    # 论文要求 1 ns 内从 0 K 加热到 300 K;
-    # 由于 Gromacs 无法从 0 K 生成速度, 这里从 50 K 开始分梯度逼近。
-    prev="em"
-    for T in 100 150 200 250 300; do
-        cp "${MDP}/2_heat.mdp" "heat_${T}.mdp"
-        sed -i "s/^ref_t.*/ref_t = ${T} ${T}/; s/^gen_temp.*/gen_temp = ${T}/" "heat_${T}.mdp"
-        ${GMX} grompp -f "heat_${T}.mdp" -c "${prev}.gro" -r neutral.gro \
-               -p topol.top -n index.ndx -o "heat_${T}.tpr" -maxwarn 2
-        ${GMX} mdrun -deffnm "heat_${T}" -v
-        prev="heat_${T}"
-    done
-fi
+# ---------- 7. 升温 0->300K (NVT, 约束, 梯度共 1.0 ns) ----------
+echo "[8/10] 升温 (NVT, 50->300 K 阶梯加热, 每温段 0.2 ns, 共 1.0 ns) ..."
+# 论文要求 1 ns 内从 0 K 加热到 300 K;
+# Gromacs 中从 50 K 开始按梯度 100/150/200/250/300 K 连续加热逼近。
+prev="em"
+for T in 100 150 200 250 300; do
+    cp "${MDP}/2_heat.mdp" "heat_${T}.mdp"
+    sed -i "s/^ref_t.*/ref_t = ${T} ${T}/; s/^gen_temp.*/gen_temp = ${T}/" "heat_${T}.mdp"
+    ${GMX} grompp -f "heat_${T}.mdp" -c "${prev}.gro" -r neutral.gro \
+           -p topol.top -n index.ndx -o "heat_${T}.tpr" -maxwarn 2
+    ${GMX} mdrun -deffnm "heat_${T}" -v
+    prev="heat_${T}"
+done
 
 # ---------- 8. 恒压密度平衡 (约束) ----------
 echo "[9/10] 恒压密度平衡 NPT (约束) ..."
