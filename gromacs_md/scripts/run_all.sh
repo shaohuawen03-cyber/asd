@@ -121,7 +121,7 @@ ${GMX} solvate -cp box.gro -cs spc216.gro -o solv.gro -p topol.top
 
 # ---------- 5. 添加离子 (NaCl, 电中性) ----------
 echo "[5/10] 添加 Na+/Cl- 实现电中性与生理盐浓度 ..."
-${GMX} grompp -f "${MDP}/1_min.mdp" -c solv.gro -p topol.top \
+${GMX} grompp -f "${MDP}/1_min.mdp" -c solv.gro -r solv.gro -p topol.top \
        -o ions.tpr -maxwarn 2
 echo "SOL" | ${GMX} genion -s ions.tpr -o neutral.gro -p topol.top \
        -pname NA -nname CL -neutral -conc 0.15
@@ -171,13 +171,13 @@ ${GMX} mdrun -deffnm equil_npt -v
 
 # ---------- 9. 无约束预平衡 (1 ns) ----------
 echo "[10/10] 无约束预平衡 NPT (1 ns) ..."
-${GMX} grompp -f "${MDP}/4_equil_npt_free.mdp" -c equil_npt.gro \
+${GMX} grompp -f "${MDP}/4_equil_npt_free.mdp" -c equil_npt.gro -r equil_npt.gro \
        -p topol.top -n index.ndx -o equil_free.tpr -maxwarn 2
 ${GMX} mdrun -deffnm equil_free -v
 
 # ---------- 10. 产物动力学 (1000 ns) ----------
 echo "[11/11] 产物动力学 NPT (300 K, 1 bar, 1000 ns) ..."
-${GMX} grompp -f "${MDP}/5_md.mdp" -c equil_free.gro \
+${GMX} grompp -f "${MDP}/5_md.mdp" -c equil_free.gro -r equil_free.gro \
        -p topol.top -n index.ndx -o md.tpr -maxwarn 2
 ${GMX} mdrun -deffnm md -v -cpi md.cpt
 
