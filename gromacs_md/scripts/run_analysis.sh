@@ -44,31 +44,31 @@ SCRIPTS_DIR="$(cd ../scripts/analysis && pwd)"
 echo "========== 开始对体系 ${SYS} 执行论文结果分析 ========"
 
 # 0. 建立分析索引
-echo "[0/7] 建立分析分组索引 (0_make_index.sh) ..."
+echo "[0/8] 建立分析分组索引 (0_make_index.sh) ..."
 bash "${SCRIPTS_DIR}/0_make_index.sh"
 
 # 1. 骨架 RMSD / RMSF (论文 3.1 图1)
-echo "[1/7] 计算骨架 RMSD / RMSF (1_rmsd_rmsf.sh) ..."
+echo "[1/8] 计算骨架 RMSD / RMSF (1_rmsd_rmsf.sh) ..."
 bash "${SCRIPTS_DIR}/1_rmsd_rmsf.sh"
 
 # 2. 径向分布函数 RDF (论文 3.1 图2)
-echo "[2/7] 计算 Aβ 围绕 AChE 的径向分布函数 RDF (2_rdf.sh) ..."
+echo "[2/8] 计算 Aβ 围绕 AChE 的径向分布函数 RDF (2_rdf.sh) ..."
 bash "${SCRIPTS_DIR}/2_rdf.sh"
 
 # 3. 溶剂可及表面积 SASA (论文 3.2 图3)
-echo "[3/7] 计算复合物 SASA (3_sasa.sh) ..."
+echo "[3/8] 计算复合物 SASA (3_sasa.sh) ..."
 bash "${SCRIPTS_DIR}/3_sasa.sh"
 
 # 4. 二级结构分析 DSSP (论文 3.2 图4)
-echo "[4/7] 计算 Aβ 肽二级结构演变 (4_secondary_structure.sh) ..."
+echo "[4/8] 计算 Aβ 肽二级结构演变 (4_secondary_structure.sh) ..."
 bash "${SCRIPTS_DIR}/4_secondary_structure.sh"
 
 # 5. 氢键数量统计 (论文 3.3)
-echo "[5/7] 统计间/内氢键分布 (5_hbond.sh) ..."
+echo "[5/8] 统计间/内氢键分布 (5_hbond.sh) ..."
 bash "${SCRIPTS_DIR}/5_hbond.sh"
 
 # 6. 非天然接触统计 (论文 3.3 图5/表1)
-echo "[6/7] 统计天然与非天然相互作用接触 (contacts.py) ..."
+echo "[6/8] 统计天然与非天然相互作用接触 (contacts.py) ..."
 if python3 -c "import MDAnalysis" >/dev/null 2>&1; then
     python3 "${SCRIPTS_DIR}/contacts.py" -t md.tpr -f md.xtc
 else
@@ -77,19 +77,30 @@ else
 fi
 
 # 7. 水介导桥连相互作用 (论文 3.4 图6/表2)
-echo "[7/7] 统计水介导桥连相互作用 (bridging_waters.py) ..."
+echo "[7/8] 统计水介导桥连相互作用 (bridging_waters.py) ..."
 if python3 -c "import MDAnalysis" >/dev/null 2>&1; then
     python3 "${SCRIPTS_DIR}/bridging_waters.py" -t md.tpr -f md.xtc
 else
     echo ">> [提示] 未检测到 Python MDAnalysis 库，跳过 bridging_waters.py 计算。"
 fi
 
+# 8. 批量生成矢量/位图出版图与统计表 (plot_all.py)
+echo "[8/8] 批量绘制论文出版级图表 (SVG / PNG / PDF) ..."
+if python3 -c "import matplotlib, pandas" >/dev/null 2>&1; then
+    python3 "${SCRIPTS_DIR}/plot_all.py" --dir . --out ./figures
+else
+    echo ">> [提示] 未安装 pandas 或 matplotlib，跳过批量绘图。"
+    echo ">>        如需生成 SVG/PNG/PDF 图，请执行: pip install pandas matplotlib"
+fi
+
 echo "========== 体系 ${SYS} 分析流程全部完成！ =========="
-echo "生成分析产物对照论文表一览:"
-echo "  - rmsd_*_bb.xvg, rmsf_*_bb.xvg            => 图 1 (RMSD / RMSF)"
-echo "  - rdf_pep_ache*.xvg                       => 图 2 (径向分布函数 RDF)"
-echo "  - sasa_*.xvg                              => 图 3 (溶剂可及表面积 SASA)"
-echo "  - ss_pep.xpm, ss_pep.sc, ss_pep_bins.dat  => 图 4 (二级结构倾向)"
-echo "  - hbond_*.xvg                             => 论文 3.3 节 (氢键分布)"
-echo "  - inter/intra_contacts.csv                => 图 5 / 表 1 (非天然接触)"
-echo "  - bridging_per_residue.csv                => 图 6 / 表 2 (桥连水分析)"
+echo "生成分析图表一览 (保存在 ./figures/ 下):"
+echo "  - fig1_rmsd_rmsf.{svg,png,pdf}            => 图 1 (RMSD / RMSF)"
+echo "  - fig2_rdf.{svg,png,pdf}                  => 图 2 (径向分布函数 RDF)"
+echo "  - fig3_sasa.{svg,png,pdf}                 => 图 3 (溶剂可及表面积 SASA)"
+echo "  - fig4_secondary_structure.{svg,png,pdf}  => 图 4 (二级结构倾向)"
+echo "  - fig5_contacts.{svg,png,pdf}             => 图 5 (非天然残基对接触)"
+echo "  - fig6_bridging_waters.{svg,png,pdf}      => 图 6 (水介导桥连)"
+echo "  - fig_hbonds.{svg,png,pdf}                => 论文 3.3 节 (氢键数量曲线)"
+echo "  - fig0_summary_all.{svg,png,pdf}          => 综合 2x3 六格汇总对比主图"
+echo "  - summary_metrics.csv & wide.csv          => 统计指标汇总表"
