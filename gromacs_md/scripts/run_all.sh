@@ -42,7 +42,24 @@ CHAIN_PEP="B"
 # 若你的 PDB 中 AChE 是连续链, 置空即可
 BREAK_RES=""
 
-GMX="gmx"                            # Gromacs 可执行文件名 (Windows 下可为 gmx.exe)
+# ---------- 自动检测/校验 GROMACS 命令 ----------
+if command -v gmx.exe >/dev/null 2>&1; then
+    GMX="gmx.exe"
+elif command -v gmx >/dev/null 2>&1; then
+    GMX="gmx"
+elif [ -n "${GROMACS_CMD:-}" ]; then
+    GMX="${GROMACS_CMD}"
+else
+    echo "!!! 错误: 在当前的 Bash 环境的 PATH 环境变量中找不到 'gmx' 或 'gmx.exe' 命令！"
+    echo "!!! 常见原因:"
+    echo "!!!   1. GROMACS 装在 Windows 目录下（如 C:\\Program Files\\Gromacs\\bin）但没有加入到 PATH 中。"
+    echo "!!!   2. 你使用的是 Conda 环境中的 GROMACS，但通过 PowerShell 执行 bash -c 时没有带入 PATH。"
+    echo "!!! 解决方案:"
+    echo "!!!   - 将 gmx.exe 所在目录放入环境变量 PATH 中；"
+    echo "!!!   - 或直接指定命令完整路径: GROMACS_CMD='/c/Program Files/Gromacs/bin/gmx.exe' TESTING=1 ./run_all.sh alllhrc"
+    exit 1
+fi
+echo ">> 使用 GROMACS 执行命令: $(command -v "${GMX}" 2>/dev/null || echo "${GMX}")"
 
 mkdir -p "${WORK}"
 cd "${WORK}"
@@ -50,10 +67,13 @@ cd "${WORK}"
 echo "========== 体系: ${SYS} =========="
 
 # ---------- 1. 结构准备 ----------
-echo "[1/10] 准备结构 (去水/配体, 保留蛋白和肽) ..."
-# 去掉晶体水分子与配体(加兰他敏已去除), 若仍有水则剔除
-cp "${INPUT}" complex_raw.pdb
-${GMX} editconf -f complex_raw.pdb -o complex_clean.pdb > /dev/null 2>&1
+echo "[1/10] 准备结构 (检查输入文件) ..."
+if [ ! -f "${INPUT}" ]; then
+    echo "!!! 错误: 找不到输入 PDB 文件 '${INPUT}'"
+    echo "!!! 请确认你已将 ${SYS}_complex.pdb 放在了 gromacs_md/input/ 目录下"
+    exit 1
+fi
+cp "${INPUT}" complex_clean.pdb
 
 # ---------- 2. 构建拓扑 ----------
 echo "[2/10] pdb2gmx 构建拓扑 (amber14sb + TIP3P, 交互封端) ..."
@@ -62,11 +82,11 @@ echo "[2/10] pdb2gmx 构建拓扑 (amber14sb + TIP3P, 交互封端) ..."
 #     - N 端: 选 ACE (封乙酰化) 或 None(保留带电 NH3+)
 #     - C 端: 选 NME (封酰胺化) 或 None(保留带电 COO-)
 #   若 AChE 存在内部断裂(如残基259/262, 492/495), 需在此处按片段分别封端。
+echo ">> 提示: 接下来的 pdb2gmx 如提示选择 N/C 端封端，请在命令行数字列表中选择对应的选项(如 ACE/NME/None)。"
 ${GMX} pdb2gmx -f complex_clean.pdb -o complex.gro \
        -p topol.top -i posre.itp \
        -ff amber14sb -water tip3p \
-       -ignh -chainsep interactive -ter \
-       || echo "!!! pdb2gmx 交互式提示: 请按提示回答各链末端封端方式 (ACE/NME/None)"
+       -ignh -ter
 
 # 将重原子位置约束力常数改为论文的 3 kcal/mol/A^2 = 1255 kJ/(mol nm^2)
 # (pdb2gmx 默认 fc=1000; 若想精确复现可执行下面 sed)
