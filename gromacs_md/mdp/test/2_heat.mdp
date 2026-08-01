@@ -6,11 +6,12 @@
 ; ============================================================
 integrator               = md
 dt                       = 0.002        ; 2 fs (SHAKE/LINCS 允许)
-nsteps                   = 100         ; 测试模式: 100 步
-nstxout-compressed       = 5000         ; 每 10 ps 存一帧
-nstlog                   = 5000
-nstcalcenergy            = 5000
-nstenergy                = 5000
+nsteps                   = 100          ; 测试模式: 100 步
+nstxout-compressed       = 10           ; 测试模式每 10 步存一帧
+nstlog                   = 10
+nstcalcenergy            = 10
+nstenergy                = 10
+nstcomm                  = 10
 
 define                   = -DPOSRES     ; 升温阶段保留重原子约束
 
@@ -36,9 +37,9 @@ rvdw-switch              = 1.0
 tcoupl                   = v-rescale
 tc-grps                  = Protein Water_and_ions
 tau_t                    = 1.0 1.0
-ref_t                    = 50           ; 脚本会自动改写为梯度温度
+ref_t                    = 300 300      ; 测试模式设为 300K (双热浴组 Protein Water_and_ions)
 gen_vel                  = yes
-gen_temp                 = 50           ; 从低温生成初速度
+gen_temp                 = 300          ; 测试模式从 300K 生成速度
 gen_seed                 = -1
 
 ; ---- 压力控制 ----

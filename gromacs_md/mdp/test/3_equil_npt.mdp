@@ -5,11 +5,12 @@
 ; ============================================================
 integrator               = md
 dt                       = 0.002
-nsteps                   = 100         ; 测试模式: 100 步
-nstxout-compressed       = 5000
-nstlog                   = 5000
-nstcalcenergy            = 5000
-nstenergy                = 5000
+nsteps                   = 100          ; 测试模式: 100 步
+nstxout-compressed       = 10           ; 测试模式每 10 步存一帧
+nstlog                   = 10
+nstcalcenergy            = 10
+nstenergy                = 10
+nstcomm                  = 10
 
 define                   = -DPOSRES     ; 密度平衡阶段仍保留约束
 

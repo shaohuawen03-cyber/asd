@@ -8,11 +8,12 @@ integrator               = md
 dt                       = 0.002        ; 2 fs
 nsteps                   = 100         ; 测试模式: 100 步
 
-; 每 0.2 ns 保存坐标帧 -> 共 5000 帧
-nstxout-compressed       = 100000
-nstlog                   = 5000
-nstcalcenergy            = 5000
-nstenergy                = 5000
+; 测试模式: 每 10 步保存一帧
+nstxout-compressed       = 10
+nstlog                   = 10
+nstcalcenergy            = 10
+nstenergy                = 10
+nstcomm                  = 10
 
 constraints              = h-bonds
 constraint_algorithm     = lincs
