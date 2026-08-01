@@ -12,14 +12,15 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
+for ana_dir in "/f/anaconda" "/f/Anaconda" "/f/anaconda3" "/c/anaconda" "/c/anaconda3" "/c/Anaconda3" "$HOME/anaconda3" "$HOME/Anaconda3"; do
+    if [ -d "$ana_dir" ]; then
+        export PATH="$ana_dir:$ana_dir/Scripts:$ana_dir/Library/bin:$PATH"
+        break
+    fi
+done
+
 if [ -n "${PYTHON:-}" ]; then
     PY="${PYTHON}"
-elif [ -x "/f/anaconda/python.exe" ]; then
-    PY="/f/anaconda/python.exe"
-elif [ -x "F:/anaconda/python.exe" ]; then
-    PY="F:/anaconda/python.exe"
-elif [ -x "/c/anaconda3/python.exe" ]; then
-    PY="/c/anaconda3/python.exe"
 elif command -v python >/dev/null 2>&1; then
     PY="python"
 elif command -v python3 >/dev/null 2>&1; then

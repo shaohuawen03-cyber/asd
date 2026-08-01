@@ -21,24 +21,26 @@ else
 fi
 export GMX="${GMX_CMD}"
 
-# 自动定位可用的 Python 解释器 (优先匹配 Windows Anaconda / conda 根环境)
+# 自动将 Windows Anaconda / Miniconda 目录及其 C/C++ DLL 依赖库放入 PATH (解决 Git Bash 找不到 python 及底层库报错)
+for ana_dir in "/f/anaconda" "/f/Anaconda" "/f/anaconda3" "/c/anaconda" "/c/anaconda3" "/c/Anaconda3" "$HOME/anaconda3" "$HOME/Anaconda3"; do
+    if [ -d "$ana_dir" ]; then
+        export PATH="$ana_dir:$ana_dir/Scripts:$ana_dir/Library/bin:$PATH"
+        break
+    fi
+done
+
+# 自动定位可用的 Python 解释器
 if [ -n "${PYTHON:-}" ]; then
     PY="${PYTHON}"
-elif [ -x "/f/anaconda/python.exe" ] && "/f/anaconda/python.exe" -c "import MDAnalysis" >/dev/null 2>&1; then
-    PY="/f/anaconda/python.exe"
-elif [ -x "F:/anaconda/python.exe" ] && "F:/anaconda/python.exe" -c "import MDAnalysis" >/dev/null 2>&1; then
-    PY="F:/anaconda/python.exe"
-elif [ -x "/c/anaconda3/python.exe" ] && "/c/anaconda3/python.exe" -c "import MDAnalysis" >/dev/null 2>&1; then
-    PY="/c/anaconda3/python.exe"
-elif python -c "import MDAnalysis" >/dev/null 2>&1; then
+elif command -v python >/dev/null 2>&1; then
     PY="python"
-elif python3 -c "import MDAnalysis" >/dev/null 2>&1; then
+elif command -v python3 >/dev/null 2>&1; then
     PY="python3"
 else
     PY="python"
 fi
 export PY
-echo ">> [Python 环境] 采用解释器路径: ${PY}"
+echo ">> [Python 环境] 采用解释器路径: $(command -v ${PY} 2>/dev/null || echo "${PY}")"
 
 SYS="${1:?用法: ./run_analysis.sh <前缀, 如 alllhrc>}"
 WORK="../md_${SYS}"
