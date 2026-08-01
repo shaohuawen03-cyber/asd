@@ -21,19 +21,42 @@ from collections import defaultdict
 RCUT = 3.0     # 距离截断 (A)
 ACUT = np.cos(np.radians(135.0))   # 135 度角截断 -> cos 值下限
 
+def select_protein(u, chain_id, default_resid):
+    for sel_str in [
+        f"moltype Protein_chain_{chain_id}",
+        f"segid Protein_chain_{chain_id}",
+        f"segid {chain_id}",
+        f"chainID {chain_id}",
+        f"chain {chain_id}"
+    ]:
+        try:
+            ag = u.select_atoms(sel_str)
+            if len(ag) > 0:
+                return ag
+        except Exception:
+            pass
+    return u.select_atoms(f"resid {default_resid}")
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-t", default="md.tpr")
     ap.add_argument("-f", default="md.xtc")
-    ap.add_argument("-a", default="1-537", help="AChE 残基范围")
-    ap.add_argument("-p", default="538-579", help="肽残基范围")
+    ap.add_argument("-a", default="1-537", help="AChE 残基范围 (默认自动选择链 A)")
+    ap.add_argument("-p", default="538-579", help="肽残基范围 (默认自动选择链 B)")
     args = ap.parse_args()
 
     u = mda.Universe(args.t, args.f)
     waters = u.select_atoms("resname SOL")
-    a = u.select_atoms(f"resid {args.a}")
-    p = u.select_atoms(f"resid {args.p}")
-    print(f"水分子数: {waters.n_residues}, 帧数: {u.trajectory.n_frames}")
+    if args.a == "1-537":
+        a = select_protein(u, "A", args.a)
+    else:
+        a = u.select_atoms(f"resid {args.a}")
+
+    if args.p == "538-579":
+        p = select_protein(u, "B", args.p)
+    else:
+        p = u.select_atoms(f"resid {args.p}")
+    print(f"AChE 原子: {len(a)}, 肽原子: {len(p)}, 水分子数: {waters.n_residues}, 帧数: {u.trajectory.n_frames}")
 
     pep_resids = np.unique(p.resids)
     # 每个肽残基: [桥连水分子累计, 桥连相互作用累计]
@@ -46,9 +69,9 @@ def main():
     wat_res_of_atom = waters.residues.resids
 
     for f, ts in enumerate(u.trajectory):
-        pa = u.select_atoms(f"resid {args.a}")
-        pp = u.select_atoms(f"resid {args.p}")
-        pw = u.select_atoms("resname SOL")
+        pa = a
+        pp = p
+        pw = waters
         box = pw.dimensions
 
         # 肽原子 <-> 水原子 距离矩阵

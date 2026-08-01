@@ -14,10 +14,11 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
-# AChE 残基范围 (请按实际体系修改, 4ey6 构建体约 1-537)
-ACHERES="${ACHERES:-1-537}"
-# 肽残基范围 (AChE 之后的连续编号)
-PEPRES="${PEPRES:-538-579}"
+# AChE / Peptide 选择表达式:
+# 默认优先按 GROMACS 链ID (chain A = AChE, chain B = Peptide) 匹配，无论是 7 肽还是 42 肽皆能准确选中
+# 若需手动指定残基范围，可在执行前传参: ACHE_SEL="ri 1-530" PEP_SEL="ri 531-537"
+ACHE_SEL="${ACHE_SEL:-chain A}"
+PEP_SEL="${PEP_SEL:-chain B}"
 
 TPR_FILE="md.tpr"
 if [ ! -f "${TPR_FILE}" ]; then
@@ -33,13 +34,13 @@ G2=$((LAST_IDX + 2))
 G3=$((LAST_IDX + 3))
 G4=$((LAST_IDX + 4))
 
-echo ">> 使用结构文件: ${TPR_FILE} 生成分析索引组 (ACHERES=${ACHERES}, PEPRES=${PEPRES}) ..."
+echo ">> 使用结构文件: ${TPR_FILE} 生成分析索引组 (ACHE_SEL='${ACHE_SEL}', PEP_SEL='${PEP_SEL}') ..."
 echo ">> 原系统最大组号: ${LAST_IDX}, 自动分配新增分组编号: ${G1}(AChE), ${G2}(Peptide), ${G3}(AChE_Backbone), ${G4}(Peptide_Backbone) ..."
 
 gmx make_ndx -f "${TPR_FILE}" -o index.ndx << EOF
-ri ${ACHERES}
+${ACHE_SEL}
 name ${G1} AChE
-ri ${PEPRES}
+${PEP_SEL}
 name ${G2} Peptide
 ${G1} & 4
 name ${G3} AChE_Backbone

@@ -20,24 +20,50 @@ import numpy as np
 import MDAnalysis as mda
 from MDAnalysis.lib.distances import distance_array
 
+def select_protein(u, chain_id, default_resid):
+    for sel_str in [
+        f"moltype Protein_chain_{chain_id}",
+        f"segid Protein_chain_{chain_id}",
+        f"segid {chain_id}",
+        f"chainID {chain_id}",
+        f"chain {chain_id}"
+    ]:
+        try:
+            ag = u.select_atoms(sel_str)
+            if len(ag) > 0:
+                return ag
+        except Exception:
+            pass
+    return u.select_atoms(f"resid {default_resid}")
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-t", default="md.tpr")
     ap.add_argument("-f", default="md.xtc")
-    ap.add_argument("-a", default="1-537", help="AChE 残基范围")
-    ap.add_argument("-p", default="538-579", help="肽残基范围")
+    ap.add_argument("-a", default="1-537", help="AChE 残基范围 (默认自动选择链 A / moltype Protein_chain_A)")
+    ap.add_argument("-p", default="538-579", help="肽残基范围 (默认自动选择链 B / moltype Protein_chain_B)")
     ap.add_argument("-cut", type=float, default=7.0, help="接触距离截断 (A)")
     ap.add_argument("-freq", type=int, default=10, help="频率阈值 (>N 次计入表1)")
     args = ap.parse_args()
 
     u = mda.Universe(args.t, args.f)
-    a = u.select_atoms(f"resid {args.a}")
-    p = u.select_atoms(f"resid {args.p}")
+    if args.a == "1-537":
+        a = select_protein(u, "A", args.a)
+    else:
+        a = u.select_atoms(f"resid {args.a}")
+
+    if args.p == "538-579":
+        p = select_protein(u, "B", args.p)
+    else:
+        p = u.select_atoms(f"resid {args.p}")
     print(f"AChE 原子: {len(a)}, 肽原子: {len(p)}, 帧数: {u.trajectory.n_frames}")
 
     # 参考结构 (第一帧) 用于定义天然接触
     u.trajectory[0]
-    a_ref = u.select_atoms(f"resid {args.a}")
+    if args.a == "1-537":
+        a_ref = select_protein(u, "A", args.a)
+    else:
+        a_ref = u.select_atoms(f"resid {args.a}")
 
     def residue_pair_contact(sel1_res, sel2_res):
         """返回 (i, j) 集合, 残基间任一对原子距离 < cut."""
@@ -71,9 +97,9 @@ def main():
     ridx = {r: k for k, r in enumerate(pep_resids)}
 
     for f, ts in enumerate(u.trajectory):
-        # 重新选择原子 (每帧坐标更新)
-        pa = u.select_atoms(f"resid {args.a}")
-        pp = u.select_atoms(f"resid {args.p}")
+        # 使用动态跟进坐标的 AtomGroup (无需每帧重新构造查询)
+        pa = a
+        pp = p
         inter = residue_pair_contact(pa, pp)
         intra = residue_pair_contact(pp, pp)
 
