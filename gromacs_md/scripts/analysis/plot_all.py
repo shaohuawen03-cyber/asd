@@ -83,6 +83,12 @@ def save_all_formats(fig: plt.Figure, out_base: Path) -> None:
             print(f"  [WARNING] Could not save {f}: {e}")
 
 
+def add_panel_label(ax: plt.Axes, label: str) -> None:
+    """按出版规范在子图左上角外部标注 A, B, C... 标签"""
+    ax.text(-0.1, 1.05, label, transform=ax.transAxes,
+            fontsize=14, weight="bold", va="top", ha="right")
+
+
 def summarize_last_ns(df: Optional[pd.DataFrame], metric: str, system_label: str, last_ns: float = 20.0):
     if df is None or df.empty:
         return None
@@ -146,11 +152,12 @@ def main():
         ax1.plot(rmsd_pep["x"], rmsd_pep["y"], label="Peptide BB", linewidth=1.5, color="tab:green")
         s = summarize_last_ns(rmsd_pep, "rmsd_pep", "Peptide")
         if s: summary_rows.append(s)
-    ax1.set_title("A. Backbone Cα RMSD", fontsize=11, weight="bold")
+    ax1.set_title("Backbone Cα RMSD", fontsize=11, weight="bold")
     ax1.set_xlabel("Time (ns)", fontsize=10)
     ax1.set_ylabel("RMSD (nm)", fontsize=10)
     ax1.grid(alpha=0.3, linestyle="--")
     ax1.legend(frameon=False, fontsize=9)
+    add_panel_label(ax1, "A")
 
     # RMSF
     if rmsf_pep is not None:
@@ -159,11 +166,12 @@ def main():
         if s: summary_rows.append(s)
     if rmsf_ach is not None:
         ax2.plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", linewidth=1.0, linestyle="--", color="tab:orange", alpha=0.7)
-    ax2.set_title("B. Backbone Cα RMSF", fontsize=11, weight="bold")
+    ax2.set_title("Backbone Cα RMSF", fontsize=11, weight="bold")
     ax2.set_xlabel("Residue Number", fontsize=10)
     ax2.set_ylabel("RMSF (nm)", fontsize=10)
     ax2.grid(alpha=0.3, linestyle="--")
     ax2.legend(frameon=False, fontsize=9)
+    add_panel_label(ax2, "B")
 
     save_all_formats(fig, fig_dir / "fig1_rmsd_rmsf")
     plt.close(fig)
@@ -251,19 +259,21 @@ def main():
     if inter_csv is not None and len(inter_csv.columns) >= 2:
         cols = inter_csv.columns
         ax1.bar(inter_csv[cols[0]].astype(str), inter_csv[cols[1]], color="tab:cyan", alpha=0.8, edgecolor="black", width=0.6)
-        ax1.set_title("A. Peptide-AChE Non-Native Contacts (Paper Fig 5A)", fontsize=11, weight="bold")
+        ax1.set_title("Peptide-AChE Non-Native Contacts", fontsize=11, weight="bold")
         ax1.set_xlabel("Peptide Residue", fontsize=10)
         ax1.set_ylabel("Average Contacts per Frame", fontsize=10)
         ax1.tick_params(axis="x", rotation=45)
         ax1.grid(axis="y", alpha=0.3, linestyle="--")
+    add_panel_label(ax1, "A")
     if intra_csv is not None and len(intra_csv.columns) >= 2:
         cols = intra_csv.columns
         ax2.bar(intra_csv[cols[0]].astype(str), intra_csv[cols[1]], color="tab:pink", alpha=0.8, edgecolor="black", width=0.6)
-        ax2.set_title("B. Intra-Peptide Contacts (Paper Fig 5B)", fontsize=11, weight="bold")
+        ax2.set_title("Intra-Peptide Contacts", fontsize=11, weight="bold")
         ax2.set_xlabel("Peptide Residue", fontsize=10)
         ax2.set_ylabel("Average Contacts per Frame", fontsize=10)
         ax2.tick_params(axis="x", rotation=45)
         ax2.grid(axis="y", alpha=0.3, linestyle="--")
+    add_panel_label(ax2, "B")
     save_all_formats(fig, fig_dir / "fig5_contacts")
     plt.close(fig)
 
@@ -379,6 +389,9 @@ def main():
     axes[5].set_ylabel("Count", fontsize=10)
     axes[5].grid(alpha=0.3, linestyle="--")
     axes[5].legend(frameon=False, fontsize=9)
+
+    for idx, (ax, label) in enumerate(zip(axes, ["A", "B", "C", "D", "E", "F"])):
+        add_panel_label(ax, label)
 
     fig.suptitle("AChE-Aβ Complex Molecular Dynamics Summary", fontsize=14, weight="bold")
     save_all_formats(fig, fig_dir / "fig0_summary_all")
