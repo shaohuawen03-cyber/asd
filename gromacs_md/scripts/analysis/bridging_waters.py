@@ -62,29 +62,32 @@ def main():
         pw = waters
         box = pw.dimensions
 
-        # 肽原子 <-> 水原子 距离矩阵
+        # 1. 优先计算肽原子 <-> 所有水原子的距离矩阵 (122 x 71331 -> ~10 ms)
         dpw = distance_array(pp.positions, pw.positions, box=box)
-        # AChE 原子 <-> 水原子
-        daw = distance_array(pa.positions, pw.positions, box=box)
+        pw_near_pep = dpw < RCUT
+        any_p = pw_near_pep.any(axis=0)  # shape: (71331,)
+        cand_idx = np.where(any_p)[0]    # 距离肽 3.0 Å 以内的候选水原子 (通常仅数百个)
 
-        pw_near = dpw < RCUT
-        aw_near = daw < RCUT
-        # 某水若同时接近肽和 AChE (距离判据近似)
-        any_p = pw_near.any(axis=0)
-        any_a = aw_near.any(axis=0)
-        bridge_wat_idx = np.where(any_p & any_a)[0]
+        if len(cand_idx) > 0:
+            # 2. 仅针对进入肽链势能球的候选水原子计算 AChE 距离 (8145 x ~200 -> 速度提升 100 倍!!)
+            pw_cand_positions = pw.positions[cand_idx]
+            daw_cand = distance_array(pa.positions, pw_cand_positions, box=box)
+            any_a_cand = (daw_cand < RCUT).any(axis=0)
 
-        for widx in bridge_wat_idx:
-            wres = water_res[widx]
-            # 找出与该水桥连的肽残基
-            pep_atoms_near = np.where(pw_near[:, widx])[0]
-            res_of_pep_atom = pp.resids[pep_atoms_near]
-            for r in set(res_of_pep_atom):
-                bridge_waters[r].add(int(wres))
-                bridge_counts[r] += 1
+            # 候选水中同时也靠近 AChE 的最终桥连水下标
+            bridge_wat_idx = cand_idx[any_a_cand]
 
-        if (f + 1) % 500 == 0:
-            print(f"  处理帧 {f+1}/{u.trajectory.n_frames}")
+            for widx in bridge_wat_idx:
+                wres = water_res[widx]
+                # 找出与该水桥连的肽残基
+                pep_atoms_near = np.where(pw_near_pep[:, widx])[0]
+                res_of_pep_atom = pp.resids[pep_atoms_near]
+                for r in set(res_of_pep_atom):
+                    bridge_waters[r].add(int(wres))
+                    bridge_counts[r] += 1
+
+        if (f + 1) % 100 == 0 or f == 0:
+            print(f"  已处理轨迹帧 {f+1}/{u.trajectory.n_frames} (候选水原子数: {len(cand_idx)})")
 
     with open("bridging_per_residue.csv", "w") as fo:
         fo.write("pep_resid,n_bridge_waters,n_bridge_interactions\n")
