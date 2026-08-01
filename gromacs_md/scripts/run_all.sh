@@ -42,6 +42,20 @@ CHAIN_PEP="B"
 # 若你的 PDB 中 AChE 是连续链, 置空即可
 BREAK_RES=""
 
+# ---------- 开放配置参数 ----------
+# 1. 力场选择 (标准 GROMACS 默认自带 amber99sb-ildn;
+#   若你在本地安装了第三方 amber14sb.ff 力场包, 可在命令中加入 FORCE_FIELD=amber14sb)
+FORCE_FIELD="${FORCE_FIELD:-amber99sb-ildn}"
+
+# 2. 链末端封端交互设置 (-ter)
+#   INTERACTIVE_TER=0 -> 全自动无交互，自动使用标准的带电 N/C 末端 (默认, 适合自动化跑通)
+#   INTERACTIVE_TER=1 -> 开启 -ter 交互模式，在命令行询问 N/C 端封端方式 (ACE/NME/None)
+INTERACTIVE_TER="${INTERACTIVE_TER:-0}"
+TER_FLAG=""
+if [ "${INTERACTIVE_TER}" = "1" ]; then
+    TER_FLAG="-ter"
+fi
+
 # ---------- 自动检测/校验 GROMACS 命令 ----------
 if command -v gmx.exe >/dev/null 2>&1; then
     GMX="gmx.exe"
@@ -76,17 +90,21 @@ fi
 cp "${INPUT}" complex_clean.pdb
 
 # ---------- 2. 构建拓扑 ----------
-echo "[2/10] pdb2gmx 构建拓扑 (amber14sb + TIP3P, 交互封端) ..."
+echo "[2/10] pdb2gmx 构建拓扑 (力场: ${FORCE_FIELD}, 水模型: TIP3P) ..."
 # 说明: -ter 会逐链询问 N/C 端处理方式。
 #   要实现论文的"封端", 对每一端选择对应封端残基:
 #     - N 端: 选 ACE (封乙酰化) 或 None(保留带电 NH3+)
 #     - C 端: 选 NME (封酰胺化) 或 None(保留带电 COO-)
 #   若 AChE 存在内部断裂(如残基259/262, 492/495), 需在此处按片段分别封端。
-echo ">> 提示: 接下来的 pdb2gmx 如提示选择 N/C 端封端，请在命令行数字列表中选择对应的选项(如 ACE/NME/None)。"
+if [ "${INTERACTIVE_TER}" = "1" ]; then
+    echo ">> 提示: 已开启交互式封端(-ter)，请在屏幕提示时输入数字选择每一条链的 N/C 端封端方式(如 ACE/NME/None)。"
+else
+    echo ">> 提示: 自动末端处理模式(未开启-ter)，将默认采用带电 N/C 端。如需交互选择可传入 INTERACTIVE_TER=1。"
+fi
 ${GMX} pdb2gmx -f complex_clean.pdb -o complex.gro \
        -p topol.top -i posre.itp \
-       -ff amber14sb -water tip3p \
-       -ignh -ter
+       -ff "${FORCE_FIELD}" -water tip3p \
+       -ignh ${TER_FLAG}
 
 # 将重原子位置约束力常数改为论文的 3 kcal/mol/A^2 = 1255 kJ/(mol nm^2)
 # (pdb2gmx 默认 fc=1000; 若想精确复现可执行下面 sed)

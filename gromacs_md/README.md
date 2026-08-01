@@ -5,7 +5,7 @@
 
 ## 0. 依赖与准备
 
-- **Gromacs** ≥ 2018（含 `amber14sb` 力场与 `spc216.gro`；旧版请改 `-ff amber99sb-ildn`）
+- **Gromacs** ≥ 2018（默认使用官方自带的 `amber99sb-ildn` 力场与 `spc216.gro`；如需第三方 `amber14sb.ff` 请传入 `FORCE_FIELD=amber14sb`）
 - 分析脚本需要 **Python 3** + **MDAnalysis** + **numpy**：`pip install numpy MDAnalysis`
 - 将你的三个 PDB 放入 `input/`，命名方式：
   - `input/alllhrc_complex.pdb`
@@ -56,7 +56,7 @@ gromacs_md/
 > 测试模式（`TESTING=1`）下，`mdp/test/` 中的 NVT(`2_heat`) / NPT(`3`、`4`) / MD(`5`) 均为 **100 步**。
 
 关键参数与论文的一致性：
-- **力场**：`amber14sb`（Gromacs 中与论文 ff14SB 等价）
+- **力场**：默认使用标准 Gromacs 内置的 `amber99sb-ildn` 力场（AMBER 体系下的标准等价方案；如需 `amber14sb` 请通过参数指定：`FORCE_FIELD=amber14sb`）
 - **水模型**：TIP3P，截角八面体盒子，周期性边界条件
 - **截断**：vdW 与静电均为 **12.0 Å**；长程静电用 **PME**
 - **控温/控压**：`v-rescale`（Gromacs 中近似 Langevin）+ `Berendsen`（1 bar）
@@ -135,5 +135,6 @@ python3 ../scripts/analysis/bridging_waters.py -a 1-537 -p 538-579
 
 - **pdb2gmx 报"chain break / 残基缺失"**：AChE 链在 259/262、492/495 处有断裂，需拆分片段并分别封端，参考 `run_all.sh` 中说明。
 - **分析时索引组不存在**：先运行 `0_make_index.sh` 并确认分组名（AChE/Peptide/Backbone）。
-- **力场缺失 amber14sb**：旧版 Gromacs 用 `-ff amber99sb-ildn` 替代。
+- **力场定制或报错**：标准 GROMACS 自带 `amber99sb-ildn`，脚本已设其为默认值。如果你本地安装了第三方 `amber14sb.ff`，可在运行命令前加 `FORCE_FIELD=amber14sb`。
+- **末端封端选择（-ter）**：脚本默认开启全自动非交互模式（`INTERACTIVE_TER=0`）。如需手动针对 N/C 端逐链选择封端（ACE/NME/None），请在运行前加 `INTERACTIVE_TER=1`。
 - **Windows 下无 bash**：使用 WSL，或安装 Git Bash/Cygwin 后运行。
