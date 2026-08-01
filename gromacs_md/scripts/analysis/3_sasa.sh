@@ -5,7 +5,7 @@
 # 说明: gmx sasa 采用类 Shrake-Rupley 算法, 功能上等价于 LCPO
 # 每 10 帧计算一次 (每帧 0.2 ns => 每 2 ns 一个点, 共 500 点)
 # ============================================================
-set -euo pipefail
+set -eu
 
 # 使用整条轨迹, 复合物组 (Protein = AChE+肽)
 gmx sasa -s md.tpr -f md.xtc -n index.ndx -o sasa_complex.xvg \

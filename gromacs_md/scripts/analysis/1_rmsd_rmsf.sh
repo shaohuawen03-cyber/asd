@@ -3,7 +3,7 @@
 # 图1: 复合物/AChE/肽 的骨架 C原子 RMSD 与 RMSF
 # 论文 3.1 节
 # ============================================================
-set -euo pipefail
+set -eu
 
 # 复合物骨架 RMSD (对齐到骨架, 论文图1A)
 gmx rms -s md.tpr -f md.xtc -n index.ndx -o rmsd_complex_bb.xvg -fit rot+trans << EOF

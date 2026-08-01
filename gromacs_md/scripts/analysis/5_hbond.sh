@@ -5,7 +5,7 @@
 #   - 肽内部氢键 (总 57383 个)
 # gmx hbond 按几何判据 (距离截断 3.0 A, 角度 30 deg)
 # ============================================================
-set -euo pipefail
+set -eu
 
 # AChE 与肽之间氢键
 gmx hbond -s md.tpr -f md.xtc -n index.ndx -num hbond_ache_pep.xvg << EOF

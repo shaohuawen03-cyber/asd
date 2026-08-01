@@ -1,0 +1,8 @@
+# Force LF line endings for Linux scripts and config files
+* text=auto
+
+*.sh text eol=lf
+*.py text eol=lf
+*.mdp text eol=lf
+*.txt text eol=lf
+*.md text eol=lf

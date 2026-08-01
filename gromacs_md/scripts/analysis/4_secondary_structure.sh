@@ -4,7 +4,7 @@
 # 论文 3.2 节 (helix, beta-turn, bend 倾向, 每 50 ns 统计)
 # gmx do_dssp 基于 DSSP 判定二级结构, -ssdump 输出逐帧 SS 字符串
 # ============================================================
-set -euo pipefail
+set -eu
 
 # 计算肽的二级结构随时间的分布
 # ss_pep.sc : 每行一个帧, 形如 "<时间> <SS字符串>" (每残基一个 DSSP 码)

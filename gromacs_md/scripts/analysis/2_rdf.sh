@@ -4,7 +4,7 @@
 # 论文 3.1 节 (Aβ 围绕 AChE 在 3 A 内更易出现)
 # gmx rdf 计算两质心之间的 RDF
 # ============================================================
-set -euo pipefail
+set -eu
 
 # 整个产物轨迹的 RDF (图2A), 以质心计算 (mol_com)
 gmx rdf -s md.tpr -f md.xtc -n index.ndx -o rdf_pep_ache.xvg \
