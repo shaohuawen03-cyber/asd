@@ -1,0 +1,46 @@
+; ============================================================
+; STEP 3: 恒压密度平衡 (NPT Density Equilibration)
+; 论文 2.3: 相同约束下进行 1 ns 的恒压密度平衡
+; 温度 300 K, 压力 1 bar, Berendsen 控压棒
+; ============================================================
+integrator               = md
+dt                       = 0.002
+nsteps                   = 500000       ; 1 ns
+nstxout-compressed       = 5000
+nstlog                   = 5000
+nstcalcenergy            = 5000
+nstenergy                = 5000
+
+define                   = -DPOSRES     ; 密度平衡阶段仍保留约束
+
+constraints              = h-bonds
+constraint_algorithm     = lincs
+
+cutoff-scheme            = Verlet
+ns_type                  = grid
+nstlist                  = 10
+rlist                    = 1.2
+rcoulomb                 = 1.2
+rvdw                     = 1.2
+coulombtype              = PME
+pme_order                = 4
+fourierspacing           = 0.12
+vdwtype                  = cutoff
+vdw-modifier             = force-switch
+rvdw-switch              = 1.0
+
+; ---- 温度控制 ----
+tcoupl                   = v-rescale
+tc-grps                  = Protein Water_and_ions
+tau_t                    = 1.0 1.0
+ref_t                    = 300 300
+gen_vel                  = no
+
+; ---- 压力控制 (Berendsen) ----
+pcoupl                   = berendsen
+pcoupltype               = isotropic
+tau_p                    = 2.0
+ref_p                    = 1.0
+compressibility          = 4.5e-5
+
+pbc                      = xyz

@@ -1,0 +1,31 @@
+; ============================================================
+; STEP 1: 能量最小化 (Energy Minimization)
+; 论文 2.3: 2000 步 EM，对蛋白/肽重原子施加 3 kcal/mol·A^2 谐波约束
+; ============================================================
+integrator               = steep        ; 最陡下降法
+nsteps                   = 2000         ; 2000 步
+emtol                    = 1000         ; 收敛判据 kJ/(mol nm)
+emstep                   = 0.01         ; 初始步长 nm
+
+; ---- 非键相互作用 (与论文 2.3 一致) ----
+cutoff-scheme            = Verlet
+ns_type                  = grid
+nstlist                  = 10
+rlist                    = 1.2          ; 12 A
+rcoulomb                 = 1.2          ; 12 A 静电截断
+rvdw                     = 1.2          ; 12 A vdW 截断
+coulombtype              = PME          ; 粒子网格 Ewald 处理长程静电
+pme_order                = 4
+fourierspacing           = 0.12
+vdwtype                  = cutoff
+vdw-modifier             = force-switch ; Amber 力场常用平滑截断
+rvdw-switch              = 1.0
+
+; ---- 约束 ----
+; 论文明确: 最小化阶段不对与 H 相连的键施加约束
+constraints              = none
+; 重原子位置约束 (3 kcal/mol/A^2), 通过 -DPOSRES 激活 pdb2gmx 生成的 posre.itp
+define                   = -DPOSRES
+
+; ---- 周期性边界条件 ----
+pbc                      = xyz

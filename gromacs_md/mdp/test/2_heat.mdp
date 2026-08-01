@@ -1,0 +1,48 @@
+; ============================================================
+; STEP 2: 升温 (NVT Heating 0 -> 300 K)
+; 论文 2.3: 在重原子约束下, 于 1 ns 内从 0 K 加热至 300 K
+; 说明: 脚本中按温度梯度(50->300 K)分段运行以近似连续升温,
+;       ref_t 会由 run_all.sh 自动改写, 每段 0.2 ns。
+; ============================================================
+integrator               = md
+dt                       = 0.002        ; 2 fs (SHAKE/LINCS 允许)
+nsteps                   = 100         ; 测试模式: 100 步
+nstxout-compressed       = 5000         ; 每 10 ps 存一帧
+nstlog                   = 5000
+nstcalcenergy            = 5000
+nstenergy                = 5000
+
+define                   = -DPOSRES     ; 升温阶段保留重原子约束
+
+; ---- 约束 ----
+constraints              = h-bonds      ; 与 H 相连的键被 SHAKE 约束, 允许 2 fs 步长
+constraint_algorithm     = lincs
+
+; ---- 非键 (同论文) ----
+cutoff-scheme            = Verlet
+ns_type                  = grid
+nstlist                  = 10
+rlist                    = 1.2
+rcoulomb                 = 1.2
+rvdw                     = 1.2
+coulombtype              = PME
+pme_order                = 4
+fourierspacing           = 0.12
+vdwtype                  = cutoff
+vdw-modifier             = force-switch
+rvdw-switch              = 1.0
+
+; ---- 温度控制 (论文用 Langevin; Gromacs 以 v-rescale 近似的随机控温) ----
+tcoupl                   = v-rescale
+tc-grps                  = Protein Water_and_ions
+tau_t                    = 1.0 1.0
+ref_t                    = 50           ; 脚本会自动改写为梯度温度
+gen_vel                  = yes
+gen_temp                 = 50           ; 从低温生成初速度
+gen_seed                 = -1
+
+; ---- 压力控制 ----
+; 升温阶段用 NVT, 不控压
+pcoupl                   = no
+
+pbc                      = xyz

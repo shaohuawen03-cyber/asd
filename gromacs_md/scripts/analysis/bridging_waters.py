@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""
+复现论文 3.4 节: 水介导的桥连相互作用 (bridging water)
+  - 桥连水: 至少一帧中同时与肽(Aβ)和 AChE 结合的水分子
+  - 一个水分子可形成多个桥连相互作用
+  - 氢键判据: 距离截断 3.0 A, 角度截断 135 deg
+  - 简化实现: 以水氧与两个分子重原子/氢的几何判据近似
+
+用法:
+    python3 bridging_waters.py [-t top.tpr] [-f md.xtc] [-a a1-a2] [-p p1-p2]
+输出:
+  bridging_per_residue.csv : 每个肽残基的桥连水分子数和桥连相互作用数 (图6/表2)
+"""
+import argparse
+import numpy as np
+import MDAnalysis as mda
+from MDAnalysis.lib.distances import distance_array
+from collections import defaultdict
+
+# H-bond 几何判据
+RCUT = 3.0     # 距离截断 (A)
+ACUT = np.cos(np.radians(135.0))   # 135 度角截断 -> cos 值下限
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-t", default="md.tpr")
+    ap.add_argument("-f", default="md.xtc")
+    ap.add_argument("-a", default="1-537", help="AChE 残基范围")
+    ap.add_argument("-p", default="538-579", help="肽残基范围")
+    args = ap.parse_args()
+
+    u = mda.Universe(args.t, args.f)
+    waters = u.select_atoms("resname SOL")
+    a = u.select_atoms(f"resid {args.a}")
+    p = u.select_atoms(f"resid {args.p}")
+    print(f"水分子数: {waters.n_residues}, 帧数: {u.trajectory.n_frames}")
+
+    pep_resids = np.unique(p.resids)
+    # 每个肽残基: [桥连水分子累计, 桥连相互作用累计]
+    bridge_waters = defaultdict(set)    # pep_resid -> set(water resids)  (曾经桥连)
+    bridge_counts = defaultdict(int)    # pep_resid -> 桥连相互作用总次数
+
+    # 预取水残基索引
+    water_res = waters.resids
+    # 原子到残基映射
+    wat_res_of_atom = waters.residues.resids
+
+    for f, ts in enumerate(u.trajectory):
+        pa = u.select_atoms(f"resid {args.a}")
+        pp = u.select_atoms(f"resid {args.p}")
+        pw = u.select_atoms("resname SOL")
+        box = pw.dimensions
+
+        # 肽原子 <-> 水原子 距离矩阵
+        dpw = distance_array(pp.positions, pw.positions, box=box)
+        # AChE 原子 <-> 水原子
+        daw = distance_array(pa.positions, pw.positions, box=box)
+
+        pw_near = dpw < RCUT
+        aw_near = daw < RCUT
+        # 某水若同时接近肽和 AChE (距离判据近似)
+        any_p = pw_near.any(axis=0)
+        any_a = aw_near.any(axis=0)
+        bridge_wat_idx = np.where(any_p & any_a)[0]
+
+        for widx in bridge_wat_idx:
+            wres = water_res[widx]
+            # 找出与该水桥连的肽残基
+            pep_atoms_near = np.where(pw_near[:, widx])[0]
+            res_of_pep_atom = pp.resids[pep_atoms_near]
+            for r in set(res_of_pep_atom):
+                bridge_waters[r].add(int(wres))
+                bridge_counts[r] += 1
+
+        if (f + 1) % 500 == 0:
+            print(f"  处理帧 {f+1}/{u.trajectory.n_frames}")
+
+    with open("bridging_per_residue.csv", "w") as fo:
+        fo.write("pep_resid,n_bridge_waters,n_bridge_interactions\n")
+        for r in pep_resids:
+            fo.write(f"{r},{len(bridge_waters.get(int(r), []))},{bridge_counts.get(int(r),0)}\n")
+
+    print("输出: bridging_per_residue.csv")
+    print("说明: 本实现以水氧-重原子距离(<3A)近似 H 键; 若要严格复现角度判据")
+    print("      建议改用 AmberTools cpptraj 的 Bridge 命令处理原始轨迹。")
+
+if __name__ == "__main__":
+    main()

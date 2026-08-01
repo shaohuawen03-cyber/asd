@@ -1,0 +1,48 @@
+; ============================================================
+; STEP 5: 产物动力学 (Production MD, 1000 ns)
+; 论文 2.3: 恒定 300 K, 1 bar; Langevin 控温 / Berendsen 控压
+;           ff14SB (此处用 amber14sb 等价), 周期性边界条件,
+;           每 0.2 ns 存一帧 -> 5000 帧用于分析
+; ============================================================
+integrator               = md
+dt                       = 0.002        ; 2 fs
+nsteps                   = 500000000    ; 1000 ns @ 2 fs
+
+; 每 0.2 ns 保存坐标帧 -> 共 5000 帧
+nstxout-compressed       = 100000
+nstlog                   = 5000
+nstcalcenergy            = 5000
+nstenergy                = 5000
+
+constraints              = h-bonds
+constraint_algorithm     = lincs
+
+cutoff-scheme            = Verlet
+ns_type                  = grid
+nstlist                  = 10
+rlist                    = 1.2
+rcoulomb                 = 1.2
+rvdw                     = 1.2
+coulombtype              = PME
+pme_order                = 4
+fourierspacing           = 0.12
+vdwtype                  = cutoff
+vdw-modifier             = force-switch
+rvdw-switch              = 1.0
+
+; ---- 温度控制 (v-rescale 近似 Langevin) ----
+tcoupl                   = v-rescale
+tc-grps                  = Protein Water_and_ions
+tau_t                    = 1.0 1.0
+ref_t                    = 300 300
+gen_vel                  = no
+
+; ---- 压力控制 (Berendsen) ----
+pcoupl                   = berendsen
+pcoupltype               = isotropic
+tau_p                    = 2.0
+ref_p                    = 1.0
+compressibility          = 4.5e-5
+
+pbc                      = xyz
+DispCorr                 = EnerPres      ; 长程范德华修正
