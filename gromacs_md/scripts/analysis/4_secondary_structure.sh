@@ -14,6 +14,12 @@ fi
 
 if [ -n "${PYTHON:-}" ]; then
     PY="${PYTHON}"
+elif [ -x "/f/anaconda/python.exe" ]; then
+    PY="/f/anaconda/python.exe"
+elif [ -x "F:/anaconda/python.exe" ]; then
+    PY="F:/anaconda/python.exe"
+elif [ -x "/c/anaconda3/python.exe" ]; then
+    PY="/c/anaconda3/python.exe"
 elif command -v python >/dev/null 2>&1; then
     PY="python"
 elif command -v python3 >/dev/null 2>&1; then
