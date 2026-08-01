@@ -107,7 +107,16 @@ TESTING=1 ./run_all.sh ylsllqr
 
 ### 分析用法示例
 
-你可以直接在 `scripts/` 目录下执行**自动化总分析脚本**（一键运行 0-8 全套论文计算并在 `figures/` 下批量绘制 `svg`, `png`, `pdf` 图与统计表）：
+**方法一：Windows PowerShell 原生运行（推荐 Windows 环境使用 `.ps1` 脚本）**
+```powershell
+# 测试模式 (100步轨迹快速出图)
+.\run_analysis.ps1 -System alllhrc -Testing
+
+# 正式生产模式
+.\run_analysis.ps1 -System alllhrc
+```
+
+**方法二：WSL / Git Bash 运行（`.sh` 脚本已自动支持 WSL 调用 Windows python.exe 时的路径自动转换）**
 ```bash
 # 测试模式(适用 100 步测试轨迹)
 TESTING=1 ./run_analysis.sh alllhrc

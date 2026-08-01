@@ -102,17 +102,26 @@ bash "${SCRIPTS_DIR}/4_secondary_structure.sh"
 echo "[5/8] 统计间/内氢键分布 (5_hbond.sh) ..."
 bash "${SCRIPTS_DIR}/5_hbond.sh"
 
+to_py_path() {
+    local p="$1"
+    if command -v wslpath >/dev/null 2>&1 && [[ "${PY}" == *".exe"* || "${PY}" == *"/mnt/"* || "${PY}" == *":"* ]]; then
+        wslpath -w "$p" 2>/dev/null || echo "$p"
+    else
+        echo "$p"
+    fi
+}
+
 # 6. 非天然接触统计 (论文 3.3 图5/表1)
 echo "[6/8] 统计天然与非天然相互作用接触 (contacts.py) ..."
-"${PY}" "${SCRIPTS_DIR}/contacts.py" -t md.tpr -f md.xtc
+"${PY}" "$(to_py_path "${SCRIPTS_DIR}/contacts.py")" -t md.tpr -f md.xtc
 
 # 7. 水介导桥连相互作用 (论文 3.4 图6/表2)
 echo "[7/8] 统计水介导桥连相互作用 (bridging_waters.py) ..."
-"${PY}" "${SCRIPTS_DIR}/bridging_waters.py" -t md.tpr -f md.xtc
+"${PY}" "$(to_py_path "${SCRIPTS_DIR}/bridging_waters.py")" -t md.tpr -f md.xtc
 
 # 8. 批量生成矢量/位图出版图与统计表 (plot_all.py)
 echo "[8/8] 批量绘制论文出版级图表 (SVG / PNG / PDF) ..."
-"${PY}" "${SCRIPTS_DIR}/plot_all.py" --dir . --out ./figures
+"${PY}" "$(to_py_path "${SCRIPTS_DIR}/plot_all.py")" --dir . --out ./figures
 
 echo "========== 体系 ${SYS} 分析流程全部完成！ =========="
 echo "生成分析图表一览 (保存在 ./figures/ 下):"

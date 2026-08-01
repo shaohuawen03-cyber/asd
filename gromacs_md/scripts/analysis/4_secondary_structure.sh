@@ -74,7 +74,13 @@ if [ "${TESTING}" = "1" ]; then
 else
     WIN_NS=50
 fi
-$PY "$(dirname "$0")/dssp_bins.py" "${SS_FILE}" ss_pep_bins.dat ${WIN_NS}
+
+if command -v wslpath >/dev/null 2>&1 && [[ "${PY}" == *".exe"* || "${PY}" == *"/mnt/"* || "${PY}" == *":"* ]]; then
+    SCRIPT_PATH=$(wslpath -w "$(dirname "$0")/dssp_bins.py" 2>/dev/null || echo "$(dirname "$0")/dssp_bins.py")
+else
+    SCRIPT_PATH="$(dirname "$0")/dssp_bins.py"
+fi
+"${PY}" "${SCRIPT_PATH}" "${SS_FILE}" ss_pep_bins.dat ${WIN_NS}
 
 echo "二级结构输出: ${SS_FILE}, ss_pep_bins.dat"
 echo "ss_pep_bins.dat 列: 时间窗口(ns)  helix倾向  turn倾向  bend倾向"
