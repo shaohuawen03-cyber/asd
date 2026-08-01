@@ -14,15 +14,29 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
-# AChE / Peptide 选择表达式:
-# 默认优先按 GROMACS 链ID (chain A = AChE, chain B = Peptide) 匹配，无论是 7 肽还是 42 肽皆能准确选中
-# 若需手动指定残基范围，可在执行前传参: ACHE_SEL="ri 1-530" PEP_SEL="ri 531-537"
-ACHE_SEL="${ACHE_SEL:-chain A}"
-PEP_SEL="${PEP_SEL:-chain B}"
-
 TPR_FILE="md.tpr"
 if [ ! -f "${TPR_FILE}" ]; then
     TPR_FILE="neutral.gro"
+fi
+
+# 自动检测体系的蛋白质总残基数 (由于 binary tpr 不保存字母 chainID, 这里用残基号划分最稳定)
+N_PROT_RES=$(echo "q" | gmx make_ndx -f "${TPR_FILE}" -o /dev/null 2>&1 | grep "Protein residues" | grep -oE "[0-9]+" | head -n 1 || true)
+N_PROT_RES="${N_PROT_RES:-537}"
+
+if [ -z "${ACHE_SEL:-}" ] || [ -z "${PEP_SEL:-}" ]; then
+    if [ "${N_PROT_RES}" = "537" ]; then
+        # 你的 7 肽对接构象体系: AChE(1-530), Peptide(531-537)
+        ACHE_SEL="ri 1-530"
+        PEP_SEL="ri 531-537"
+    elif [ "${N_PROT_RES}" = "579" ]; then
+        # 论文 Aβ(1-42) 体系: AChE(1-537), Peptide(538-579)
+        ACHE_SEL="ri 1-537"
+        PEP_SEL="ri 538-579"
+    else
+        # 自适应后退: 默认最后 7 个残基为小肽
+        ACHE_SEL="ri 1-$((N_PROT_RES - 7))"
+        PEP_SEL="ri $((N_PROT_RES - 6))-${N_PROT_RES}"
+    fi
 fi
 
 # 自动检测该体系 tpr 中原有默认组的最大编号(如 16 或 18 等)
@@ -34,7 +48,7 @@ G2=$((LAST_IDX + 2))
 G3=$((LAST_IDX + 3))
 G4=$((LAST_IDX + 4))
 
-echo ">> 使用结构文件: ${TPR_FILE} 生成分析索引组 (ACHE_SEL='${ACHE_SEL}', PEP_SEL='${PEP_SEL}') ..."
+echo ">> 检测到体系蛋白总残基数: ${N_PROT_RES}, 自动划分 AChE/Peptide 索引规则: ACHE_SEL='${ACHE_SEL}', PEP_SEL='${PEP_SEL}'"
 echo ">> 原系统最大组号: ${LAST_IDX}, 自动分配新增分组编号: ${G1}(AChE), ${G2}(Peptide), ${G3}(AChE_Backbone), ${G4}(Peptide_Backbone) ..."
 
 gmx make_ndx -f "${TPR_FILE}" -o index.ndx << EOF

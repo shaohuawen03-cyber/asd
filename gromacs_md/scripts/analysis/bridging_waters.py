@@ -21,41 +21,29 @@ from collections import defaultdict
 RCUT = 3.0     # 距离截断 (A)
 ACUT = np.cos(np.radians(135.0))   # 135 度角截断 -> cos 值下限
 
-def select_protein(u, chain_id, default_resid):
-    for sel_str in [
-        f"moltype Protein_chain_{chain_id}",
-        f"segid Protein_chain_{chain_id}",
-        f"segid {chain_id}",
-        f"chainID {chain_id}",
-        f"chain {chain_id}"
-    ]:
-        try:
-            ag = u.select_atoms(sel_str)
-            if len(ag) > 0:
-                return ag
-        except Exception:
-            pass
-    return u.select_atoms(f"resid {default_resid}")
+def select_ache_and_pep(u, arg_a, arg_p):
+    if arg_a != "default" and arg_p != "default":
+        return u.select_atoms(f"resid {arg_a}"), u.select_atoms(f"resid {arg_p}")
+    prot = u.select_atoms("protein")
+    nres = prot.n_residues
+    if nres == 537:  # 7 肽对接复合物体系
+        return u.select_atoms("resid 1-530"), u.select_atoms("resid 531-537")
+    elif nres == 579:  # 论文 42 肽 Aβ(1-42) 体系
+        return u.select_atoms("resid 1-537"), u.select_atoms("resid 538-579")
+    else:  # 默认后 7 个残基为小肽
+        return u.select_atoms(f"resid 1-{nres-7}"), u.select_atoms(f"resid {nres-6}-{nres}")
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-t", default="md.tpr")
     ap.add_argument("-f", default="md.xtc")
-    ap.add_argument("-a", default="1-537", help="AChE 残基范围 (默认自动选择链 A)")
-    ap.add_argument("-p", default="538-579", help="肽残基范围 (默认自动选择链 B)")
+    ap.add_argument("-a", default="default", help="AChE 残基范围 (默认根据体系残基数自适应)")
+    ap.add_argument("-p", default="default", help="肽残基范围 (默认根据体系残基数自适应)")
     args = ap.parse_args()
 
     u = mda.Universe(args.t, args.f)
     waters = u.select_atoms("resname SOL")
-    if args.a == "1-537":
-        a = select_protein(u, "A", args.a)
-    else:
-        a = u.select_atoms(f"resid {args.a}")
-
-    if args.p == "538-579":
-        p = select_protein(u, "B", args.p)
-    else:
-        p = u.select_atoms(f"resid {args.p}")
+    a, p = select_ache_and_pep(u, args.a, args.p)
     print(f"AChE 原子: {len(a)}, 肽原子: {len(p)}, 水分子数: {waters.n_residues}, 帧数: {u.trajectory.n_frames}")
 
     pep_resids = np.unique(p.resids)
