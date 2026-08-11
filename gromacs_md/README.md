@@ -24,6 +24,8 @@ gromacs_md/
 │   ├── 100ns/                   # ★ 100 ns 正式模拟参数配置 (采用 0->300K 连续线性退火)
 │   ├── test/                    # ★ 测试参数 (已更新同步为 100 ns 验证套件)
 ├── scripts/
+│   ├── run_100ns_formal.ps1/.sh # ★ 100 ns 正式产物模拟一键全自动套件 (自动清除测试残留 -> 100ns MD -> 绘图)
+│   ├── clean_test_results.ps1/.sh # ★ 一键清理脚本 (安全清理历史所有测试目录和临时日志)
 │   ├── run_pipeline_all.ps1/.sh # ★ 从头到尾一键主流水线 (MD模拟 -> 统计 -> SVG/PNG/PDF绘图)
 │   ├── run_all.ps1 / .sh        # 全流程 MD 主脚本 (支持 100 ns / 测试 / OnlyMD 续跑)
 │   ├── run_analysis.ps1 / .sh   # ★ 全流程自动化分析主脚本 (一键执行全部分析与作图)
