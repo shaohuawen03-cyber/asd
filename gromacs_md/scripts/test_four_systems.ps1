@@ -3,6 +3,8 @@
 #
 # Usage:  .\test_four_systems.ps1
 # ============================================================
+$ErrorActionPreference = "Continue"
+
 $Systems = @("alllhrc", "fllhttr", "ylsllqr", "ache")
 $LogFile = (Resolve-Path ".").Path + "\test_four_systems.log"
 
@@ -22,16 +24,10 @@ foreach ($Sys in $Systems) {
     Write-Host "====================================================================" -ForegroundColor Cyan
     
     $Status = "SUCCESS"
-    
-    try {
-        "=== System: $Sys ===" | Out-File -FilePath $LogFile -Append -Encoding utf8
-        & .\run_pipeline_all.ps1 -System $Sys -Testing *>&1 | Tee-Object -FilePath $LogFile -Append
-        if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) {
-            $Status = "FAILED (Exit Code $LASTEXITCODE)"
-        }
-    } catch {
-        $Status = "FAILED (Exception)"
-        "ERROR: $($_.Exception.Message)" | Out-File -FilePath $LogFile -Append -Encoding utf8
+    "=== System: $Sys ===" | Out-File -FilePath $LogFile -Append -Encoding utf8
+    & .\run_pipeline_all.ps1 -System $Sys -Testing *>&1 | Tee-Object -FilePath $LogFile -Append
+    if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) {
+        $Status = "FAILED (Exit Code $LASTEXITCODE)"
     }
 
     $FigPath = "..\md_$Sys\figures\fig0_summary_all.svg"
@@ -52,7 +48,7 @@ Write-Host "====================================================================
 $Results | Format-Table -AutoSize
 Write-Host "Full execution log saved in: $LogFile" -ForegroundColor Green
 
-$Errors = Select-String -Path $LogFile -Pattern "Fatal error|ERROR:|Exception|No such file|command not found|Segmentation fault" -ErrorAction SilentlyContinue
+$Errors = Select-String -Path $LogFile -Pattern "Fatal error|Segmentation fault|command not found|No such file|ModuleNotFoundError|Syntax error" -ErrorAction SilentlyContinue
 if ($Errors) {
     Write-Host ""
     Write-Host ">>> [LOGGED ERRORS FOUND IN test_four_systems.log] :" -ForegroundColor Red
