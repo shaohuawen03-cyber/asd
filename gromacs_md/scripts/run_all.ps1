@@ -15,10 +15,10 @@ param(
 $ErrorActionPreference = "Stop"
 
 if ($Testing -or $env:TESTING -eq "1") {
-    Write-Host ">> [100 ns Formal Simulation Mode] Running 100 ns Production MD Workflow (mdp/100ns)" -ForegroundColor Yellow
+    Write-Host ">> [10000-Step Validation Mode] Running 10000-Step Testing Workflow (mdp/test)" -ForegroundColor Yellow
     $env:TESTING = "1"
 } else {
-    Write-Host ">> [1000 ns Formal Simulation Mode] Running 1000 ns Production MD Workflow (mdp)" -ForegroundColor Cyan
+    Write-Host ">> [100 ns Formal Simulation Mode] Running 100 ns Production MD Workflow (mdp/100ns)" -ForegroundColor Cyan
     $env:TESTING = "0"
 }
 

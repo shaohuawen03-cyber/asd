@@ -18,12 +18,15 @@ SYS="${1:?用法: ./run_all.sh <前缀, 如 alllhrc>}"
 WORK="../md_${SYS}"                 # 输出工作目录 (避免污染 input/)
 
 # ---------- 模拟参数配置 ----------
-#   SIM_MODE="100ns"   -> 100 ns 正式产物动力学模拟 (默认配置: mdp/100ns)
-#   SIM_MODE="1000ns"  -> 1000 ns 正式产物动力学模拟 (mdp)
-SIM_MODE="${SIM_MODE:-100ns}"
-if [ "${SIM_MODE}" = "100ns" ] || [ "${TESTING}" = "1" ]; then
+# TESTING=1 -> 使用 mdp/test (10,000 步测试模式, 用于快速验证四套体系从 MD 到绘图全流程)
+# SIM_MODE="100ns" -> 100 ns 正式产物动力学模拟 (默认配置: mdp/100ns)
+# SIM_MODE="1000ns" -> 1000 ns 正式产物动力学模拟 (mdp)
+if [ "${TESTING}" = "1" ] || [ "${SIM_MODE:-}" = "test" ]; then
+    MDP="../mdp/test"
+    echo ">> [10,000 步测试验证模式] 使用 mdp/test (MD = 10,000 步 = 20 ps, 快速测试全量流程)"
+elif [ "${SIM_MODE:-100ns}" = "100ns" ]; then
     MDP="../mdp/100ns"
-    echo ">> [100 ns 正式生产模拟] 使用 mdp/100ns (NVT梯度 1.0 ns -> NPT 2.0 ns -> MD 100 ns -> 5,000 帧)"
+    echo ">> [100 ns 正式生产模拟] 使用 mdp/100ns (NVT退火 1.0 ns -> NPT 2.0 ns -> MD 100 ns -> 5,000 帧)"
 else
     MDP="../mdp"
     echo ">> [1000 ns 正式生产模拟] 使用 mdp (完整 1000 ns 产物动力学)"
@@ -182,11 +185,15 @@ ${GMX} grompp -f "${MDP}/4_equil_npt_free.mdp" -c equil_npt.gro -r equil_npt.gro
        -p topol.top -n index.ndx -o equil_free.tpr -maxwarn 2
 ${GMX} mdrun -deffnm equil_free -v ${GPU_FLAGS}
 
-# ---------- 10. 产物动力学 (100 ns / 1000 ns) ----------
-echo "[11/11] 产物动力学 NPT (300 K, 1 bar, 正式产物动力学) ..."
+# ---------- 10. 产物动力学 (100 ns / 1000 ns / 10,000 步测试) ----------
+echo "[11/11] 产物动力学 NPT (300 K, 1 bar, 产物动力学模拟) ..."
 ${GMX} grompp -f "${MDP}/5_md.mdp" -c equil_free.gro -r equil_free.gro \
        -p topol.top -n index.ndx -o md.tpr -maxwarn 2
-if [ -f "md.cpt" ]; then
+if [ "${TESTING}" = "1" ] || [ "${SIM_MODE:-}" = "test" ]; then
+    echo ">> [10,000 步测试模式] 自动清理历史 md.cpt，完整运行 10,000 步测试验证 ..."
+    rm -f md.cpt md.part*.cpt 2>/dev/null || true
+    ${GMX} mdrun -deffnm md -v ${GPU_FLAGS}
+elif [ -f "md.cpt" ]; then
     echo ">> 尝试从 existing md.cpt 续跑产物动力学..."
     ${GMX} mdrun -deffnm md -v -cpi md.cpt ${GPU_FLAGS} || {
         echo ">> [提示] 检测到原有 md.cpt 与当前新体系原子数/三斜盒子不匹配，自动清理旧 cpt 纯净启动 MD..."
