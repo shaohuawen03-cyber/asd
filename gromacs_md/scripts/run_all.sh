@@ -38,6 +38,14 @@ elif [ -f "../input/${SYS}.pdb" ]; then
     INPUT="../input/${SYS}.pdb"
 elif [ -f "../input/${SYS}_alone.pdb" ]; then
     INPUT="../input/${SYS}_alone.pdb"
+elif [ "${SYS}" = "ache" ] || [ "${SYS}" = "ache_alone" ] || [ "${SYS}" = "ache_mono" ] || [ "${SYS}" = "pro" ]; then
+    echo ">> [自动提取 AChE 单体] 未发现单体文件，正从 input/alllhrc_complex.pdb 中自动提取纯 AChE 单体至 input/${SYS}.pdb ..."
+    if command -v python >/dev/null 2>&1; then
+        python "./extract_ache_monomer.py" "../input/alllhrc_complex.pdb" "../input/${SYS}.pdb"
+    else
+        python3 "./extract_ache_monomer.py" "../input/alllhrc_complex.pdb" "../input/${SYS}.pdb"
+    fi
+    INPUT="../input/${SYS}.pdb"
 else
     INPUT="../input/${SYS}_complex.pdb"
 fi
