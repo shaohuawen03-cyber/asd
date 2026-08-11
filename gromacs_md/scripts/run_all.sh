@@ -81,6 +81,22 @@ cd "${WORK}"
 
 echo "========== 体系: ${SYS} =========="
 
+# ----- 支持单独从第11步产物MD启动 (节省时间, 无需重跑前期 10 步平衡) -----
+if [ "${ONLY_MD:-0}" = "1" ]; then
+    echo ">> [仅启动产物模拟模式] 跳过前 10 步准备与平衡，直接启动第 [11/11] 步产物 MD..."
+    if [ ! -f "equil_free.gro" ]; then
+        echo "!!! 错误: 未在工作目录找到 equil_free.gro！请先运行完整的预平衡。"
+        exit 1
+    fi
+    # 删掉原子数不匹配的旧残留 md.cpt，保证能从新盒子纯净启动
+    rm -f md.cpt md.part*.cpt 2>/dev/null || true
+    ${GMX} grompp -f "${MDP}/5_md.mdp" -c equil_free.gro -r equil_free.gro \
+           -p topol.top -n index.ndx -o md.tpr -maxwarn 2
+    ${GMX} mdrun -deffnm md -v ${GPU_FLAGS}
+    echo "========== 体系 ${SYS} 正式产物模拟完成 =========="
+    exit 0
+fi
+
 # ---------- 1. 结构准备 ----------
 echo "[1/10] 准备结构 (检查输入文件) ..."
 if [ ! -f "${INPUT}" ]; then
@@ -166,11 +182,20 @@ ${GMX} grompp -f "${MDP}/4_equil_npt_free.mdp" -c equil_npt.gro -r equil_npt.gro
        -p topol.top -n index.ndx -o equil_free.tpr -maxwarn 2
 ${GMX} mdrun -deffnm equil_free -v ${GPU_FLAGS}
 
-# ---------- 10. 产物动力学 (1000 ns) ----------
-echo "[11/11] 产物动力学 NPT (300 K, 1 bar, 1000 ns) ..."
+# ---------- 10. 产物动力学 (100 ns / 1000 ns) ----------
+echo "[11/11] 产物动力学 NPT (300 K, 1 bar, 正式产物动力学) ..."
 ${GMX} grompp -f "${MDP}/5_md.mdp" -c equil_free.gro -r equil_free.gro \
        -p topol.top -n index.ndx -o md.tpr -maxwarn 2
-${GMX} mdrun -deffnm md -v -cpi md.cpt ${GPU_FLAGS}
+if [ -f "md.cpt" ]; then
+    echo ">> 尝试从 existing md.cpt 续跑产物动力学..."
+    ${GMX} mdrun -deffnm md -v -cpi md.cpt ${GPU_FLAGS} || {
+        echo ">> [提示] 检测到原有 md.cpt 与当前新体系原子数/三斜盒子不匹配，自动清理旧 cpt 纯净启动 MD..."
+        rm -f md.cpt md.part*.cpt
+        ${GMX} mdrun -deffnm md -v ${GPU_FLAGS}
+    }
+else
+    ${GMX} mdrun -deffnm md -v ${GPU_FLAGS}
+fi
 
 echo "========== 体系 ${SYS} 模拟完成 =========="
 echo "产物轨迹: md.xtc (每 0.2 ns 一帧, 共 5000 帧)"
