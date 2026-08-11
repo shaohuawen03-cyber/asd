@@ -113,15 +113,15 @@ def build_sci_methods_docx(out_docx: Path, out_md: Path):
         "（1）能量最小化（Energy Minimization, EM）：使用最速下降法（Steepest Descents, integrator=steep）"
         "在对所有蛋白质和肽的重原子施加位置约束（define = -DPOSRES，力常数 k = 3 kcal·mol-1·Å-2 = 1255 kJ·mol-1·nm-2）"
         "的前提下进行 2,000 步能量优化，或至最大原子受力 Fmax < 1,000 kJ·mol-1·nm-1 为止，消除空间位阻冲突。\n"
-        "（2）NVT 升温模拟（0 K 至 300 K，总时长 1.0 ns）：为避免低温骤升导致系统动能震荡，将 1.0 ns 的 NVT 加热过程"
-        "划分成 5 个连续的等时分段（100 K -> 150 K -> 200 K -> 250 K -> 300 K，每个梯度温段运行 0.2 ns，即 100,000 步）。"
+        "（2）NVT 升温模拟（0 K 至 300 K，总时长 1.0 ns）：采用 GROMACS 原生模拟退火（Simulated Annealing，"
+        "annealing = single single）实现 1.0 ns 内自极低温（10 K）至 300 K 的连续线性加温，严格按照文献要求在1 ns内升至300 K。"
         "升温阶段全程对所有重原子保留 1255 kJ·mol-1·nm-2 的位置约束，温度耦合器采用 Velocity-rescale（v-rescale，"
         "作为 Langevin 热浴在 Gromacs 中的等效算法），为“蛋白质+肽”（Protein）与“水和离子”（Water_and_ions）两个独立"
         "热浴组分别设置时间常数 τ_T = 1.0 ps。\n"
         "（3）NPT 恒压密度平衡（1.0 ns，重原子约束）：继续对重原子保留上述位置约束，在 300 K 和 1.0 bar 压力下运行 "
-        "1.0 ns（500,000 步）NPT 模拟。控压采用 Berendsen 压力耦合器（isotropic 各向同性，τ_P = 2.0 ps，压缩率 4.5e-5 bar-1）。\n"
+        "1.0 ns（500,000 步）NPT 模拟。控压采用 Berendsen 压力耦合器（isotropic 各向同性，τ_P = 5.0 ps，压缩率 4.5e-5 bar-1）。\n"
         "（4）NPT 无约束预平衡（1.0 ns）：释放全体系所有位置约束（define = -DFLEXIBLE），在恒定 300 K、1.0 bar 条件下"
-        "继续运行 1.0 ns 无约束预平衡，促使肽与 AChE 界面侧链及周围显式水网络充分适应其近邻局部构象。"
+        "继续运行 1.0 ns 无约束预平衡（τ_P = 5.0 ps 保证密度平衡平稳消警），促使肽与 AChE 界面侧链及显式水网络充分适应其近邻局部构象。"
     )
     p3.paragraph_format.line_spacing = 1.25
 
@@ -185,10 +185,10 @@ def build_sci_methods_docx(out_docx: Path, out_md: Path):
 
     rows_data1 = [
         ("1. 能量最小化 (EM)", "2,000 步 (Fmax < 1000)", "0.01 (emstep)", "重原子 1255 kJ/mol/nm2", "最速下降法 (Steepest Descents)"),
-        ("2. NVT 梯度加热", "1.0 ns (100,000 步x5)", "2.0 fs (0.002)", "重原子 1255 kJ/mol/nm2", "v-rescale 控温 (50->300 K 阶梯)"),
-        ("3. NPT 恒压平衡", "1.0 ns (500,000 步)", "2.0 fs (0.002)", "重原子 1255 kJ/mol/nm2", "v-rescale (300K) / Berendsen (1 bar)"),
-        ("4. NPT 无约束预平衡", "1.0 ns (500,000 步)", "2.0 fs (0.002)", "无 (-DFLEXIBLE)", "v-rescale (300K) / Berendsen (1 bar)"),
-        ("5. 正式产物模拟 (MD)", "100 ns (50,000,000 步)", "2.0 fs (0.002)", "无约束 / LINCS 氢键", "v-rescale (300K) / Berendsen/PR (1 bar)"),
+        ("2. NVT 连续退火升温", "1.0 ns (500,000 步)", "2.0 fs (0.002)", "重原子 1255 kJ/mol/nm2", "模拟退火 (0->300 K 连续线性升温)"),
+        ("3. NPT 恒压平衡", "1.0 ns (500,000 步)", "2.0 fs (0.002)", "重原子 1255 kJ/mol/nm2", "v-rescale (300K) / Berendsen (tau_P=5.0 ps)"),
+        ("4. NPT 无约束预平衡", "1.0 ns (500,000 步)", "2.0 fs (0.002)", "无 (-DFLEXIBLE)", "v-rescale (300K) / Berendsen (tau_P=5.0 ps)"),
+        ("5. 正式产物模拟 (MD)", "100 ns (50,000,000 步)", "2.0 fs (0.002)", "无约束 / LINCS 氢键", "v-rescale (300K) / Berendsen/PR (tau_P=5.0 ps)"),
     ]
     for row in rows_data1:
         row_cells = t1.add_row().cells
@@ -275,10 +275,10 @@ def build_sci_methods_docx(out_docx: Path, out_md: Path):
 | 模拟阶段 | 时长/步数 | 积分步长 (dt) | 约束条件 | 控温 / 控压方式 |
 |---|---|---|---|---|
 | **1. 能量最小化 (EM)** | 2,000 步 (Fmax < 1000) | 0.01 (emstep) | 重原子 1255 kJ/mol/nm² | 最速下降法 (Steepest Descents) |
-| **2. NVT 梯度加热** | 1.0 ns (100,000步×5) | 2.0 fs (0.002) | 重原子 1255 kJ/mol/nm² | v-rescale 控温 (50->300K 阶梯) |
-| **3. NPT 恒压平衡** | 1.0 ns (500,000步) | 2.0 fs (0.002) | 重原子 1255 kJ/mol/nm² | v-rescale (300K) / Berendsen (1 bar) |
-| **4. NPT 无约束预平衡** | 1.0 ns (500,000步) | 2.0 fs (0.002) | 无 (-DFLEXIBLE) | v-rescale (300K) / Berendsen (1 bar) |
-| **5. 正式产物模拟 (MD)** | 100 ns (50,000,000步) | 2.0 fs (0.002) | 无约束 / LINCS 氢键 | v-rescale (300K) / Berendsen/PR (1 bar) |
+| **2. NVT 连续退火升温** | 1.0 ns (500,000步) | 2.0 fs (0.002) | 重原子 1255 kJ/mol/nm² | 模拟退火 (0->300 K 连续线性升温) |
+| **3. NPT 恒压平衡** | 1.0 ns (500,000步) | 2.0 fs (0.002) | 重原子 1255 kJ/mol/nm² | v-rescale (300K) / Berendsen (tau_P=5.0 ps) |
+| **4. NPT 无约束预平衡** | 1.0 ns (500,000步) | 2.0 fs (0.002) | 无 (-DFLEXIBLE) | v-rescale (300K) / Berendsen (tau_P=5.0 ps) |
+| **5. 正式产物模拟 (MD)** | 100 ns (50,000,000步) | 2.0 fs (0.002) | 无约束 / LINCS 氢键 | v-rescale (300K) / Berendsen/PR (tau_P=5.0 ps) |
 
 ### 表 2. 模拟产物轨迹分析命令与论文图表严格映射对照表
 | 分析项目 / 指标 | 论文章节与对应图表 | 核心执行指令或算法脚本 | 输出产物文件 |

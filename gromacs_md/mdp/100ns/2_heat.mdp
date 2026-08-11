@@ -1,11 +1,11 @@
 ; ============================================================
 ; STEP 2: NVT 升温 (NVT Heating 0 -> 300 K, 1.0 ns)
-; 论文 2.3: 在重原子约束下, 于 1 ns 内加热至 300 K
-; 说明: 脚本按梯度 (100/150/200/250/300 K) 逐步升温, 每段 0.2 ns
+; 论文 2.3: 在重原子约束下, 于 1 ns 内持续升温至 300 K
+; 说明: 采用 Gromacs 标准模拟退火(Simulated Annealing)实现连续线性升温
 ; ============================================================
 integrator               = md
 dt                       = 0.002        ; 2 fs
-nsteps                   = 100000       ; 0.2 ns / 梯度段 -> 5段共 1.0 ns
+nsteps                   = 500000       ; 1.0 ns @ 2 fs
 
 nstxout-compressed       = 5000         ; 每 10 ps 存一帧
 nstlog                   = 5000
@@ -29,12 +29,18 @@ vdwtype                  = cutoff
 vdw-modifier             = force-switch
 rvdw-switch              = 1.0
 
+; ---- 温度控制与连续模拟退火 (Simulated Annealing 0 -> 300 K in 1.0 ns) ----
 tcoupl                   = v-rescale
 tc-grps                  = Protein Water_and_ions
 tau_t                    = 1.0 1.0
-ref_t                    = 50 50        ; 会由 run_all 脚本自动批量替换
+ref_t                    = 300 300
+annealing                = single single
+annealing-npoints        = 2 2
+annealing-time           = 0 1000   0 1000      ; 0 ps -> 1000 ps (1.0 ns)
+annealing-temp           = 10 300   10 300      ; 从 10 K 加热至 300 K
+
 gen_vel                  = yes
-gen_temp                 = 50
+gen_temp                 = 10
 gen_seed                 = -1
 
 pbc                      = xyz

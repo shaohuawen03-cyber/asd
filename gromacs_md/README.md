@@ -21,12 +21,13 @@
 gromacs_md/
 ├── input/                       # 放置三个 *_complex.pdb
 ├── mdp/                         # ★ 正式(1000 ns 生产)参数
-│   ├── 100ns/                   # ★ 100 ns 正式模拟参数配置 (全新正式模拟)
+│   ├── 100ns/                   # ★ 100 ns 正式模拟参数配置 (采用 0->300K 连续线性退火)
 │   ├── test/                    # ★ 测试参数 (已更新同步为 100 ns 验证套件)
 ├── scripts/
-│   ├── run_all.ps1 / .sh        # 全流程 MD 主脚本 (支持 100 ns / 测试切换)
-│   ├── run_analysis.ps1 / .sh   # ★ 全流程自动化分析主脚本 (一键执行全部分析)
-│   └── analysis/                # 全部结果分析子脚本
+│   ├── run_pipeline_all.ps1/.sh # ★ 从头到尾一键主流水线 (MD模拟 -> 统计 -> SVG/PNG/PDF绘图)
+│   ├── run_all.ps1 / .sh        # 全流程 MD 主脚本 (支持 100 ns / 测试 / OnlyMD 续跑)
+│   ├── run_analysis.ps1 / .sh   # ★ 全流程自动化分析主脚本 (一键执行全部分析与作图)
+│   └── analysis/                # 全部结果分析与作图子脚本
 ├── SCI_Methods_GROMACS_MD_Simulation.docx  # ★ 参照论文对标撰写的完整 SCI 方法学 Word 文档
 ├── SCI_Methods_GROMACS_MD_Simulation.md    # ★ SCI 方法学对标 Markdown 文档
 └── README.md
@@ -103,7 +104,21 @@ TESTING=1 ./run_all.sh ylsllqr
 | `bridging_waters.py` | 水介导桥连（图6、表2）| 3.4 |
 | `plot_all.py` | ★ **一键生成全套论文出版级矢量/位图 (SVG / PNG / PDF)** 与统计表 | 图 1 - 6 / 汇总 2x3 图 |
 
-### 分析用法示例
+### 终极一键全流程：从头模拟到生成出版级 SVG / PNG / PDF 与统计表
+
+你只需要在 PowerShell 中使用一键主流水线脚本 **`run_pipeline_all.ps1`**，即可自动连接执行：动力学模拟 -> 多层次指标分析 -> 批量生成矢量图与数据表：
+```powershell
+# 1. 完整运行：从头自动构建体系、运行 100 ns 模拟并生成全套论文图表
+.\run_pipeline_all.ps1 -System alllhrc
+
+# 2. 已跑通平衡，跳过前 10 步平衡，直接跑 100 ns 产物 MD 并生成全套论文图表
+.\run_pipeline_all.ps1 -System alllhrc -OnlyMD
+
+# 3. 仅分析绘图模式：已有 md.xtc 轨迹，直接运行 7 大分析与批量图表导出
+.\run_pipeline_all.ps1 -System alllhrc -OnlyAnalysis
+```
+
+### 仅分析绘图用法示例
 
 **方法一：Windows PowerShell 原生运行（推荐 Windows 环境使用 `.ps1` 脚本）**
 ```powershell

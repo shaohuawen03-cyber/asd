@@ -155,20 +155,12 @@ ${GMX} grompp -f "${MDP}/1_min.mdp" -c neutral.gro -r neutral.gro \
        -p topol.top -n index.ndx -o em.tpr -maxwarn 2
 ${GMX} mdrun -deffnm em -v ${GPU_FLAGS}
 
-# ---------- 7. 升温 0->300K (NVT, 约束) ----------
-# ---------- 7. 升温 0->300K (NVT, 约束, 梯度共 1.0 ns) ----------
-echo "[8/10] 升温 (NVT, 50->300 K 阶梯加热, 每温段 0.2 ns, 共 1.0 ns) ..."
-# 论文要求 1 ns 内从 0 K 加热到 300 K;
-# Gromacs 中从 50 K 开始按梯度 100/150/200/250/300 K 连续加热逼近。
-prev="em"
-for T in 100 150 200 250 300; do
-    cp "${MDP}/2_heat.mdp" "heat_${T}.mdp"
-    sed -i "s/^ref_t.*/ref_t = ${T} ${T}/; s/^gen_temp.*/gen_temp = ${T}/" "heat_${T}.mdp"
-    ${GMX} grompp -f "heat_${T}.mdp" -c "${prev}.gro" -r neutral.gro \
-           -p topol.top -n index.ndx -o "heat_${T}.tpr" -maxwarn 2
-    ${GMX} mdrun -deffnm "heat_${T}" -v ${GPU_FLAGS}
-    prev="heat_${T}"
-done
+# ---------- 7. 升温 0->300K (NVT, 约束, 连续线性模拟退火共 1.0 ns) ----------
+echo "[8/10] 升温 (NVT, 0->300 K 连续模拟退火升温 1.0 ns, 严格复现论文) ..."
+${GMX} grompp -f "${MDP}/2_heat.mdp" -c em.gro -r neutral.gro \
+       -p topol.top -n index.ndx -o heat.tpr -maxwarn 2
+${GMX} mdrun -deffnm heat -v ${GPU_FLAGS}
+prev="heat"
 
 # ---------- 8. 恒压密度平衡 (约束) ----------
 echo "[9/10] 恒压密度平衡 NPT (约束) ..."
