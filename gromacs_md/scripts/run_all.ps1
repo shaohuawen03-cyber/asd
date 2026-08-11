@@ -25,9 +25,8 @@ if ($Testing -or $env:TESTING -eq "1") {
 if ($OnlyMD) {
     $env:ONLY_MD = "1"
     Write-Host ">> [ONLY_MD Mode] Directly starting Production MD from Step 11/11..." -ForegroundColor Yellow
+    & bash "./run_all.sh" $System "--only-md"
 } else {
     $env:ONLY_MD = "0"
+    & bash "./run_all.sh" $System
 }
-
-# 使用正斜杠 "./run_all.sh" 避免 Windows 反斜杠被转义移除
-& bash "./run_all.sh" $System
