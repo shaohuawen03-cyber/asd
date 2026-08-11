@@ -16,6 +16,13 @@ param(
 $OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = "Continue"
 
+# 强制清除之前任何测试会话残留的环境变量，1000% 锁定为 100 ns 正式产物生产模式
+$env:TESTING = "0"
+$env:ONLY_MD = "0"
+$env:SIM_MODE = "100ns"
+Remove-Item env:TESTING -ErrorAction SilentlyContinue
+Remove-Item env:ONLY_MD -ErrorAction SilentlyContinue
+
 $WorkDir = "..\md_$System"
 
 Write-Host "====================================================================" -ForegroundColor Green
