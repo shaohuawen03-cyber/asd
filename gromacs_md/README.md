@@ -24,7 +24,8 @@ gromacs_md/
 │   ├── 100ns/                   # ★ 100 ns 正式模拟参数配置 (采用 0->300K 连续线性退火)
 │   ├── test/                    # ★ 测试参数 (已更新同步为 100 ns 验证套件)
 ├── scripts/
-│   ├── run_100ns_formal.ps1/.sh # ★ 100 ns 正式产物模拟一键全自动套件 (自动清除测试残留 -> 100ns MD -> 绘图)
+│   ├── run_all_four_100ns_formal.ps1/.sh # ★ 终极自动化：四个体系顺序正式跑100ns并全自动分析绘图和比拼
+│   ├── run_100ns_formal.ps1/.sh # ★ 100 ns 正式产物模拟单体系全自动套件 (自动清除测试残留 -> 100ns MD -> 绘图)
 │   ├── clean_test_results.ps1/.sh # ★ 一键清理脚本 (安全清理历史所有测试目录和临时日志)
 │   ├── run_pipeline_all.ps1/.sh # ★ 从头到尾一键主流水线 (MD模拟 -> 统计 -> SVG/PNG/PDF绘图)
 │   ├── run_all.ps1 / .sh        # 全流程 MD 主脚本 (支持 100 ns / 测试 / OnlyMD 续跑)
@@ -105,6 +106,16 @@ TESTING=1 ./run_all.sh ylsllqr
 | `contacts.py` | 非天然接触（图5A/5B、表1）| 3.3 |
 | `bridging_waters.py` | 水介导桥连（图6、表2）| 3.4 |
 | `plot_all.py` | ★ **一键生成全套论文出版级矢量/位图 (SVG / PNG / PDF)** 与统计表 | 图 1 - 6 / 汇总 2x3 图 |
+
+### ★ 终极自动化：四个体系顺序正式跑 100 ns 并全自动出图与单体对比大总图
+
+在 PowerShell 中使用顺序执行脚本 **`run_all_four_100ns_formal.ps1`**，能够自动实现你要求的：
+**先清空测试残留 -> 跑完体系1的100ns -> 立即算出图表让你直接看图分析 -> 后台自动继续跑体系2... -> 全跑完后自动生成“AChE单体 vs 3个复合物”的 2×3 对比图表！**
+```powershell
+# Windows PowerShell 原生一键顺序生产 4 个体系并作图：
+.\run_all_four_100ns_formal.ps1
+```
+*(WSL / Linux 下对应指令：`./run_all_four_100ns_formal.sh`)*
 
 ### 终极一键全流程：从头模拟到生成出版级 SVG / PNG / PDF 与统计表
 
