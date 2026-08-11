@@ -9,7 +9,8 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$System,
 
-    [switch]$Testing
+    [switch]$Testing,
+    [switch]$OnlyPlot
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,29 +45,33 @@ try {
     Write-Host "========== Starting Paper Analysis for System: $System ========" -ForegroundColor Green
     Write-Host ">> Using Python Interpreter: $PY" -ForegroundColor Green
 
-    Write-Host "[0/8] Generating analysis index groups (0_make_index.sh) ..."
-    & bash "../scripts/analysis/0_make_index.sh"
+    if (-not $OnlyPlot) {
+        Write-Host "[0/8] Generating analysis index groups (0_make_index.sh) ..."
+        & bash "../scripts/analysis/0_make_index.sh"
 
-    Write-Host "[1/8] Backbone RMSD / RMSF (1_rmsd_rmsf.sh) ..."
-    & bash "../scripts/analysis/1_rmsd_rmsf.sh"
+        Write-Host "[1/8] Backbone RMSD / RMSF (1_rmsd_rmsf.sh) ..."
+        & bash "../scripts/analysis/1_rmsd_rmsf.sh"
 
-    Write-Host "[2/8] Peptide around AChE COM RDF (2_rdf.sh) ..."
-    & bash "../scripts/analysis/2_rdf.sh"
+        Write-Host "[2/8] Peptide around AChE COM RDF (2_rdf.sh) ..."
+        & bash "../scripts/analysis/2_rdf.sh"
 
-    Write-Host "[3/8] Complex SASA (3_sasa.sh) ..."
-    & bash "../scripts/analysis/3_sasa.sh"
+        Write-Host "[3/8] Complex SASA (3_sasa.sh) ..."
+        & bash "../scripts/analysis/3_sasa.sh"
 
-    Write-Host "[4/8] Peptide Secondary Structure Evolution (4_secondary_structure.sh) ..."
-    & bash "../scripts/analysis/4_secondary_structure.sh"
+        Write-Host "[4/8] Peptide Secondary Structure Evolution (4_secondary_structure.sh) ..."
+        & bash "../scripts/analysis/4_secondary_structure.sh"
 
-    Write-Host "[5/8] Inter/Intra Hydrogen Bonds (5_hbond.sh) ..."
-    & bash "../scripts/analysis/5_hbond.sh"
+        Write-Host "[5/8] Inter/Intra Hydrogen Bonds (5_hbond.sh) ..."
+        & bash "../scripts/analysis/5_hbond.sh"
 
-    Write-Host "[6/8] Native/Non-native Intermolecular Contacts (contacts.py) ..."
-    & $PY "..\scripts\analysis\contacts.py" -t md.tpr -f md.xtc
+        Write-Host "[6/8] Native/Non-native Intermolecular Contacts (contacts.py) ..."
+        & $PY "..\scripts\analysis\contacts.py" -t md.tpr -f md.xtc
 
-    Write-Host "[7/8] Water-mediated Bridging Interactions (bridging_waters.py) ..."
-    & $PY "..\scripts\analysis\bridging_waters.py" -t md.tpr -f md.xtc
+        Write-Host "[7/8] Water-mediated Bridging Interactions (bridging_waters.py) ..."
+        & $PY "..\scripts\analysis\bridging_waters.py" -t md.tpr -f md.xtc
+    } else {
+        Write-Host ">> [OnlyPlot Mode] Skipping GROMACS analysis steps [0-7], directly generating figures via plot_all.py ..." -ForegroundColor Yellow
+    }
 
     Write-Host "[8/8] Generating publication SVG / PNG / PDF figures (plot_all.py) ..."
     & $PY "..\scripts\analysis\plot_all.py" --dir . --out ./figures

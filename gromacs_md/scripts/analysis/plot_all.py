@@ -350,7 +350,12 @@ def main():
     # Panel 2: RMSF
     if rmsf_pep is not None:
         axes[1].plot(rmsf_pep["x"], rmsf_pep["y"], label="Peptide BB", marker="o", color="tab:green", linewidth=1.2)
-    axes[1].set_title("Peptide Backbone RMSF", fontsize=11, weight="bold")
+        axes[1].set_title("Peptide Backbone RMSF", fontsize=11, weight="bold")
+    elif rmsf_ach is not None:
+        axes[1].plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", color="tab:orange", linewidth=1.0)
+        axes[1].set_title("AChE Backbone RMSF", fontsize=11, weight="bold")
+    else:
+        axes[1].set_title("Backbone RMSF", fontsize=11, weight="bold")
     axes[1].set_xlabel("Residue", fontsize=10)
     axes[1].set_ylabel("RMSF (nm)", fontsize=10)
     axes[1].grid(alpha=0.3, linestyle="--")
@@ -359,7 +364,10 @@ def main():
     # Panel 3: RDF
     if rdf_main is not None:
         axes[2].plot(rdf_main["x"], rdf_main["y"], label="Total RDF", color="tab:purple", linewidth=1.5)
-    axes[2].set_title("Peptide-AChE COM RDF", fontsize=11, weight="bold")
+        axes[2].set_title("Peptide-AChE COM RDF", fontsize=11, weight="bold")
+    else:
+        axes[2].text(0.5, 0.5, "RDF (N/A for Monomer)", ha="center", va="center", fontsize=10, color="gray")
+        axes[2].set_title("Peptide-AChE COM RDF", fontsize=11, weight="bold")
     axes[2].set_xlabel("Distance (nm)", fontsize=10)
     axes[2].set_ylabel("g(r)", fontsize=10)
     axes[2].grid(alpha=0.3, linestyle="--")
@@ -370,6 +378,8 @@ def main():
         axes[3].plot(sasa_com["x"], sasa_com["y"], label="Complex SASA", color="tab:blue", linewidth=1.2)
     if sasa_pep is not None:
         axes[3].plot(sasa_pep["x"], sasa_pep["y"], label="Peptide SASA", color="tab:green", linewidth=1.2)
+    elif sasa_ach is not None:
+        axes[3].plot(sasa_ach["x"], sasa_ach["y"], label="AChE SASA", color="tab:orange", linewidth=1.2)
     axes[3].set_title("Solvent Accessible Surface Area", fontsize=11, weight="bold")
     axes[3].set_xlabel("Time (ns)", fontsize=10)
     axes[3].set_ylabel("SASA (nm²)", fontsize=10)
@@ -382,7 +392,10 @@ def main():
         axes[4].plot(ss_bins[cols[0]], ss_bins[cols[1]], label="Helix", marker="o", color="tab:blue")
         axes[4].plot(ss_bins[cols[0]], ss_bins[cols[2]], label="Turn", marker="s", color="tab:orange")
         axes[4].plot(ss_bins[cols[0]], ss_bins[cols[3]], label="Bend", marker="^", color="tab:green")
-    axes[4].set_title("Secondary Structure Fractions", fontsize=11, weight="bold")
+        axes[4].set_title("Secondary Structure Fractions", fontsize=11, weight="bold")
+    else:
+        axes[4].text(0.5, 0.5, "DSSP (N/A for Monomer)", ha="center", va="center", fontsize=10, color="gray")
+        axes[4].set_title("Secondary Structure Fractions", fontsize=11, weight="bold")
     axes[4].set_xlabel("Time (ns)", fontsize=10)
     axes[4].set_ylabel("Fraction", fontsize=10)
     axes[4].grid(alpha=0.3, linestyle="--")
@@ -391,7 +404,13 @@ def main():
     # Panel 6: H-bonds
     if hb_pep_ach is not None:
         axes[5].plot(hb_pep_ach["x"], hb_pep_ach["y"], label="AChE-Peptide", color="tab:green", linewidth=1.2)
-    axes[5].set_title("Intermolecular H-Bonds", fontsize=11, weight="bold")
+        axes[5].set_title("Intermolecular H-Bonds", fontsize=11, weight="bold")
+    elif hb_intra is not None:
+        axes[5].plot(hb_intra["x"], hb_intra["y"], label="Intra-AChE H-Bonds", color="tab:olive", linewidth=1.2)
+        axes[5].set_title("AChE Hydrogen Bonds", fontsize=11, weight="bold")
+    else:
+        axes[5].text(0.5, 0.5, "H-Bonds (N/A for Monomer)", ha="center", va="center", fontsize=10, color="gray")
+        axes[5].set_title("Hydrogen Bonds", fontsize=11, weight="bold")
     axes[5].set_xlabel("Time (ns)", fontsize=10)
     axes[5].set_ylabel("Count", fontsize=10)
     axes[5].grid(alpha=0.3, linestyle="--")
