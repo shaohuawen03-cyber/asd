@@ -12,6 +12,11 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
+if ! grep -q "\[ *Peptide *\]" index.ndx 2>/dev/null; then
+    echo ">> [单体蛋白模式] 未检测到 Peptide 组，跳过肽-AChE 径向分布函数 RDF 计算。"
+    exit 0
+fi
+
 # 整个产物轨迹的 RDF (图2A), 以质心计算 (mol_com)
 gmx rdf -s md.tpr -f md.xtc -n index.ndx -o rdf_pep_ache.xvg \
        -ref AChE -sel Peptide -selrpos mol_com -seltype mol_com -bin 0.02

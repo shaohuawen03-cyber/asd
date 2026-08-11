@@ -89,6 +89,13 @@ def add_panel_label(ax: plt.Axes, label: str) -> None:
             fontsize=14, weight="bold", va="top", ha="right")
 
 
+def safe_legend(ax: plt.Axes, **kwargs) -> None:
+    """仅在子图有带标签曲线时生成图例，防空图产生 UserWarning"""
+    handles, labels = ax.get_legend_handles_labels()
+    if handles:
+        ax.legend(frameon=False, fontsize=9, **kwargs)
+
+
 def summarize_last_ns(df: Optional[pd.DataFrame], metric: str, system_label: str, last_ns: float = 20.0):
     if df is None or df.empty:
         return None
@@ -156,7 +163,7 @@ def main():
     ax1.set_xlabel("Time (ns)", fontsize=10)
     ax1.set_ylabel("RMSD (nm)", fontsize=10)
     ax1.grid(alpha=0.3, linestyle="--")
-    ax1.legend(frameon=False, fontsize=9)
+    safe_legend(ax1)
     add_panel_label(ax1, "A")
 
     # RMSF
@@ -170,7 +177,7 @@ def main():
     ax2.set_xlabel("Residue Number", fontsize=10)
     ax2.set_ylabel("RMSF (nm)", fontsize=10)
     ax2.grid(alpha=0.3, linestyle="--")
-    ax2.legend(frameon=False, fontsize=9)
+    safe_legend(ax2)
     add_panel_label(ax2, "B")
 
     save_all_formats(fig, fig_dir / "fig1_rmsd_rmsf")
@@ -195,7 +202,7 @@ def main():
     ax.set_xlabel("Distance (nm)", fontsize=10)
     ax.set_ylabel("g(r)", fontsize=10)
     ax.grid(alpha=0.3, linestyle="--")
-    ax.legend(frameon=False, fontsize=9)
+    safe_legend(ax)
     save_all_formats(fig, fig_dir / "fig2_rdf")
     plt.close(fig)
 
@@ -222,7 +229,7 @@ def main():
     ax.set_xlabel("Time (ns)", fontsize=10)
     ax.set_ylabel("SASA (nm²)", fontsize=10)
     ax.grid(alpha=0.3, linestyle="--")
-    ax.legend(frameon=False, fontsize=9)
+    safe_legend(ax)
     save_all_formats(fig, fig_dir / "fig3_sasa")
     plt.close(fig)
 
@@ -241,7 +248,7 @@ def main():
         ax.set_xlabel("Time Window (ns)", fontsize=10)
         ax.set_ylabel("Fraction", fontsize=10)
         ax.grid(alpha=0.3, linestyle="--")
-        ax.legend(frameon=False, fontsize=9)
+        safe_legend(ax)
     else:
         ax.text(0.5, 0.5, "Secondary structure data not available", ha="center", va="center")
     save_all_formats(fig, fig_dir / "fig4_secondary_structure")
@@ -293,7 +300,7 @@ def main():
         ax.set_ylabel("Count / Interactions", fontsize=10)
         ax.tick_params(axis="x", rotation=45)
         ax.grid(axis="y", alpha=0.3, linestyle="--")
-        ax.legend(frameon=False, fontsize=9)
+        safe_legend(ax)
     else:
         ax.text(0.5, 0.5, "Bridging water data not available", ha="center", va="center")
     save_all_formats(fig, fig_dir / "fig6_bridging_waters")
@@ -318,7 +325,7 @@ def main():
     ax.set_xlabel("Time (ns)", fontsize=10)
     ax.set_ylabel("Number of H-Bonds", fontsize=10)
     ax.grid(alpha=0.3, linestyle="--")
-    ax.legend(frameon=False, fontsize=9)
+    safe_legend(ax)
     save_all_formats(fig, fig_dir / "fig_hbonds")
     plt.close(fig)
 
@@ -338,7 +345,7 @@ def main():
     axes[0].set_xlabel("Time (ns)", fontsize=10)
     axes[0].set_ylabel("RMSD (nm)", fontsize=10)
     axes[0].grid(alpha=0.3, linestyle="--")
-    axes[0].legend(frameon=False, fontsize=9)
+    safe_legend(axes[0])
 
     # Panel 2: RMSF
     if rmsf_pep is not None:
@@ -347,7 +354,7 @@ def main():
     axes[1].set_xlabel("Residue", fontsize=10)
     axes[1].set_ylabel("RMSF (nm)", fontsize=10)
     axes[1].grid(alpha=0.3, linestyle="--")
-    axes[1].legend(frameon=False, fontsize=9)
+    safe_legend(axes[1])
 
     # Panel 3: RDF
     if rdf_main is not None:
@@ -356,7 +363,7 @@ def main():
     axes[2].set_xlabel("Distance (nm)", fontsize=10)
     axes[2].set_ylabel("g(r)", fontsize=10)
     axes[2].grid(alpha=0.3, linestyle="--")
-    axes[2].legend(frameon=False, fontsize=9)
+    safe_legend(axes[2])
 
     # Panel 4: SASA
     if sasa_com is not None:
@@ -367,7 +374,7 @@ def main():
     axes[3].set_xlabel("Time (ns)", fontsize=10)
     axes[3].set_ylabel("SASA (nm²)", fontsize=10)
     axes[3].grid(alpha=0.3, linestyle="--")
-    axes[3].legend(frameon=False, fontsize=9)
+    safe_legend(axes[3])
 
     # Panel 5: Secondary Structure
     if ss_bins is not None and len(ss_bins.columns) >= 4:
@@ -379,7 +386,7 @@ def main():
     axes[4].set_xlabel("Time (ns)", fontsize=10)
     axes[4].set_ylabel("Fraction", fontsize=10)
     axes[4].grid(alpha=0.3, linestyle="--")
-    axes[4].legend(frameon=False, fontsize=9)
+    safe_legend(axes[4])
 
     # Panel 6: H-bonds
     if hb_pep_ach is not None:
@@ -388,7 +395,7 @@ def main():
     axes[5].set_xlabel("Time (ns)", fontsize=10)
     axes[5].set_ylabel("Count", fontsize=10)
     axes[5].grid(alpha=0.3, linestyle="--")
-    axes[5].legend(frameon=False, fontsize=9)
+    safe_legend(axes[5])
 
     for idx, (ax, label) in enumerate(zip(axes, ["A", "B", "C", "D", "E", "F"])):
         add_panel_label(ax, label)

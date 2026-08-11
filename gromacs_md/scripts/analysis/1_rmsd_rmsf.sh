@@ -23,12 +23,6 @@ AChE_Backbone
 AChE_Backbone
 EOF
 
-# 肽 骨架 RMSD (论文图1E)
-gmx rms -s md.tpr -f md.xtc -n index.ndx -o rmsd_pep_bb.xvg -fit rot+trans << EOF
-Peptide_Backbone
-Peptide_Backbone
-EOF
-
 # 复合物骨架 RMSF (论文图1B)
 gmx rmsf -s md.tpr -f md.xtc -n index.ndx -o rmsf_complex_bb.xvg -res << EOF
 Backbone
@@ -39,10 +33,18 @@ gmx rmsf -s md.tpr -f md.xtc -n index.ndx -o rmsf_ache_bb.xvg -res << EOF
 AChE_Backbone
 EOF
 
-# 肽 骨架 RMSF (论文图1F, 按残基)
-gmx rmsf -s md.tpr -f md.xtc -n index.ndx -o rmsf_pep_bb.xvg -res << EOF
+# 肽 骨架 RMSD/RMSF (复合物体系执行, 单体体系跳过)
+if grep -q "\[ *Peptide_Backbone *\]" index.ndx 2>/dev/null; then
+    gmx rms -s md.tpr -f md.xtc -n index.ndx -o rmsd_pep_bb.xvg -fit rot+trans << EOF
+Peptide_Backbone
 Peptide_Backbone
 EOF
+    gmx rmsf -s md.tpr -f md.xtc -n index.ndx -o rmsf_pep_bb.xvg -res << EOF
+Peptide_Backbone
+EOF
+else
+    echo ">> [单体蛋白模式] 未检测到 Peptide_Backbone，跳过肽相关 RMSD / RMSF。"
+fi
 
 echo "RMSD/RMSF 输出: rmsd_*_bb.xvg, rmsf_*_bb.xvg"
 echo "可用 xmgrace / Python matplotlib 作图, 或 gmx xvgconv 转换。"

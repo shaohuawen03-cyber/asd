@@ -44,6 +44,9 @@ def main():
     u = mda.Universe(args.t, args.f)
     waters = u.select_atoms("resname SOL")
     a, p = select_ache_and_pep(u, args.a, args.p)
+    if len(p) == 0:
+        print(">> [单体蛋白模式] 结构中不存在肽原子，跳过桥连水分子计算。")
+        return
     print(f"AChE 原子: {len(a)}, 肽原子: {len(p)}, 水分子数: {waters.n_residues}, 帧数: {u.trajectory.n_frames}")
 
     pep_resids = np.unique(p.resids)

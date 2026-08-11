@@ -43,6 +43,11 @@ else
 fi
 PY="${PY_FOUND:-python}"
 
+if ! grep -q "\[ *Peptide *\]" index.ndx 2>/dev/null; then
+    echo ">> [单体蛋白模式] 未检测到 Peptide 组，跳过小肽二级结构计算。"
+    exit 0
+fi
+
 # 计算肽的二级结构随时间的分布
 if gmx dssp -h 2>&1 | grep -q -- "-sel "; then
     # GROMACS >= 2023 新版内置 dssp (支持 -sel Peptide -o .dat -num .xvg)

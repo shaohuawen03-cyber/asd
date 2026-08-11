@@ -13,6 +13,15 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
+if ! grep -q "\[ *Peptide *\]" index.ndx 2>/dev/null; then
+    echo ">> [单体蛋白模式] 未检测到 Peptide 组，跳过结合氢键计算，仅计算 AChE 内部氢键。"
+    gmx hbond -s md.tpr -f md.xtc -n index.ndx -num hbond_ache_intra.xvg << EOF
+AChE
+AChE
+EOF
+    exit 0
+fi
+
 # AChE 与肽之间氢键
 gmx hbond -s md.tpr -f md.xtc -n index.ndx -num hbond_ache_pep.xvg << EOF
 AChE

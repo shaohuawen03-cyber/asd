@@ -48,10 +48,16 @@ G2=$((LAST_IDX + 2))
 G3=$((LAST_IDX + 3))
 G4=$((LAST_IDX + 4))
 
-echo ">> 检测到体系蛋白总残基数: ${N_PROT_RES}, 自动划分 AChE/Peptide 索引规则: ACHE_SEL='${ACHE_SEL}', PEP_SEL='${PEP_SEL}'"
-echo ">> 原系统最大组号: ${LAST_IDX}, 自动分配新增分组编号: ${G1}(AChE), ${G2}(Peptide), ${G3}(AChE_Backbone), ${G4}(Peptide_Backbone) ..."
+# 检查体系中是否含有第二条肽链或小肽残基 (识别是否为单独 AChE 单体对照组)
+HAS_PEP=1
+PEP_CNT=$(echo "${PEP_SEL}" | gmx make_ndx -f "${TPR_FILE}" -o /dev/null 2>&1 | grep -E "Found [1-9][0-9]* atoms" | wc -l || echo "0")
+if [ "${PEP_CNT}" -eq "0" ]; then
+    HAS_PEP=0
+fi
 
-gmx make_ndx -f "${TPR_FILE}" -o index.ndx << EOF
+if [ "${HAS_PEP}" = "1" ]; then
+    echo ">> [复合物模式] 分配新增分组编号: ${G1}(AChE), ${G2}(Peptide), ${G3}(AChE_Backbone), ${G4}(Peptide_Backbone) ..."
+    gmx make_ndx -f "${TPR_FILE}" -o index.ndx << EOF
 ${ACHE_SEL}
 name ${G1} AChE
 ${PEP_SEL}
@@ -62,5 +68,15 @@ ${G2} & 4
 name ${G4} Peptide_Backbone
 q
 EOF
-
-echo ">> 已成功生成 index.ndx, 包含新增分析组: AChE, Peptide, AChE_Backbone, Peptide_Backbone。"
+    echo ">> 已成功生成复合物 index.ndx, 包含组: AChE, Peptide, AChE_Backbone, Peptide_Backbone。"
+else
+    echo ">> [单体蛋白模式] 未检测到第二条肽链，自动配置为单独 AChE 单体 (Protein alone) 对照组索引..."
+    gmx make_ndx -f "${TPR_FILE}" -o index.ndx << EOF
+${ACHE_SEL}
+name ${G1} AChE
+${G1} & 4
+name ${G2} AChE_Backbone
+q
+EOF
+    echo ">> 已成功生成单体 index.ndx, 包含组: AChE, AChE_Backbone。"
+fi

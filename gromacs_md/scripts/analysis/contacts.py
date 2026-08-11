@@ -45,6 +45,9 @@ def main():
 
     u = mda.Universe(args.t, args.f)
     a, p = select_ache_and_pep(u, args.a, args.p)
+    if len(p) == 0:
+        print(">> [单体蛋白模式] 结构中不存在肽原子，跳过该项非天然接触统计。")
+        return
     print(f"AChE 原子: {len(a)}, 肽原子: {len(p)}, 帧数: {u.trajectory.n_frames}")
 
     # 参考结构 (第一帧) 用于定义天然接触
