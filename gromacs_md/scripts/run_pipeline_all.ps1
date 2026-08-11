@@ -38,6 +38,10 @@ if (-not $OnlyAnalysis) {
             .\run_all.ps1 -System $System
         }
     }
+    if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) {
+        Write-Host "ERROR: run_all.ps1 failed with exit code $LASTEXITCODE" -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
 } else {
     Write-Host ""
     Write-Host "=== Phase 1: OnlyAnalysis mode - Skipping MD simulation ===" -ForegroundColor Yellow
@@ -49,6 +53,10 @@ if ($Testing) {
     .\run_analysis.ps1 -System $System -Testing
 } else {
     .\run_analysis.ps1 -System $System
+}
+if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) {
+    Write-Host "ERROR: run_analysis.ps1 failed with exit code $LASTEXITCODE" -ForegroundColor Red
+    exit $LASTEXITCODE
 }
 
 Write-Host ""
