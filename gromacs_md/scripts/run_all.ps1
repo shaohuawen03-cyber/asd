@@ -12,23 +12,26 @@ param(
     [switch]$OnlyMD
 )
 
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::InputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = "Continue"
 
 if ($OnlyMD) {
     $env:ONLY_MD = "1"
-    Write-Host ">> [ONLY_MD Mode] Directly starting Production MD from Step 11/11..." -ForegroundColor Yellow
-    & bash "./run_all.sh" $System "--only-md"
+    Write-Host ">> [ONLY_MD Mode] 仅启动第 [11/11] 步产物动力学模拟 ..." -ForegroundColor Yellow
+    & bash "./run_all.sh" $System "--only-md" 2>&1 | ForEach-Object { "$_" }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } elseif ($Testing -or $env:TESTING -eq "1") {
     $env:ONLY_MD = "0"
     $env:TESTING = "1"
-    Write-Host ">> [5000-Step Validation Mode] Running FULL Workflow from Step 1 (pdb2gmx) to Step 11 (MD 5000 steps) (mdp/test)" -ForegroundColor Yellow
-    & bash "./run_all.sh" $System "--testing"
+    Write-Host ">> [5,000步验证模式] 完整运行所有阶段 (准备结构->pdb2gmx->三斜盒子->加水->生理盐->索引->EM->退火->NPT->5000步MD)" -ForegroundColor Yellow
+    & bash "./run_all.sh" $System "--testing" 2>&1 | ForEach-Object { "$_" }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } else {
     $env:ONLY_MD = "0"
     $env:TESTING = "0"
-    Write-Host ">> [100 ns Formal Simulation Mode] Running FULL 100 ns Production MD Workflow (mdp/100ns)" -ForegroundColor Cyan
-    & bash "./run_all.sh" $System
+    Write-Host ">> [100 ns 正式生产模拟模式] 完整运行 100 ns 生产级流程度 (mdp/100ns)" -ForegroundColor Cyan
+    & bash "./run_all.sh" $System 2>&1 | ForEach-Object { "$_" }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
