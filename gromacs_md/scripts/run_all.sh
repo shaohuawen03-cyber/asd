@@ -18,12 +18,12 @@ SYS="${1:?用法: ./run_all.sh <前缀, 如 alllhrc>}"
 WORK="../md_${SYS}"                 # 输出工作目录 (避免污染 input/)
 
 # ---------- 模拟参数配置 ----------
-# TESTING=1 -> 使用 mdp/test (10,000 步测试模式, 用于快速验证四套体系从 MD 到绘图全流程)
+# TESTING=1 -> 使用 mdp/test (5,000 步测试模式, 用于快速验证四套体系从 MD 到绘图全量流程)
 # SIM_MODE="100ns" -> 100 ns 正式产物动力学模拟 (默认配置: mdp/100ns)
 # SIM_MODE="1000ns" -> 1000 ns 正式产物动力学模拟 (mdp)
 if [ "${TESTING}" = "1" ] || [ "${SIM_MODE:-}" = "test" ]; then
     MDP="../mdp/test"
-    echo ">> [10,000 步测试验证模式] 使用 mdp/test (MD = 10,000 步 = 20 ps, 快速测试全量流程)"
+    echo ">> [5,000 步测试验证模式] 使用 mdp/test (MD = 5,000 步 = 10 ps, 快速验证完整流程)"
 elif [ "${SIM_MODE:-100ns}" = "100ns" ]; then
     MDP="../mdp/100ns"
     echo ">> [100 ns 正式生产模拟] 使用 mdp/100ns (NVT退火 1.0 ns -> NPT 2.0 ns -> MD 100 ns -> 5,000 帧)"

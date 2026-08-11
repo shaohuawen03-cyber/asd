@@ -1,16 +1,16 @@
 ; ============================================================
-; STEP 5: 产物动力学测试模拟 (Testing Production MD, 10000 步)
-; 论文对齐配置: 在 300 K, 1 bar 下进行 10000 步 (20 ps) 快速产物模拟验证
-;           每 1 ps (0.001 ns, 500步) 保存一个坐标帧 -> 20 帧供后续统计绘图
+; STEP 5: 产物动力学测试模拟 (Testing Production MD, 5000 步)
+; 论文对齐配置: 在 300 K, 1 bar 下进行 5000 步 (10 ps) 快速产物模拟验证
+;           每 0.2 ps (0.0002 ns, 100步) 保存一个坐标帧 -> 50 帧供后续统计绘图
 ; ============================================================
 integrator               = md
 dt                       = 0.002        ; 2 fs
-nsteps                   = 10000        ; 10,000 步测试
+nsteps                   = 5000         ; 5,000 步测试
 
-nstxout-compressed       = 500          ; 每 1 ps 存一帧 -> 20 帧
-nstlog                   = 500
-nstcalcenergy            = 500
-nstenergy                = 500
+nstxout-compressed       = 100          ; 每 0.2 ps 存一帧 -> 50 帧
+nstlog                   = 100
+nstcalcenergy            = 100
+nstenergy                = 100
 
 constraints              = h-bonds
 constraint_algorithm     = lincs
