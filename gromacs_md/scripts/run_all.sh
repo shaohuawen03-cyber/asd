@@ -29,7 +29,15 @@ else
     echo ">> [1000 ns 正式生产模拟] 使用 mdp (完整 1000 ns 产物动力学)"
 fi
 
-INPUT="../input/${SYS}_complex.pdb"
+if [ -f "../input/${SYS}_complex.pdb" ]; then
+    INPUT="../input/${SYS}_complex.pdb"
+elif [ -f "../input/${SYS}.pdb" ]; then
+    INPUT="../input/${SYS}.pdb"
+elif [ -f "../input/${SYS}_alone.pdb" ]; then
+    INPUT="../input/${SYS}_alone.pdb"
+else
+    INPUT="../input/${SYS}_complex.pdb"
+fi
 
 # 蛋白链 / 肽链的链ID (请根据你的 PDB 实际链ID修改)
 # AChE 通常为链 A, 肽为链 B; 若不同请改这里
