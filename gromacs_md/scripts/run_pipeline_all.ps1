@@ -15,7 +15,7 @@ param(
     [switch]$OnlyAnalysis
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 Write-Host "====================================================================" -ForegroundColor Green
 Write-Host " AChE(4ey6) - A-beta Complex MD & Analysis Master Pipeline" -ForegroundColor Green

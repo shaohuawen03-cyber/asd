@@ -13,7 +13,7 @@ param(
     [switch]$OnlyPlot
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 $GMX = "gmx"
 if (Get-Command "gmx.exe" -ErrorAction SilentlyContinue) {

@@ -12,7 +12,7 @@ param(
     [switch]$OnlyMD
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 if ($OnlyMD) {
     $env:ONLY_MD = "1"

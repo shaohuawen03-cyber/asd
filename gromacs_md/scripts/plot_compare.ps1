@@ -9,7 +9,7 @@ param(
     [string]$OutDir = "..\compare_figures"
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 $PY = "python"
 if (Get-Command "python.exe" -ErrorAction SilentlyContinue) {
