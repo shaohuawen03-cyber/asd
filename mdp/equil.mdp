@@ -1,0 +1,71 @@
+; =====================================================================
+; equil.mdp - Unrestrained equilibration, 1 ns  (PRODUCTION MDP)
+; AChE(4EY6) - peptide complex, PAS site
+;
+; Paper: "The system was then equilibrated for 1 ns without any
+;         restraints."
+;
+; This is the stage where the paper reports the pi-pi stacking between
+; Phe4 and Trp286 being lost, so it matters: do NOT skip it.
+;
+; 1 ns @ 2 fs = 500000 steps
+; =====================================================================
+
+; no 'define' -> all position restraints are OFF
+
+; ---------------------- Run control ---------------------------------
+integrator               = sd            ; Langevin dynamics
+dt                       = 0.002
+nsteps                   = 500000        ; 1 ns
+comm-mode                = Linear
+nstcomm                  = 100
+
+; ---------------------- Output --------------------------------------
+nstxout                  = 0
+nstvout                  = 0
+nstfout                  = 0
+nstlog                   = 5000
+nstenergy                = 5000
+nstxout-compressed       = 5000
+compressed-x-grps        = System
+
+; ---------------------- Neighbour searching -------------------------
+cutoff-scheme            = Verlet
+nstlist                  = 20
+pbc                      = xyz
+verlet-buffer-tolerance  = 0.005
+
+; ---------------------- Electrostatics / VdW ------------------------
+coulombtype              = PME
+rcoulomb                 = 1.2
+vdwtype                  = cutoff
+vdw-modifier             = potential-shift-verlet
+rvdw                     = 1.2
+rlist                    = 1.2
+fourierspacing           = 0.12
+pme-order                = 4
+ewald-rtol               = 1e-5
+DispCorr                 = EnerPres
+
+; ---------------------- Temperature coupling ------------------------
+tcoupl                   = no
+tc-grps                  = System
+tau-t                    = 1.0
+ref-t                    = 300
+
+; ---------------------- Pressure coupling ---------------------------
+pcoupl                   = Berendsen
+pcoupltype               = isotropic
+tau-p                    = 2.0
+ref-p                    = 1.0
+compressibility          = 4.5e-5
+
+; ---------------------- Velocity generation -------------------------
+gen-vel                  = no
+continuation             = yes
+
+; ---------------------- Bonds ---------------------------------------
+constraints              = h-bonds
+constraint-algorithm     = lincs
+lincs-order              = 4
+lincs-iter               = 1

@@ -1,0 +1,47 @@
+; =====================================================================
+; em.mdp - Energy minimisation (restrained)
+; AChE(4EY6) - peptide complex, PAS site
+; Reproduces: "2000 steps of energy minimisation with 3 kcal/mol/A^2
+;              harmonic restraints on protein and peptide heavy atoms;
+;              bonds to hydrogen NOT constrained during minimisation."
+;
+; NOTE: 3 kcal/mol/A^2 == 3 * 4.184 * 100 kJ/mol/nm^2 = 1255.2 kJ/mol/nm^2
+;       The restraint itself lives in posre_heavy.itp, switched on by
+;       -DPOSRES_HEAVY below.
+; =====================================================================
+
+define                   = -DPOSRES_HEAVY
+
+; ---------------------- Run control ---------------------------------
+integrator               = steep
+nsteps                   = 2000          ; paper: 2000 steps
+emtol                    = 100.0         ; kJ/mol/nm (not reached -> runs full 2000)
+emstep                   = 0.01
+
+; ---------------------- Output --------------------------------------
+nstlog                   = 100
+nstenergy                = 100
+
+; ---------------------- Neighbour searching -------------------------
+cutoff-scheme            = Verlet
+nstlist                  = 10
+pbc                      = xyz
+verlet-buffer-tolerance  = 0.005
+
+; ---------------------- Electrostatics / VdW ------------------------
+; Paper: 12.0 A cut-off for both vdW and electrostatics, PME beyond.
+coulombtype              = PME
+rcoulomb                 = 1.2
+vdwtype                  = cutoff
+vdw-modifier             = potential-shift-verlet
+rvdw                     = 1.2
+rlist                    = 1.2
+fourierspacing           = 0.12
+pme-order                = 4
+ewald-rtol               = 1e-5
+DispCorr                 = EnerPres
+
+; ---------------------- Bonds ---------------------------------------
+; Paper: hydrogen bonds are NOT constrained during minimisation only.
+constraints              = none
+continuation             = no

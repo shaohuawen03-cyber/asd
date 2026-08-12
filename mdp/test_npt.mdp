@@ -1,0 +1,80 @@
+; ##### SHORT TEST VERSION - do NOT use for real science #####
+; Identical to npt.mdp except nsteps/output frequencies were cut down
+; so the whole pipeline can be smoke-tested in minutes.
+; Production length: 1 ns restrained density equilibration
+
+; =====================================================================
+; npt.mdp - Density equilibration, 1 ns, restrained  (PRODUCTION MDP)
+; AChE(4EY6) - peptide complex, PAS site
+;
+; Paper: "followed by 1 ns of constant-pressure density equilibration
+;         under the same restraints".
+;
+; Langevin thermostat (sd integrator) + Berendsen barostat, exactly as
+; in the paper.  Berendsen is fine (and fast) for equilibration; it does
+; not produce a true NPT ensemble, which is why the *production* run
+; keeps it only for consistency with the reference protocol - see
+; md.mdp for the note and the C-rescale alternative.
+;
+; 1 ns @ 2 fs = 500000 steps
+; =====================================================================
+
+define                   = -DPOSRES_HEAVY
+
+; ---------------------- Run control ---------------------------------
+integrator               = sd            ; Langevin dynamics
+dt                       = 0.002
+nsteps                   = 100           ; TEST: 100 steps = 0.2 ps (production: 500000 = 1 ns)
+comm-mode                = Linear
+nstcomm                  = 100
+
+; ---------------------- Output --------------------------------------
+nstxout                  = 0
+nstvout                  = 0
+nstfout                  = 0
+nstlog                   = 10
+nstenergy                = 10
+nstxout-compressed       = 10
+compressed-x-grps        = System
+
+; ---------------------- Neighbour searching -------------------------
+cutoff-scheme            = Verlet
+nstlist                  = 20
+pbc                      = xyz
+verlet-buffer-tolerance  = 0.005
+
+; ---------------------- Electrostatics / VdW ------------------------
+coulombtype              = PME
+rcoulomb                 = 1.2
+vdwtype                  = cutoff
+vdw-modifier             = potential-shift-verlet
+rvdw                     = 1.2
+rlist                    = 1.2
+fourierspacing           = 0.12
+pme-order                = 4
+ewald-rtol               = 1e-5
+DispCorr                 = EnerPres
+
+; ---------------------- Temperature coupling ------------------------
+tcoupl                   = no            ; sd integrator = Langevin thermostat
+tc-grps                  = System
+tau-t                    = 1.0
+ref-t                    = 300
+
+; ---------------------- Pressure coupling ---------------------------
+pcoupl                   = Berendsen     ; paper: Berendsen barostat
+pcoupltype               = isotropic
+tau-p                    = 2.0
+ref-p                    = 1.0           ; 1 bar
+compressibility          = 4.5e-5
+refcoord-scaling         = com           ; required with position restraints
+
+; ---------------------- Velocity generation -------------------------
+gen-vel                  = no
+continuation             = yes           ; continue from nvt
+
+; ---------------------- Bonds ---------------------------------------
+constraints              = h-bonds       ; SHAKE-equivalent
+constraint-algorithm     = lincs
+lincs-order              = 4
+lincs-iter               = 1

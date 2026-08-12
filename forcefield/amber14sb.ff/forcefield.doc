@@ -1,0 +1,10 @@
+AMBER ff14SB protein force field (Maier et al., JCTC 2015, 11, 3696-3713)
+GROMACS port by Man Hoang Viet (vhman@ncsu.edu), combined with OL15 nucleic
+acid refinements.  Distributed via the GROMACS user-contributed force field
+page (https://fch.upol.cz/ff_ol/gromacs.php).  Na+ parameter typo corrected.
+
+Used here for the AChE(4EY6)-peptide PAS complex, matching the reference
+paper which states "the system was simulated with the ff14SB force field".
+Only the protein part (aminoacids.rtp / ffbonded / ffnonbonded) is relevant
+for this project; the nucleic-acid files come along with the port and are
+simply unused.

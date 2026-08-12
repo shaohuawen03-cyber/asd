@@ -1,0 +1,52 @@
+# ---- simulation output -------------------------------------------------
+work/
+figures/
+*.tpr
+*.trr
+*.xtc
+*.edr
+*.cpt
+*.log
+*_prev.cpt
+step*.pdb
+\#*\#
+
+# generated coordinates / topologies (regenerate with build_system.sh)
+processed.gro
+boxed.gro
+solvated.gro
+solv_ions.gro
+prepared.pdb
+prepared.json
+topol.top
+topol_*.itp
+posre*.itp
+index.ndx
+index_default.ndx
+mdout*.mdp
+ions.mdp
+ions.tpr
+
+# ---- analysis ----------------------------------------------------------
+analysis/
+*.xvg
+*.xpm
+*.png
+
+# ---- python ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ---- editors / OS ------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ---- keep these --------------------------------------------------------
+!tests/data/*.pdb
+!forcefield/**
+!mdp/*.mdp

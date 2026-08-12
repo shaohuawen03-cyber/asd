@@ -1,0 +1,81 @@
+; =====================================================================
+; nvt.mdp - Heating 0 K -> 300 K over 1 ns, restrained  (PRODUCTION MDP)
+; AChE(4EY6) - peptide complex, PAS site
+;
+; Paper: "the system was heated from 0 K to 300 K during 1 ns under the
+;         same restraints (3 kcal/mol/A^2 on protein + peptide heavy
+;         atoms).  SHAKE on bonds to hydrogen -> 2 fs timestep."
+;
+; GROMACS equivalents used here:
+;   SHAKE   -> LINCS (h-bonds) : same purpose, better conditioned/parallel
+;   Langevin thermostat -> sd integrator (stochastic dynamics), which is
+;                          Langevin dynamics, matching the paper's choice.
+;   annealing            -> linear 0 -> 300 K ramp over the full 1 ns
+;
+; 1 ns @ 2 fs = 500000 steps
+; =====================================================================
+
+define                   = -DPOSRES_HEAVY
+
+; ---------------------- Run control ---------------------------------
+integrator               = sd            ; Langevin (stochastic) dynamics
+dt                       = 0.002         ; 2 fs, allowed by h-bond constraints
+nsteps                   = 500000        ; 1 ns
+comm-mode                = Linear
+nstcomm                  = 100
+
+; ---------------------- Output --------------------------------------
+nstxout                  = 0
+nstvout                  = 0
+nstfout                  = 0
+nstlog                   = 5000
+nstenergy                = 5000
+nstxout-compressed       = 5000
+compressed-x-grps        = System
+
+; ---------------------- Neighbour searching -------------------------
+cutoff-scheme            = Verlet
+nstlist                  = 20
+pbc                      = xyz
+verlet-buffer-tolerance  = 0.005
+
+; ---------------------- Electrostatics / VdW ------------------------
+coulombtype              = PME
+rcoulomb                 = 1.2           ; 12.0 A
+vdwtype                  = cutoff
+vdw-modifier             = potential-shift-verlet
+rvdw                     = 1.2           ; 12.0 A
+rlist                    = 1.2
+fourierspacing           = 0.12
+pme-order                = 4
+ewald-rtol               = 1e-5
+DispCorr                 = EnerPres
+
+; ---------------------- Temperature coupling ------------------------
+; With integrator = sd the thermostat IS the Langevin friction; tau-t is
+; the inverse friction coefficient (ps).  tcoupl must stay 'no'.
+tcoupl                   = no
+tc-grps                  = System
+tau-t                    = 1.0
+ref-t                    = 300
+
+; ---------------------- Pressure coupling ---------------------------
+pcoupl                   = no            ; NVT
+
+; ---------------------- Simulated annealing: 0 -> 300 K -------------
+annealing                = single
+annealing-npoints        = 2
+annealing-time           = 0    1000     ; ps
+annealing-temp           = 0    300      ; K
+
+; ---------------------- Velocity generation -------------------------
+gen-vel                  = yes
+gen-temp                 = 10            ; tiny seed velocities at "0 K" start
+gen-seed                 = -1
+continuation             = no
+
+; ---------------------- Bonds ---------------------------------------
+constraints              = h-bonds       ; == SHAKE on X-H in the paper
+constraint-algorithm     = lincs
+lincs-order              = 4
+lincs-iter               = 1
