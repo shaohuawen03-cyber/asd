@@ -111,6 +111,7 @@ if [ "${ONLY_MD:-0}" = "1" ] || [ "${2:-}" = "--only-md" ] || [ "${2:-}" = "-Onl
     ${GMX} grompp -f "${MDP}/5_md.mdp" -c equil_free.gro -r equil_free.gro \
            -p topol.top -n index.ndx -o md.tpr -maxwarn 2
     ${GMX} mdrun -deffnm md -v ${GPU_FLAGS}
+    rm -f mdout.mdp 2>/dev/null || true
     echo "========== 体系 ${SYS} 正式产物模拟完成 =========="
     exit 0
 fi
@@ -214,6 +215,9 @@ elif [ -f "md.cpt" ]; then
 else
     ${GMX} mdrun -deffnm md -v ${GPU_FLAGS}
 fi
+
+# 自动清理 grompp 产生的临时日志参数文本，保持目录纯净
+rm -f mdout.mdp 2>/dev/null || true
 
 echo "========== 体系 ${SYS} 模拟完成 =========="
 echo "产物轨迹: md.xtc (每 0.2 ns 一帧, 共 5000 帧)"
