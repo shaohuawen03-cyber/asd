@@ -46,6 +46,12 @@ venv/
 .DS_Store
 Thumbs.db
 
+# ---- run reports -------------------------------------------------------
+# check_run.sh --bundle writes a small tarball here; these ARE meant to be
+# shared, so they are force-added with `git add -f reports/<name>.tar.gz`
+reports/*
+!reports/.gitkeep
+
 # ---- keep these --------------------------------------------------------
 !tests/data/*.pdb
 !forcefield/**

@@ -36,6 +36,22 @@ Per system, manually:
 python3 scripts/plot_results.py -d work/alllhrc
 ```
 
+## A run finished — is it any good?
+
+```bash
+./scripts/check_run.sh -d work/alllhrc --bundle
+```
+
+Applies pass/fail criteria to the things that actually go wrong: stage
+completion and trajectory length, temperature/pressure/density/energy drift,
+**whether the peptide stayed bound**, receptor stability, LINCS warnings, and
+periodic-image distance. It prints `[OK]/[WARN]/[FAIL]` per item with a verdict,
+and `--bundle` writes a few-hundred-kB tarball of the numbers and logs —
+**no trajectories** — that is easy to share.
+
+Full guidance, including which results *look* wrong but are actually what the
+paper reports, is in **[`docs/CHECKING_RESULTS.md`](docs/CHECKING_RESULTS.md)**.
+
 ---
 
 ## What the test mode does
@@ -109,10 +125,12 @@ scripts/
   water_bridges.py      Fig 6 + Table 2 (water-mediated bridges)
   plot_results.py       Figures 1–6 as PNGs, with multi-peptide overlay
   run_all.sh            every structure in input/, then a comparison figure
+  check_run.sh          post-run health check + shareable report bundle
 forcefield/amber14sb.ff ff14SB port (used automatically)
 tests/                  run_tests.sh + a synthetic complex fixture
 input/                  ← put your *_complex.pdb here
 docs/PROTOCOL.md        stage-by-stage reference and troubleshooting
+docs/CHECKING_RESULTS.md  how to judge a finished run, and what to send me
 ```
 
 ---
