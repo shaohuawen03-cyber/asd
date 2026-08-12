@@ -43,8 +43,9 @@ def main():
     ap.add_argument("-p", default="default", help="肽残基范围 (默认根据体系残基数自适应)")
     args = ap.parse_args()
 
-    traj_file = "md_fit.xtc" if Path("md_fit.xtc").exists() else ("md_noPBC.xtc" if Path("md_noPBC.xtc").exists() else args.f)
-    u = mda.Universe(args.t, traj_file)
+    tpr_file = args.t if Path(args.t).exists() else ("md_0_1.tpr" if Path("md_0_1.tpr").exists() else "md.tpr")
+    traj_file = "md_fit.xtc" if Path("md_fit.xtc").exists() else ("md_0_1.xtc" if Path("md_0_1.xtc").exists() else ("md_noPBC.xtc" if Path("md_noPBC.xtc").exists() else args.f))
+    u = mda.Universe(tpr_file, traj_file)
     waters = u.select_atoms("resname SOL")
     a, p = select_ache_and_pep(u, args.a, args.p)
     if len(p) == 0:

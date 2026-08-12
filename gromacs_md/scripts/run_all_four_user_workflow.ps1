@@ -53,7 +53,7 @@ foreach ($Sys in $Systems) {
     $Status = "SUCCESS"
     "=== [100NS START] System: $Sys at $($SysStart.ToString('yyyy-MM-dd HH:mm:ss')) ===" | Out-File -FilePath $LogFile -Append -Encoding utf8
 
-    & .\run_md_user_workflow.ps1 -System $Sys 2>&1 | ForEach-Object { "$_" } | Tee-Object -FilePath $LogFile -Append
+    & .\run_split_md_workflow.ps1 -System $Sys 2>&1 | ForEach-Object { "$_" } | Tee-Object -FilePath $LogFile -Append
     if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) {
         $Status = "FAILED_MD (Exit Code $LASTEXITCODE)"
     } else {

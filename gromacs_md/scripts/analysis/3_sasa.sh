@@ -13,24 +13,29 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
+TPR_FILE="md_0_1.tpr"
+if [ ! -f "${TPR_FILE}" ]; then
+    TPR_FILE="md.tpr"
+fi
+
 TRAJ_FILE="md_fit.xtc"
 if [ ! -f "${TRAJ_FILE}" ]; then
-    TRAJ_FILE="md_noPBC.xtc"
+    TRAJ_FILE="md_0_1.xtc"
     if [ ! -f "${TRAJ_FILE}" ]; then
         TRAJ_FILE="md.xtc"
     fi
 fi
 
 # 使用整条轨迹, 蛋白体系 SASA
-gmx sasa -s md.tpr -f "${TRAJ_FILE}" -n index.ndx -o sasa_complex.xvg \
+gmx sasa -s "${TPR_FILE}" -f "${TRAJ_FILE}" -n index.ndx -o sasa_complex.xvg \
          -surface Protein -output Protein
 
 # AChE SASA
-gmx sasa -s md.tpr -f "${TRAJ_FILE}" -n index.ndx -o sasa_ache.xvg \
+gmx sasa -s "${TPR_FILE}" -f "${TRAJ_FILE}" -n index.ndx -o sasa_ache.xvg \
          -surface AChE -output AChE
 
 if grep -q "\[ *Peptide *\]" index.ndx 2>/dev/null; then
-    gmx sasa -s md.tpr -f "${TRAJ_FILE}" -n index.ndx -o sasa_pep.xvg \
+    gmx sasa -s "${TPR_FILE}" -f "${TRAJ_FILE}" -n index.ndx -o sasa_pep.xvg \
              -surface Peptide -output Peptide
 else
     echo ">> [单体蛋白模式] 未检测到 Peptide 组，跳过小肽 SASA。"

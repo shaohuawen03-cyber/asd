@@ -157,9 +157,30 @@ if [ ! -f "${MD_MDP}" ]; then MD_MDP="${MDP_DIR}/5_md.mdp"; fi
 ${GMX} grompp -f "${MD_MDP}" -c "npt.gro" -r "npt.gro" -t "npt.cpt" -p "topol.top" -n "index.ndx" -o "md_0_1.tpr" -maxwarn 7
 ${GMX} mdrun -v -deffnm md_0_1 -nb gpu
 
+echo ""
+echo "Step 13: Executing user's 3-step golden PBC removal & make_index (0_make_index.sh -> md_fit.xtc)..."
+bash "../scripts/analysis/0_make_index.sh"
+
+echo ""
+echo "Step 14: Verifying peptide Calpha-Calpha bond covalent integrity (verify_peptide_integrity.py)..."
+"${PY}" "../scripts/verify_peptide_integrity.py" -s "md_0_1.tpr" -f "md_fit.xtc" || true
+
 rm -f "mdout.mdp" 2>/dev/null || true
 
 echo ""
 echo "===================================================================="
-echo " SUCCESS! System ${SYS} 100 ns MD completed! Output: md_0_1.xtc / md_0_1.tpr"
+echo " SUCCESS! System ${SYS} 12-Step Split-Topology MD & PBC post-processing completed!"
+echo " Output: md_0_1.xtc / md_0_1.tpr / md_fit.xtc"
+echo "===================================================================="
+cd "../scripts"
+
+echo ""
+echo "Step 15: Automatically running full paper analysis & figure generation (run_analysis.sh)..."
+bash "./run_analysis.sh" "${SYS}"
+
+echo ""
+echo "===================================================================="
+echo " [SUCCESS] 100% COMPLETE! System: ${SYS} MD simulation, PBC removal, peptide"
+echo "           integrity verification, and publication SVG/PNG/PDF plotting finished!"
+echo " -> Inspect your figures in: md_${SYS}/figures/"
 echo "===================================================================="

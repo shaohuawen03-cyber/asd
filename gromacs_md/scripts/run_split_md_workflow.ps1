@@ -197,10 +197,30 @@ try {
     & $GMX mdrun -v -deffnm md_0_1 -nb gpu 2>&1 | ForEach-Object { "$_" }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+    # Step 13: Automatic PBC removal (user's 3-step reference: whole -> nojump -> mol compact center -> fit rot+trans) & make index
+    Write-Host "`nStep 13: Executing user's 3-step golden PBC removal & make_index (0_make_index.sh -> md_fit.xtc)..." -ForegroundColor Cyan
+    & bash "../scripts/analysis/0_make_index.sh" 2>&1 | ForEach-Object { "$_" }
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+    # Step 14: Automatic Peptide Backbone Covalent Integrity Verification
+    Write-Host "`nStep 14: Verifying peptide Calpha-Calpha bond covalent integrity (verify_peptide_integrity.py)..." -ForegroundColor Cyan
+    & $PY "..\scripts\verify_peptide_integrity.py" -s "md_0_1.tpr" -f "md_fit.xtc" 2>&1 | ForEach-Object { "$_" }
+
     Remove-Item "mdout.mdp" -ErrorAction SilentlyContinue
     Write-Host "`n====================================================================" -ForegroundColor Green
-    Write-Host " SUCCESS! 12-Step Split-Topology MD completed! Output: md_0_1.xtc / md_0_1.tpr" -ForegroundColor Green
+    Write-Host " SUCCESS! 12-Step Split-Topology MD & PBC post-processing completed!" -ForegroundColor Green
+    Write-Host " Output: md_0_1.xtc / md_0_1.tpr / md_fit.xtc" -ForegroundColor Green
     Write-Host "====================================================================" -ForegroundColor Green
 } finally {
     Pop-Location
 }
+
+Write-Host "`nStep 15: Automatically running full paper analysis & figure generation (run_analysis.ps1)..." -ForegroundColor Cyan
+& .\run_analysis.ps1 -System $System 2>&1 | ForEach-Object { "$_" }
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+Write-Host "`n====================================================================" -ForegroundColor Green
+Write-Host " [SUCCESS] 100% COMPLETE! System: $System MD simulation, PBC removal, peptide" -ForegroundColor Green
+Write-Host "           integrity verification, and publication SVG/PNG/PDF plotting finished!" -ForegroundColor Green
+Write-Host " -> Inspect your figures in: md_$System\figures\" -ForegroundColor Green
+Write-Host "====================================================================" -ForegroundColor Green

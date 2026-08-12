@@ -25,13 +25,70 @@ def main():
     parser.add_argument("-s", "--tpr", default="md_0_1.tpr", help="参考拓扑文件 (.tpr)")
     parser.add_argument("-f", "--traj", default="md_fit.xtc", help="待检轨迹文件 (.xtc)")
     parser.add_argument("-o", "--out", default="peptide_integrity_report.txt", help="完整性检验报告文件")
+    parser.add_argument("--sys", "-sys", "-d", "--dir", default="", help="指定模拟体系名称 (如 alllhrc) 或产物目录 (如 ../md_alllhrc)")
     args = parser.parse_args()
 
-    tpr_path = args.tpr if Path(args.tpr).exists() else "md.tpr"
-    traj_path = args.traj if Path(args.traj).exists() else ("md_noPBC.xtc" if Path("md_noPBC.xtc").exists() else "md.xtc")
+    tpr_path = args.tpr
+    traj_path = args.traj
+
+    # 如果显式指定了 --sys / -d 参数，优先在相应目录内查找
+    if args.sys:
+        sys_dir = Path(args.sys)
+        if not sys_dir.exists():
+            for cand in [f"../md_{args.sys}", f"md_{args.sys}", f"./md_{args.sys}"]:
+                if Path(cand).exists():
+                    sys_dir = Path(cand)
+                    break
+        if sys_dir.exists():
+            for t_cand in [args.tpr, "md_0_1.tpr", "md.tpr", "em.gro", "neutral.gro"]:
+                if (sys_dir / t_cand).exists():
+                    tpr_path = str(sys_dir / t_cand)
+                    break
+            for f_cand in [args.traj, "md_fit.xtc", "md_0_1.xtc", "md.xtc"]:
+                if (sys_dir / f_cand).exists():
+                    traj_path = str(sys_dir / f_cand)
+                    break
+
+    # 如果未指定 --sys 且在当前工作目录下未找到对应文件，自动在 ../md_* 或 ./md_* 中搜寻符合条件的产物
+    if not Path(tpr_path).exists() or not Path(traj_path).exists():
+        found = False
+        for cand_dir in ["../md_alllhrc", "../md_fllhttr", "../md_ylsllqr", "../md_ache", "./md_alllhrc", "./md_fllhttr", "./md_ylsllqr", "./md_ache"]:
+            d = Path(cand_dir)
+            if d.exists():
+                t_found = None
+                for t_cand in ["md_0_1.tpr", "md.tpr", args.tpr]:
+                    if (d / t_cand).exists():
+                        t_found = str(d / t_cand)
+                        break
+                f_found = None
+                for f_cand in ["md_fit.xtc", "md_0_1.xtc", "md.xtc", args.traj]:
+                    if (d / f_cand).exists():
+                        f_found = str(d / f_cand)
+                        break
+                if t_found and f_found:
+                    tpr_path = t_found
+                    traj_path = f_found
+                    print(f">> [自动定位] 在目录 '{d}' 中发现有效模拟产物:\n   拓扑: {tpr_path}\n   轨迹: {traj_path}")
+                    found = True
+                    break
+        if not found and Path("md.tpr").exists():
+            tpr_path = "md.tpr"
+        if not found and not Path(traj_path).exists() and Path("md_noPBC.xtc").exists():
+            traj_path = "md_noPBC.xtc"
+        elif not found and not Path(traj_path).exists() and Path("md.xtc").exists():
+            traj_path = "md.xtc"
 
     if not Path(tpr_path).exists() or not Path(traj_path).exists():
-        print(f"!!! 错误: 找不到被检拓扑或轨迹文件 ({tpr_path}, {traj_path})", file=sys.stderr)
+        print("!!! 错误: 未能在当前目录或默认产物目录中找到有效的拓扑文件或轨迹文件！\n"
+              f"   - 当前工作路径 : {Path.cwd()}\n"
+              f"   - 待找拓扑文件 : '{args.tpr}' (或 md_0_1.tpr / md.tpr)\n"
+              f"   - 待找轨迹文件 : '{args.traj}' (或 md_fit.xtc / md_0_1.xtc / md.xtc)\n"
+              "   - 常见原因与解决办法:\n"
+              "     1) 您可能在 scripts 目录下直接运行，且尚未完成对应体系的 MD 模拟。\n"
+              "        -> 请先执行: .\\run_split_md_workflow.ps1 -System alllhrc\n"
+              "     2) 如果刚通过 Ctrl+C 中断模拟，可能导致 .tpr 或 .xtc 尚未成功生成。\n"
+              "     3) 如果模拟产物在其他目录，请使用 -d ..\\md_alllhrc 或 --sys alllhrc 显式指定目录！\n",
+              file=sys.stderr)
         sys.exit(1)
 
     print("=" * 60)

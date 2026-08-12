@@ -33,8 +33,7 @@ for SYS in "${SYSTEMS[@]}"; do
     echo "===================================================================="
 
     echo "=== [100NS START] System: ${SYS} at $(date '+%Y-%m-%d %H:%M:%S') ===" >> "$LOG_FILE"
-    bash "./run_md_user_workflow.sh" "${SYS}" 2>&1 | tee -a "$LOG_FILE"
-    bash "./run_analysis.sh" "${SYS}" 2>&1 | tee -a "$LOG_FILE"
+    bash "./run_split_md_workflow.sh" "${SYS}" 2>&1 | tee -a "$LOG_FILE"
 
     echo ""
     echo "===================================================================="

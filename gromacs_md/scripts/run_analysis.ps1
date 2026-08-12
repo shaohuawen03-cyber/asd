@@ -29,11 +29,14 @@ if (Get-Command "python.exe" -ErrorAction SilentlyContinue) {
 }
 
 $WorkDir = "..\md_$System"
-if (-not (Test-Path "$WorkDir\md.xtc")) {
-    Write-Host "ERROR: Trajectory file md.xtc not found in $WorkDir!" -ForegroundColor Red
-    Write-Host "Please run MD simulation first." -ForegroundColor Red
+if (-not (Test-Path "$WorkDir\md_0_1.xtc") -and -not (Test-Path "$WorkDir\md.xtc")) {
+    Write-Host "!!! 错误: 在 $WorkDir 目录下未找到产物轨迹文件 (md_0_1.xtc 或 md.xtc)！" -ForegroundColor Red
+    Write-Host "请先执行产物模拟 (例如 .\run_split_md_workflow.ps1 -System $System)。" -ForegroundColor Red
     exit 1
 }
+
+$TprFile = if (Test-Path "$WorkDir\md_0_1.tpr") { "md_0_1.tpr" } else { "md.tpr" }
+$XtcFile = if (Test-Path "$WorkDir\md_0_1.xtc") { "md_0_1.xtc" } else { "md.xtc" }
 
 if ($Testing -or $env:TESTING -eq "1") {
     Write-Host ">> [TESTING MODE] 5000-step short trajectory parameters" -ForegroundColor Yellow
@@ -74,11 +77,11 @@ try {
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
         Write-Host "[6/8] Native/Non-native Intermolecular Contacts (contacts.py) ..."
-        & $PY "..\scripts\analysis\contacts.py" -t md.tpr -f md.xtc 2>&1 | ForEach-Object { "$_" }
+        & $PY "..\scripts\analysis\contacts.py" -t $TprFile -f $XtcFile 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
         Write-Host "[7/8] Water-mediated Bridging Interactions (bridging_waters.py) ..."
-        & $PY "..\scripts\analysis\bridging_waters.py" -t md.tpr -f md.xtc 2>&1 | ForEach-Object { "$_" }
+        & $PY "..\scripts\analysis\bridging_waters.py" -t $TprFile -f $XtcFile 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     } else {
         Write-Host ">> [OnlyPlot Mode] Skipping GROMACS analysis steps [0-7], directly generating figures via plot_all.py ..." -ForegroundColor Yellow

@@ -59,10 +59,19 @@ echo ">> [Python 环境] 锁定已装有 MDAnalysis 库的解释器: ${PY}"
 SYS="${1:?用法: ./run_analysis.sh <前缀, 如 alllhrc>}"
 WORK="../md_${SYS}"
 
-if [ ! -d "${WORK}" ] || [ ! -f "${WORK}/md.xtc" ]; then
-    echo "!!! 错误: 在 ${WORK} 目录下未找到产物轨迹文件 md.xtc！"
-    echo "!!! 请先执行 ./run_all.sh ${SYS} 完成 MD 模拟。"
+if [ ! -d "${WORK}" ] || ( [ ! -f "${WORK}/md_0_1.xtc" ] && [ ! -f "${WORK}/md.xtc" ] ); then
+    echo "!!! 错误: 在 ${WORK} 目录下未找到产物轨迹文件 md_0_1.xtc 或 md.xtc！"
+    echo "!!! 请先执行 ./run_split_md_workflow.sh ${SYS} 完成完整 MD 模拟。"
     exit 1
+fi
+
+TPR_FILE="md_0_1.tpr"
+if [ ! -f "${WORK}/${TPR_FILE}" ]; then
+    TPR_FILE="md.tpr"
+fi
+XTC_FILE="md_0_1.xtc"
+if [ ! -f "${WORK}/${XTC_FILE}" ]; then
+    XTC_FILE="md.xtc"
 fi
 
 export TESTING="${TESTING:-0}"
@@ -113,11 +122,11 @@ to_py_path() {
 
 # 6. 非天然接触统计 (论文 3.3 图5/表1)
 echo "[6/8] 统计天然与非天然相互作用接触 (contacts.py) ..."
-"${PY}" "$(to_py_path "${SCRIPTS_DIR}/contacts.py")" -t md.tpr -f md.xtc
+"${PY}" "$(to_py_path "${SCRIPTS_DIR}/contacts.py")" -t "${TPR_FILE}" -f "${XTC_FILE}"
 
 # 7. 水介导桥连相互作用 (论文 3.4 图6/表2)
 echo "[7/8] 统计水介导桥连相互作用 (bridging_waters.py) ..."
-"${PY}" "$(to_py_path "${SCRIPTS_DIR}/bridging_waters.py")" -t md.tpr -f md.xtc
+"${PY}" "$(to_py_path "${SCRIPTS_DIR}/bridging_waters.py")" -t "${TPR_FILE}" -f "${XTC_FILE}"
 
 # 8. 批量生成矢量/位图出版图与统计表 (plot_all.py)
 echo "[8/8] 批量绘制论文出版级图表 (SVG / PNG / PDF) ..."

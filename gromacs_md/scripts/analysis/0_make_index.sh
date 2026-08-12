@@ -14,9 +14,12 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
-TPR_FILE="md.tpr"
+TPR_FILE="md_0_1.tpr"
 if [ ! -f "${TPR_FILE}" ]; then
-    TPR_FILE="neutral.gro"
+    TPR_FILE="md.tpr"
+    if [ ! -f "${TPR_FILE}" ]; then
+        TPR_FILE="neutral.gro"
+    fi
 fi
 
 # 自动检测体系的蛋白质总残基数 (由于 binary tpr 不保存字母 chainID, 这里用残基号划分最稳定)
@@ -84,24 +87,35 @@ EOF
     echo ">> 已成功生成单体 index.ndx, 包含组: AChE, AChE_Backbone。"
 fi
 
-# ----- 黄金三步法去除周期性边界条件(PBC)、消除多链跨界拆分并叠合主干旋转平移 -----
-if [ -f "md.xtc" ]; then
-    if [ ! -f "md_fit.xtc" ] || [ "md.xtc" -nt "md_fit.xtc" ]; then
-        echo ">> [1/3 消除跨界折回] 正在执行 gmx trjconv -pbc nojump 保证两链不受边缘跨越拆分 ..."
-        gmx trjconv -s md.tpr -f md.xtc -n index.ndx -o md_nojump.xtc -pbc nojump << EOF
+# ----- 去除周期性边界条件(PBC)、消除多链跨界拆分并叠合主干旋转平移 -----
+RAW_XTC=""
+if [ -f "md_0_1.xtc" ]; then
+    RAW_XTC="md_0_1.xtc"
+elif [ -f "md.xtc" ]; then
+    RAW_XTC="md.xtc"
+fi
+
+if [ -n "${RAW_XTC}" ]; then
+    if [ ! -f "md_fit.xtc" ] || [ "${RAW_XTC}" -nt "md_fit.xtc" ]; then
+        echo ">> [1/4 恢复多肽与蛋白分子完整性] 正在执行 gmx trjconv -pbc whole ..."
+        gmx trjconv -s "${TPR_FILE}" -f "${RAW_XTC}" -n index.ndx -o md_whole.xtc -pbc whole << EOF
 0
 EOF
-        echo ">> [2/3 紧凑居中与去PBC] 正在执行 gmx trjconv -center -pbc mol -ur compact 生成 md_center.xtc ..."
-        gmx trjconv -s md.tpr -f md_nojump.xtc -n index.ndx -o md_center.xtc -center -pbc mol -ur compact << EOF
+        echo ">> [2/4 消除跨界折回突跳] 正在执行 gmx trjconv -pbc nojump 保证两链连续不跳变 ..."
+        gmx trjconv -s "${TPR_FILE}" -f md_whole.xtc -n index.ndx -o md_nojump.xtc -pbc nojump << EOF
+0
+EOF
+        echo ">> [3/4 紧凑居中与去PBC] 正在执行 gmx trjconv -center -pbc mol -ur compact 生成 md_center.xtc ..."
+        gmx trjconv -s "${TPR_FILE}" -f md_nojump.xtc -n index.ndx -o md_center.xtc -center -pbc mol -ur compact << EOF
 1
 0
 EOF
-        echo ">> [3/3 旋转平移叠合] 正在执行 gmx trjconv -fit rot+trans 消除主干漂移生成 md_fit.xtc ..."
-        gmx trjconv -s md.tpr -f md_center.xtc -n index.ndx -o md_fit.xtc -fit rot+trans << EOF
+        echo ">> [4/4 旋转平移叠合] 正在执行 gmx trjconv -fit rot+trans 消除主干整体漂移生成 md_fit.xtc ..."
+        gmx trjconv -s "${TPR_FILE}" -f md_center.xtc -n index.ndx -o md_fit.xtc -fit rot+trans << EOF
 4
 0
 EOF
-        rm -f md_nojump.xtc md_center.xtc 2>/dev/null || true
-        echo ">> [OK] 已生成彻底去 PBC、无跨越突跳、紧凑居中且主干对齐的纯净轨迹: md_fit.xtc ！"
+        rm -f md_whole.xtc md_nojump.xtc md_center.xtc 2>/dev/null || true
+        echo ">> [OK] 已成功生成彻底去 PBC、无跨越突跳、紧凑居中且主干对齐的纯净轨迹: md_fit.xtc ！"
     fi
 fi
