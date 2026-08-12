@@ -1,0 +1,10 @@
+metric,AChE,Complex,Peptide
+hbond_ache_pep,,2.1878121878121877,
+hbond_intra,,,1.132867132867133
+rdf_peak,,0.0,
+rmsd_ache,0.1883186723276723,,
+rmsd_complex,,0.46664003936063936,
+rmsd_pep,,,0.2517893410589411
+rmsf_pep,,,0.0733
+sasa_complex,,217.4754075924076,
+sasa_pep,,,11.474407592407594
