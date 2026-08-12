@@ -88,12 +88,22 @@ else
     WIN_NS=50
 fi
 
-if command -v wslpath >/dev/null 2>&1 && [[ "${PY}" == *".exe"* || "${PY}" == *"/mnt/"* || "${PY}" == *":"* ]]; then
-    SCRIPT_PATH=$(wslpath -w "$(dirname "$0")/dssp_bins.py" 2>/dev/null || echo "$(dirname "$0")/dssp_bins.py")
+if [ -f "ss_pep_num.xvg" ]; then
+    echo ">> [优先使用 DSSP -num] 正在解析 ss_pep_num.xvg 生成 ss_pep_bins.dat ..."
+    if command -v wslpath >/dev/null 2>&1 && [[ "${PY}" == *".exe"* || "${PY}" == *"/mnt/"* || "${PY}" == *":"* ]]; then
+        NUM_SCRIPT=$(wslpath -w "$(dirname "$0")/parse_dssp_num.py" 2>/dev/null || echo "$(dirname "$0")/parse_dssp_num.py")
+    else
+        NUM_SCRIPT="$(dirname "$0")/parse_dssp_num.py"
+    fi
+    "${PY}" "${NUM_SCRIPT}" "ss_pep_num.xvg" "ss_pep_bins.dat" "${WIN_NS}" "7.0"
 else
-    SCRIPT_PATH="$(dirname "$0")/dssp_bins.py"
+    if command -v wslpath >/dev/null 2>&1 && [[ "${PY}" == *".exe"* || "${PY}" == *"/mnt/"* || "${PY}" == *":"* ]]; then
+        SCRIPT_PATH=$(wslpath -w "$(dirname "$0")/dssp_bins.py" 2>/dev/null || echo "$(dirname "$0")/dssp_bins.py")
+    else
+        SCRIPT_PATH="$(dirname "$0")/dssp_bins.py"
+    fi
+    "${PY}" "${SCRIPT_PATH}" "${SS_FILE}" ss_pep_bins.dat "${WIN_NS}"
 fi
-"${PY}" "${SCRIPT_PATH}" "${SS_FILE}" ss_pep_bins.dat ${WIN_NS}
 
 echo "二级结构输出: ${SS_FILE}, ss_pep_bins.dat"
 echo "ss_pep_bins.dat 列: 时间窗口(ns)  helix倾向  turn倾向  bend倾向"
