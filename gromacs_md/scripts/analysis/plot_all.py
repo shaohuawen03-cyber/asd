@@ -358,28 +358,25 @@ def main():
 
     # Panel 1: RMSD
     if rmsd_com is not None:
-        axes[0].plot(rmsd_com["x"], rmsd_com["y"], label="Complex", color="tab:blue", linewidth=1.2)
-    if rmsd_pep is not None:
-        axes[0].plot(rmsd_pep["x"], rmsd_pep["y"], label="Peptide", color="tab:green", linewidth=1.2)
+        axes[0].plot(rmsd_com["x"], rmsd_com["y"], label="Complex BB", color="tab:blue", linewidth=1.2)
+    if rmsd_ach is not None:
+        axes[0].plot(rmsd_ach["x"], rmsd_ach["y"], label="AChE BB", color="tab:orange", linewidth=1.2, linestyle="--")
     axes[0].set_title("Backbone Cα RMSD", fontsize=11, weight="bold")
     axes[0].set_xlabel("Time (ns)", fontsize=10)
     axes[0].set_ylabel("RMSD (nm)", fontsize=10)
     axes[0].grid(alpha=0.3, linestyle="--")
     safe_legend(axes[0])
 
-    # Panel 2: RMSF
-    if rmsf_com is not None:
-        axes[1].plot(rmsf_com["x"], rmsf_com["y"], label="Complex BB", color="tab:blue", linewidth=1.0, alpha=0.6)
+    # Panel 2: RMSF (重点展示 AChE 受体主干柔性分布)
     if rmsf_ach is not None:
-        axes[1].plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", color="tab:orange", linewidth=1.0, linestyle="--", alpha=0.8)
-    if rmsf_pep is not None:
-        axes[1].plot(rmsf_pep["x"], rmsf_pep["y"], label="Peptide BB", marker="o", color="tab:green", linewidth=1.2)
-        axes[1].set_title("Peptide Backbone RMSF", fontsize=11, weight="bold")
-    elif rmsf_ach is not None:
-        axes[1].set_title("AChE Backbone RMSF", fontsize=11, weight="bold")
+        axes[1].plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", color="tab:orange", linewidth=1.2)
+        axes[1].set_title("AChE Backbone Cα RMSF", fontsize=11, weight="bold")
+    elif rmsf_com is not None:
+        axes[1].plot(rmsf_com["x"], rmsf_com["y"], label="Complex BB", color="tab:blue", linewidth=1.2)
+        axes[1].set_title("Complex Backbone Cα RMSF", fontsize=11, weight="bold")
     else:
         axes[1].set_title("Backbone RMSF", fontsize=11, weight="bold")
-    axes[1].set_xlabel("Residue", fontsize=10)
+    axes[1].set_xlabel("Residue Number", fontsize=10)
     axes[1].set_ylabel("RMSF (nm)", fontsize=10)
     axes[1].grid(alpha=0.3, linestyle="--")
     safe_legend(axes[1])
