@@ -81,20 +81,24 @@ EOF
     echo ">> 已成功生成单体 index.ndx, 包含组: AChE, AChE_Backbone。"
 fi
 
-# ----- 严格两步法去除周期性边界条件(PBC)、居中并叠合主干旋转平移 (参考规范) -----
+# ----- 黄金三步法去除周期性边界条件(PBC)、消除多链跨界拆分并叠合主干旋转平移 -----
 if [ -f "md.xtc" ]; then
     if [ ! -f "md_fit.xtc" ] || [ "md.xtc" -nt "md_fit.xtc" ]; then
-        echo ">> [1/2 去PBC与紧凑居中] 正在执行 gmx trjconv -center -pbc mol -ur compact 生成 md_center.xtc ..."
-        gmx trjconv -s md.tpr -f md.xtc -n index.ndx -o md_center.xtc -center -pbc mol -ur compact << EOF
+        echo ">> [1/3 消除跨界折回] 正在执行 gmx trjconv -pbc nojump 保证两链不受边缘跨越拆分 ..."
+        gmx trjconv -s md.tpr -f md.xtc -n index.ndx -o md_nojump.xtc -pbc nojump << EOF
+0
+EOF
+        echo ">> [2/3 紧凑居中与去PBC] 正在执行 gmx trjconv -center -pbc mol -ur compact 生成 md_center.xtc ..."
+        gmx trjconv -s md.tpr -f md_nojump.xtc -n index.ndx -o md_center.xtc -center -pbc mol -ur compact << EOF
 1
 0
 EOF
-        echo ">> [2/2 旋转平移叠合] 正在执行 gmx trjconv -fit rot+trans 消除主干漂移生成 md_fit.xtc ..."
+        echo ">> [3/3 旋转平移叠合] 正在执行 gmx trjconv -fit rot+trans 消除主干漂移生成 md_fit.xtc ..."
         gmx trjconv -s md.tpr -f md_center.xtc -n index.ndx -o md_fit.xtc -fit rot+trans << EOF
 4
 0
 EOF
-        rm -f md_center.xtc 2>/dev/null || true
-        echo ">> [OK] 已生成彻底去 PBC、紧凑居中且主干对齐的纯净轨迹: md_fit.xtc ！"
+        rm -f md_nojump.xtc md_center.xtc 2>/dev/null || true
+        echo ">> [OK] 已生成彻底去 PBC、无跨越突跳、紧凑居中且主干对齐的纯净轨迹: md_fit.xtc ！"
     fi
 fi

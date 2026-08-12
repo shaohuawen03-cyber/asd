@@ -16,6 +16,7 @@
   frequent_contacts.tsv : 出现 >10 次的非天然接触对 (表1)
 """
 import argparse
+from pathlib import Path
 import numpy as np
 import MDAnalysis as mda
 from MDAnalysis.lib.distances import distance_array
