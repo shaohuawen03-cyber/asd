@@ -17,12 +17,20 @@ if ! grep -q "\[ *Peptide *\]" index.ndx 2>/dev/null; then
     exit 0
 fi
 
+TRAJ_FILE="md_fit.xtc"
+if [ ! -f "${TRAJ_FILE}" ]; then
+    TRAJ_FILE="md_noPBC.xtc"
+    if [ ! -f "${TRAJ_FILE}" ]; then
+        TRAJ_FILE="md.xtc"
+    fi
+fi
+
 # 整个产物轨迹的 RDF (图2A), 以质心计算 (mol_com)
-gmx rdf -s md.tpr -f md.xtc -n index.ndx -o rdf_pep_ache.xvg \
+gmx rdf -s md.tpr -f "${TRAJ_FILE}" -n index.ndx -o rdf_pep_ache.xvg \
        -ref AChE -sel Peptide -selrpos mol_com -seltype mol_com -bin 0.02
 
 # 自动读取轨迹总时间(ps)，自适应计算四等份区段，无视测试轨迹或正式100ns/1000ns差异
-END_PS=$(gmx check -f md.xtc 2>&1 | grep -iE "Last frame|Step" | tail -n 1 | awk '{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+(\.[0-9]+)?$/) last=$i; print last}' || true)
+END_PS=$(gmx check -f "${TRAJ_FILE}" 2>&1 | grep -iE "Last frame|Step" | tail -n 1 | awk '{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+(\.[0-9]+)?$/) last=$i; print last}' || true)
 if [ -z "${END_PS:-}" ] || [ "${END_PS}" = "0" ]; then
     END_PS=20
 fi
@@ -32,7 +40,7 @@ echo ">> 自动读取轨迹长度: 0 - ${END_PS} ps, 四等份切分步长: ${ST
 for q in 1 2 3 4; do
     t0=$(awk "BEGIN {print ($q - 1) * $STEP_PS}")
     t1=$(awk "BEGIN {print $q * $STEP_PS}")
-    gmx rdf -s md.tpr -f md.xtc -n index.ndx \
+    gmx rdf -s md.tpr -f "${TRAJ_FILE}" -n index.ndx \
         -o "rdf_pep_ache_q${q}.xvg" -ref AChE -sel Peptide \
         -selrpos mol_com -seltype mol_com -b "${t0}" -e "${t1}" -bin 0.02 || true
 done

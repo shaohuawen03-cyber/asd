@@ -13,9 +13,17 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
+TRAJ_FILE="md_fit.xtc"
+if [ ! -f "${TRAJ_FILE}" ]; then
+    TRAJ_FILE="md_noPBC.xtc"
+    if [ ! -f "${TRAJ_FILE}" ]; then
+        TRAJ_FILE="md.xtc"
+    fi
+fi
+
 if ! grep -q "\[ *Peptide *\]" index.ndx 2>/dev/null; then
     echo ">> [单体蛋白模式] 未检测到 Peptide 组，跳过结合氢键计算，仅计算 AChE 内部氢键。"
-    gmx hbond -s md.tpr -f md.xtc -n index.ndx -num hbond_ache_intra.xvg << EOF
+    gmx hbond -s md.tpr -f "${TRAJ_FILE}" -n index.ndx -num hbond_ache_intra.xvg << EOF
 AChE
 AChE
 EOF
@@ -23,19 +31,19 @@ EOF
 fi
 
 # AChE 与肽之间氢键
-gmx hbond -s md.tpr -f md.xtc -n index.ndx -num hbond_ache_pep.xvg << EOF
+gmx hbond -s md.tpr -f "${TRAJ_FILE}" -n index.ndx -num hbond_ache_pep.xvg << EOF
 AChE
 Peptide
 EOF
 
 # 肽内部氢键
-gmx hbond -s md.tpr -f md.xtc -n index.ndx -num hbond_pep_intra.xvg << EOF
+gmx hbond -s md.tpr -f "${TRAJ_FILE}" -n index.ndx -num hbond_pep_intra.xvg << EOF
 Peptide
 Peptide
 EOF
 
 # AChE 内部氢键 (可选)
-gmx hbond -s md.tpr -f md.xtc -n index.ndx -num hbond_ache_intra.xvg << EOF
+gmx hbond -s md.tpr -f "${TRAJ_FILE}" -n index.ndx -num hbond_ache_intra.xvg << EOF
 AChE
 AChE
 EOF

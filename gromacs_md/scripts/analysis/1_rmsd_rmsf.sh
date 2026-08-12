@@ -11,9 +11,12 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
-TRAJ_FILE="md_noPBC.xtc"
+TRAJ_FILE="md_fit.xtc"
 if [ ! -f "${TRAJ_FILE}" ]; then
-    TRAJ_FILE="md.xtc"
+    TRAJ_FILE="md_noPBC.xtc"
+    if [ ! -f "${TRAJ_FILE}" ]; then
+        TRAJ_FILE="md.xtc"
+    fi
 fi
 
 # 复合物骨架 RMSD (对齐到骨架, 论文图1A)

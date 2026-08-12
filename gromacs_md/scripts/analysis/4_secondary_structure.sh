@@ -49,9 +49,17 @@ if ! grep -q "\[ *Peptide *\]" index.ndx 2>/dev/null; then
 fi
 
 # 计算肽的二级结构随时间的分布
+TRAJ_FILE="md_fit.xtc"
+if [ ! -f "${TRAJ_FILE}" ]; then
+    TRAJ_FILE="md_noPBC.xtc"
+    if [ ! -f "${TRAJ_FILE}" ]; then
+        TRAJ_FILE="md.xtc"
+    fi
+fi
+
 if gmx dssp -h 2>&1 | grep -q -- "-sel "; then
     # GROMACS >= 2023 新版内置 dssp (支持 -sel Peptide -o .dat -num .xvg)
-    gmx dssp -s md.tpr -f md.xtc -n index.ndx -sel "Peptide" -o ss_pep.dat -num ss_pep_num.xvg
+    gmx dssp -s md.tpr -f "${TRAJ_FILE}" -n index.ndx -sel "Peptide" -o ss_pep.dat -num ss_pep_num.xvg
     SS_FILE="ss_pep.dat"
 else
     # GROMACS <= 2022 传统版 (do_dssp / dssp -sc / -ssdump)
@@ -65,7 +73,7 @@ else
     else
         SC_FLAG="-sc"
     fi
-    gmx ${DSSP_CMD} -s md.tpr -f md.xtc -n index.ndx \
+    gmx ${DSSP_CMD} -s md.tpr -f "${TRAJ_FILE}" -n index.ndx \
                 ${SC_FLAG} ss_pep.sc -o ss_pep.xpm << EOF
 Peptide
 EOF
