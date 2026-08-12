@@ -29,22 +29,22 @@ def main():
             if not line or line.startswith(("#", "@", ";")):
                 continue
             parts = line.split()
-            if len(parts) < 10:
+            if len(parts) < 7:
                 continue
             try:
-                # GROMACS gmx dssp -num 列顺序:
+                # GROMACS gmx dssp -num 列顺序自适应兼容:
                 # 0:Time(ps) 1:Structure 2:Coil 3:B-Sheet 4:B-Bridge 5:Bend 6:Turn 7:A-Helix 8:5-Helix 9:3-Helix
                 t_ns = float(parts[0]) * 0.001
                 times.append(t_ns)
-                struc_c.append(float(parts[1]))
-                coil_c.append(float(parts[2]))
-                sheet_c.append(float(parts[3]))
-                bridge_c.append(float(parts[4]))
-                bend_c.append(float(parts[5]))
-                turn_c.append(float(parts[6]))
-                ahel_c.append(float(parts[7]))
-                fhel_c.append(float(parts[8]))
-                thel_c.append(float(parts[9]))
+                struc_c.append(float(parts[1]) if len(parts) > 1 else 0.0)
+                coil_c.append(float(parts[2]) if len(parts) > 2 else 0.0)
+                sheet_c.append(float(parts[3]) if len(parts) > 3 else 0.0)
+                bridge_c.append(float(parts[4]) if len(parts) > 4 else 0.0)
+                bend_c.append(float(parts[5]) if len(parts) > 5 else 0.0)
+                turn_c.append(float(parts[6]) if len(parts) > 6 else 0.0)
+                ahel_c.append(float(parts[7]) if len(parts) > 7 else 0.0)
+                fhel_c.append(float(parts[8]) if len(parts) > 8 else 0.0)
+                thel_c.append(float(parts[9]) if len(parts) > 9 else 0.0)
             except ValueError:
                 continue
 
