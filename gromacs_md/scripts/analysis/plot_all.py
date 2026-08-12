@@ -183,12 +183,14 @@ def main():
     add_panel_label(ax1, "A")
 
     # RMSF
+    if rmsf_com is not None:
+        ax2.plot(rmsf_com["x"], rmsf_com["y"], label="Complex BB", linewidth=1.0, color="tab:blue", alpha=0.6)
+    if rmsf_ach is not None:
+        ax2.plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", linewidth=1.0, linestyle="--", color="tab:orange", alpha=0.8)
     if rmsf_pep is not None:
         ax2.plot(rmsf_pep["x"], rmsf_pep["y"], label="Peptide BB", linewidth=1.5, color="tab:green", marker="o", markersize=3)
         s = summarize_last_ns(rmsf_pep, "rmsf_pep", "Peptide")
         if s: summary_rows.append(s)
-    if rmsf_ach is not None:
-        ax2.plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", linewidth=1.0, linestyle="--", color="tab:orange", alpha=0.7)
     ax2.set_title("Backbone Cα RMSF", fontsize=11, weight="bold")
     ax2.set_xlabel("Residue Number", fontsize=10)
     ax2.set_ylabel("RMSF (nm)", fontsize=10)
@@ -366,11 +368,14 @@ def main():
     safe_legend(axes[0])
 
     # Panel 2: RMSF
+    if rmsf_com is not None:
+        axes[1].plot(rmsf_com["x"], rmsf_com["y"], label="Complex BB", color="tab:blue", linewidth=1.0, alpha=0.6)
+    if rmsf_ach is not None:
+        axes[1].plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", color="tab:orange", linewidth=1.0, linestyle="--", alpha=0.8)
     if rmsf_pep is not None:
         axes[1].plot(rmsf_pep["x"], rmsf_pep["y"], label="Peptide BB", marker="o", color="tab:green", linewidth=1.2)
         axes[1].set_title("Peptide Backbone RMSF", fontsize=11, weight="bold")
     elif rmsf_ach is not None:
-        axes[1].plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", color="tab:orange", linewidth=1.0)
         axes[1].set_title("AChE Backbone RMSF", fontsize=11, weight="bold")
     else:
         axes[1].set_title("Backbone RMSF", fontsize=11, weight="bold")
