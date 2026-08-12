@@ -96,6 +96,22 @@ def safe_legend(ax: plt.Axes, **kwargs) -> None:
         ax.legend(frameon=False, fontsize=9, **kwargs)
 
 
+def summarize_rdf(df: Optional[pd.DataFrame], metric: str, system_label: str):
+    """针对径向分布函数 g(r)，提取峰高度 g_max 及主峰位置 r(nm)"""
+    if df is None or df.empty:
+        return None
+    peak_idx = df["y"].idxmax()
+    r_peak = float(df.loc[peak_idx, "x"])
+    g_max = float(df.loc[peak_idx, "y"])
+    return {
+        "system": system_label,
+        "metric": metric,
+        "mean": g_max,
+        "std": r_peak,
+        "n_points": int(len(df)),
+    }
+
+
 def summarize_last_ns(df: Optional[pd.DataFrame], metric: str, system_label: str, last_ns: float = 20.0):
     if df is None or df.empty:
         return None
@@ -191,7 +207,7 @@ def main():
     fig, ax = plt.subplots(figsize=(7.5, 4.8), constrained_layout=True)
     if rdf_main is not None:
         ax.plot(rdf_main["x"], rdf_main["y"], label="Total Trajectory", linewidth=2.0, color="tab:purple")
-        s = summarize_last_ns(rdf_main, "rdf_peak", "Complex")
+        s = summarize_rdf(rdf_main, "rdf_peak_g_max", "Complex")
         if s: summary_rows.append(s)
     for q, color in enumerate(["tab:blue", "tab:orange", "tab:green", "tab:red"], start=1):
         rdf_q = read_xvg(work_dir / f"rdf_pep_ache_q{q}.xvg", x_scale=1.0)
