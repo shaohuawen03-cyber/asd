@@ -260,6 +260,8 @@ def main():
         ax.plot(ss_bins[cols[0]], ss_bins[cols[1]], label="Helix", linewidth=1.8, marker="o", color="tab:blue")
         ax.plot(ss_bins[cols[0]], ss_bins[cols[2]], label="Turn", linewidth=1.8, marker="s", color="tab:orange")
         ax.plot(ss_bins[cols[0]], ss_bins[cols[3]], label="Bend", linewidth=1.8, marker="^", color="tab:green")
+        if len(cols) >= 5:
+            ax.plot(ss_bins[cols[0]], ss_bins[cols[4]], label="Coil/Loop", linewidth=1.8, marker="d", color="tab:purple")
         ax.set_title("Peptide Secondary Structure Fraction over Time (Paper Fig 4)", fontsize=11, weight="bold")
         ax.set_xlabel("Time Window (ns)", fontsize=10)
         ax.set_ylabel("Fraction", fontsize=10)
@@ -408,6 +410,8 @@ def main():
         axes[4].plot(ss_bins[cols[0]], ss_bins[cols[1]], label="Helix", marker="o", color="tab:blue")
         axes[4].plot(ss_bins[cols[0]], ss_bins[cols[2]], label="Turn", marker="s", color="tab:orange")
         axes[4].plot(ss_bins[cols[0]], ss_bins[cols[3]], label="Bend", marker="^", color="tab:green")
+        if len(cols) >= 5:
+            axes[4].plot(ss_bins[cols[0]], ss_bins[cols[4]], label="Coil/Loop", marker="d", color="tab:purple")
         axes[4].set_title("Secondary Structure Fractions", fontsize=11, weight="bold")
     else:
         axes[4].text(0.5, 0.5, "DSSP (N/A for Monomer)", ha="center", va="center", fontsize=10, color="gray")

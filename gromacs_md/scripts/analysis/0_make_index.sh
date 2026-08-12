@@ -80,3 +80,15 @@ q
 EOF
     echo ">> 已成功生成单体 index.ndx, 包含组: AChE, AChE_Backbone。"
 fi
+
+# ----- 自动对轨迹执行去周期性边界条件 (PBC) 处理与居中，消除跨盒边界坐标跳变 -----
+if [ -f "md.xtc" ]; then
+    if [ ! -f "md_noPBC.xtc" ] || [ "md.xtc" -nt "md_noPBC.xtc" ]; then
+        echo ">> [去 PBC 消除跳变] 正在使用 gmx trjconv 对 md.xtc 执行 -pbc mol -center 消除跨盒子边缘的突跳..."
+        gmx trjconv -s md.tpr -f md.xtc -n index.ndx -o md_noPBC.xtc -pbc mol -center << EOF
+Protein
+System
+EOF
+        echo ">> [OK] 已生成去边界跳变的纯净轨迹 md_noPBC.xtc，后续统计与绘图将自动优先加载该纯净轨迹。"
+    fi
+fi

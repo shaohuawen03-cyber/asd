@@ -49,7 +49,7 @@ def main():
     print(f"帧数: {len(times)}, 残基数: {nres}, 时间范围: {t0}-{t1} ns, 窗口: {window} ns -> {nwin} 窗")
 
     with open(dst, "w") as out:
-        out.write("# time_ns helix_frac turn_frac bend_frac\n")
+        out.write("time_ns helix_frac turn_frac bend_frac coil_frac\n")
         for i in range(nwin):
             lo = t0 + i * window
             hi = lo + window
@@ -57,7 +57,7 @@ def main():
             if mask.sum() == 0:
                 continue
             sub = [seqs[j] for j in range(len(times)) if mask[j]]
-            helix = turn = bend = 0
+            helix = turn = bend = coil = 0
             total = 0
             for s in sub:
                 for c in s:
@@ -68,8 +68,10 @@ def main():
                         turn += 1
                     elif c in "SB":
                         bend += 1
+                    else:
+                        coil += 1
             mid = lo + window / 2
-            out.write(f"{mid:.1f} {helix/total:.4f} {turn/total:.4f} {bend/total:.4f}\n")
+            out.write(f"{mid:.1f} {helix/total:.4f} {turn/total:.4f} {bend/total:.4f} {coil/total:.4f}\n")
 
     print(f"已写入 {dst}")
 
