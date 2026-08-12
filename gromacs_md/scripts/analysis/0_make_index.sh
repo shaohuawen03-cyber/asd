@@ -47,6 +47,7 @@ G1=$((LAST_IDX + 1))
 G2=$((LAST_IDX + 2))
 G3=$((LAST_IDX + 3))
 G4=$((LAST_IDX + 4))
+G5=$((LAST_IDX + 5))
 
 # 检查体系中是否含有第二条肽链或小肽残基 (识别是否为单独 AChE 单体对照组)
 HAS_PEP=1
@@ -56,7 +57,7 @@ if [ "${PEP_CNT}" -eq "0" ]; then
 fi
 
 if [ "${HAS_PEP}" = "1" ]; then
-    echo ">> [复合物模式] 分配新增分组编号: ${G1}(AChE), ${G2}(Peptide), ${G3}(AChE_Backbone), ${G4}(Peptide_Backbone) ..."
+    echo ">> [复合物模式] 分配新增分组编号: ${G1}(AChE), ${G2}(Peptide), ${G3}(AChE_Backbone), ${G4}(Peptide_Backbone), ${G5}(Peptide_Calpha) ..."
     gmx make_ndx -f "${TPR_FILE}" -o index.ndx << EOF
 ${ACHE_SEL}
 name ${G1} AChE
@@ -66,9 +67,11 @@ ${G1} & 4
 name ${G3} AChE_Backbone
 ${G2} & 4
 name ${G4} Peptide_Backbone
+${G2} & 3
+name ${G5} Peptide_Calpha
 q
 EOF
-    echo ">> 已成功生成复合物 index.ndx, 包含组: AChE, Peptide, AChE_Backbone, Peptide_Backbone。"
+    echo ">> 已成功生成复合物 index.ndx, 包含组: AChE, Peptide, AChE_Backbone, Peptide_Backbone, Peptide_Calpha。"
 else
     echo ">> [单体蛋白模式] 未检测到第二条肽链，自动配置为单独 AChE 单体 (Protein alone) 对照组索引..."
     gmx make_ndx -f "${TPR_FILE}" -o index.ndx << EOF

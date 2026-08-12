@@ -47,9 +47,15 @@ if grep -q "\[ *Peptide_Backbone *\]" index.ndx 2>/dev/null; then
 Peptide_Backbone
 Peptide_Backbone
 EOF
-    gmx rmsf -s md.tpr -f "${TRAJ_FILE}" -n index.ndx -o rmsf_pep_bb.xvg -res << EOF
+    if grep -q "\[ *Peptide_Calpha *\]" index.ndx 2>/dev/null; then
+        gmx rmsf -s md.tpr -f "${TRAJ_FILE}" -n index.ndx -o rmsf_pep_bb.xvg -res << EOF
+Peptide_Calpha
+EOF
+    else
+        gmx rmsf -s md.tpr -f "${TRAJ_FILE}" -n index.ndx -o rmsf_pep_bb.xvg -res << EOF
 Peptide_Backbone
 EOF
+    fi
 else
     echo ">> [单体蛋白模式] 未检测到 Peptide_Backbone，跳过肽相关 RMSD / RMSF。"
 fi
