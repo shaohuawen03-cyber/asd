@@ -141,10 +141,18 @@ TESTING=1 ./run_all.sh ylsllqr
 # 正式生产模式
 .\run_analysis.ps1 -System alllhrc
 
-# ★ 只重跑有问题的部分 (DSSP 逐帧 + 肽 RMSD 三段相位 + 出图)
+# ★ 只重跑有问题的部分 (DSSP 逐帧 + 肽 RMSD 诊断 + 出图)
 #    不重跑 RDF/SASA/氢键/接触, 也不中断后台 mdrun
 .\run_fix_dssp_peptide.ps1 -System alllhrc
 # 等价:  .\run_analysis.ps1 -System alllhrc -OnlyDsspPeptide
+
+# ★ 四个体系单独重绘 / 一键四个 (不启动 mdrun, 不删除 md_*)
+#    分析已经跑完、只是出图失败时，直接再跑即可（默认 OnlyPlot）
+.\replot_alllhrc.ps1
+.\replot_fllhttr.ps1
+.\replot_ylsllqr.ps1
+.\replot_ache.ps1
+.\replot_all_four.ps1
 ```
 
 **方法二：WSL / Git Bash 运行（`.sh` 脚本已自动支持 WSL 调用 Windows python.exe 时的路径自动转换）**

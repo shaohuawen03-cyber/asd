@@ -13,16 +13,16 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
-TPR_FILE="md_0_1.tpr"
+TPR_FILE="md.tpr"
 if [ ! -f "${TPR_FILE}" ]; then
-    TPR_FILE="md.tpr"
+    TPR_FILE="md_0_1.tpr"
 fi
 
 TRAJ_FILE="md_fit.xtc"
 if [ ! -f "${TRAJ_FILE}" ]; then
-    TRAJ_FILE="md_0_1.xtc"
+    TRAJ_FILE="md.xtc"
     if [ ! -f "${TRAJ_FILE}" ]; then
-        TRAJ_FILE="md.xtc"
+        TRAJ_FILE="md_0_1.xtc"
     fi
 fi
 

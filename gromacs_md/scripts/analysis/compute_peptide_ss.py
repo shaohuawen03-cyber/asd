@@ -441,12 +441,12 @@ def rama_assign(bb: Dict[str, np.ndarray]) -> str:
 
 def _pick_files(work: Path):
     tpr = None
-    for name in ("md_0_1.tpr", "md.tpr"):
+    for name in ("md.tpr", "md_0_1.tpr"):
         if (work / name).exists():
             tpr = work / name
             break
     traj = None
-    for name in ("md_fit.xtc", "md_0_1.xtc", "md.xtc", "md_noPBC.xtc"):
+    for name in ("md_fit.xtc", "md.xtc", "md_0_1.xtc", "md_noPBC.xtc"):
         if (work / name).exists():
             traj = work / name
             break

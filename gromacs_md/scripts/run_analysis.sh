@@ -59,9 +59,9 @@ echo ">> [Python 环境] 锁定已装有 MDAnalysis 库的解释器: ${PY}"
 SYS="${1:?用法: ./run_analysis.sh <前缀, 如 alllhrc>}"
 WORK="../md_${SYS}"
 
-if [ ! -d "${WORK}" ] || ( [ ! -f "${WORK}/md_0_1.xtc" ] && [ ! -f "${WORK}/md.xtc" ] ); then
-    echo "!!! 错误: 在 ${WORK} 目录下未找到产物轨迹文件 md_0_1.xtc 或 md.xtc！"
-    echo "!!! 请先执行 ./run_split_md_workflow.sh ${SYS} 完成完整 MD 模拟。"
+if [ ! -d "${WORK}" ] || ( [ ! -f "${WORK}/md.xtc" ] && [ ! -f "${WORK}/md_0_1.xtc" ] ); then
+    echo "ERROR: no md.xtc / md_0_1.xtc in ${WORK}"
+    echo "This script is ANALYSIS only. Do NOT run run_all_four_100ns_formal.sh (it deletes md_*)."
     exit 1
 fi
 
@@ -79,7 +79,7 @@ ONLY_DSSP_PEPTIDE="${ONLY_DSSP_PEPTIDE:-0}"
 if [ "${TESTING}" = "1" ]; then
     echo ">> [分析测试模式] 针对短时间测试轨迹自动自适应参数"
 else
-    echo ">> [分析正式模式] 针对 1000 ns 生产轨迹执行完整计算"
+    echo ">> [PRODUCTION] 100 ns v1.0 trajectory analysis"
 fi
 
 cd "${WORK}"
@@ -147,9 +147,9 @@ echo "生成分析图表一览 (保存在 ./figures/ 下):"
 echo "  - fig1_rmsd_rmsf.{svg,png,pdf}            => 图 1 (RMSD / RMSF)"
 echo "  - fig2_rdf.{svg,png,pdf}                  => 图 2 (径向分布函数 RDF)"
 echo "  - fig3_sasa.{svg,png,pdf}                 => 图 3 (溶剂可及表面积 SASA)"
-echo "  - fig4_secondary_structure.{svg,png,pdf}  => 图 4 (二级结构倾向)"
-echo "  - fig5_contacts.{svg,png,pdf}             => 图 5 (非天然残基对接触)"
-echo "  - fig6_bridging_waters.{svg,png,pdf}      => 图 6 (水介导桥连)"
-echo "  - fig_hbonds.{svg,png,pdf}                => 论文 3.3 节 (氢键数量曲线)"
-echo "  - fig0_summary_all.{svg,png,pdf}          => 综合 2x3 六格汇总对比主图"
+echo "  - fig4_secondary_structure.{svg,png,pdf}  => Fig 4 (DSSP stacked %)"
+echo "  - fig5_contacts.{svg,png,pdf}             => Fig 5 (contacts)"
+echo "  - fig6_bridging_waters.{svg,png,pdf}      => Fig 6 (bridging waters)"
+echo "  - fig_hbonds.{svg,png,pdf}                => H-bonds"
+echo "  - fig0_summary_all.{svg,png,pdf}          => 2x3: RMSD / AChE-RMSF / RDF / SASA / DSSP% / Rg"
 echo "  - summary_metrics.csv & wide.csv          => 统计指标汇总表"

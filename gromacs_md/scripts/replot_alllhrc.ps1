@@ -1,8 +1,14 @@
-# Re-analyze + replot ONE finished v1.0 system. Does not start mdrun.
-# DSSP = complex (v2.5). fig0 = no peptide RMSD/RMSF; adds complex Rg.
-param()
-$ErrorActionPreference = "Continue"
+# Replot ONE finished v1.0 system. Does not start mdrun. Does not delete md_*.
+# Default: OnlyPlot if analysis products already exist (safe after a plot crash).
+#   .\replot_alllhrc.ps1
+#   .\replot_alllhrc.ps1 -OnlyPlot
+#   .\replot_alllhrc.ps1 -Full
+param(
+    [switch]$OnlyPlot,
+    [switch]$Full
+)
 try { chcp 65001 | Out-Null } catch {}
-Write-Host "========== REPLOT alllhrc (v1.0 traj + current analysis) ==========" -ForegroundColor Cyan
-& "$PSScriptRoot\run_analysis.ps1" -System alllhrc
+$ErrorActionPreference = "Continue"
+Write-Host "========== REPLOT alllhrc ==========" -ForegroundColor Cyan
+& "$PSScriptRoot\replot_common.ps1" -System alllhrc -OnlyPlot:$OnlyPlot -Full:$Full
 exit $LASTEXITCODE

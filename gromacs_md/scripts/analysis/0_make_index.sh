@@ -14,9 +14,9 @@ elif command -v gmx.exe >/dev/null 2>&1; then
     gmx() { gmx.exe "$@"; }
 fi
 
-TPR_FILE="md_0_1.tpr"
+TPR_FILE="md.tpr"
 if [ ! -f "${TPR_FILE}" ]; then
-    TPR_FILE="md.tpr"
+    TPR_FILE="md_0_1.tpr"
     if [ ! -f "${TPR_FILE}" ]; then
         TPR_FILE="neutral.gro"
     fi
@@ -89,10 +89,10 @@ fi
 
 # ----- 去除周期性边界条件(PBC)、消除多链跨界拆分并叠合主干旋转平移 -----
 RAW_XTC=""
-if [ -f "md_0_1.xtc" ]; then
-    RAW_XTC="md_0_1.xtc"
-elif [ -f "md.xtc" ]; then
+if [ -f "md.xtc" ]; then
     RAW_XTC="md.xtc"
+elif [ -f "md_0_1.xtc" ]; then
+    RAW_XTC="md_0_1.xtc"
 fi
 
 if [ -n "${RAW_XTC}" ]; then

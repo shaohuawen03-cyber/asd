@@ -90,10 +90,37 @@ def add_panel_label(ax: plt.Axes, label: str) -> None:
 
 
 def safe_legend(ax: plt.Axes, **kwargs) -> None:
-    """仅在子图有带标签曲线时生成图例，防空图产生 UserWarning"""
-    handles, labels = ax.get_legend_handles_labels()
-    if handles:
-        ax.legend(frameon=False, fontsize=9, **kwargs)
+    """Only add a legend when labeled artists exist.
+
+    Callers may pass fontsize/loc/ncol. Do NOT hard-code fontsize=9
+    and then also accept fontsize= in kwargs (TypeError).
+    """
+    handles, _labels = ax.get_legend_handles_labels()
+    if not handles:
+        return
+    kwargs.setdefault("frameon", False)
+    kwargs.setdefault("fontsize", 9)
+    ax.legend(**kwargs)
+
+
+SS_STACK_LABELS = ["α-helix", "β-sheet", "Turn", "Bend", "Coil/loop"]
+SS_STACK_COLORS = ["#c0392b", "#f1c40f", "#e67e22", "#27ae60", "#bdc3c7"]
+
+
+def ss_to_percent_stacks(ss_src: pd.DataFrame):
+    """Convert per-frame DSSP fractions (0-1) to 0-100% stacks that sum to 100."""
+    t = ss_src["t"].to_numpy(dtype=float)
+    helix = np.asarray(ss_src["helix"], dtype=float) * 100.0
+    sheet = (np.asarray(ss_src["sheet"], dtype=float) * 100.0
+             if "sheet" in ss_src.columns else np.zeros_like(helix))
+    turn = np.asarray(ss_src["turn"], dtype=float) * 100.0
+    bend = np.asarray(ss_src["bend"], dtype=float) * 100.0
+    coil = (np.asarray(ss_src["coil"], dtype=float) * 100.0
+            if "coil" in ss_src.columns else np.zeros_like(helix))
+    # fold ppii / break / rounding remainder into coil so the stack is 0-100%
+    rest = 100.0 - helix - sheet - turn - bend - coil
+    coil = np.clip(coil + rest, 0.0, 100.0)
+    return t, helix, sheet, turn, bend, coil
 
 
 def detect_rmsd_phases(t, y, max_phases: int = 3, min_span_ns: float = 8.0):
@@ -278,11 +305,12 @@ def summarize_last_ns(df: Optional[pd.DataFrame], metric: str, system_label: str
     last_std = float(sub.std(ddof=1)) if len(sub) > 1 else 0.0
     min_val = float(df["y"].min())
     max_val = float(df["y"].max())
-    status = "STABLE (稳定收敛)"
+    status = "STABLE"
     if "rmsd" in metric.lower() and (
         "pep" in metric.lower() or "peptide" in system_label.lower()
     ):
-        status = "INDUCED_FIT_3PHASE (三段诱导契合: 初态/亚稳态/终态)"
+        # table-only; do not paint 3-stage RMSD as a feature on overview figures
+        status = "TABLE_ONLY (see peptide_rmsd_jump_diagnosis.txt; not on fig0)"
     return {
         "system": system_label,
         "metric": metric,
@@ -460,22 +488,18 @@ def main():
             "turn": ss_bins[cols[2]],
             "bend": ss_bins[cols[3]],
             "coil": ss_bins[cols[4]] if len(cols) > 4 else 0.0,
+            "sheet": ss_bins[cols[5]] if len(cols) > 5 else 0.0,
         })
 
     fig, axes4 = plt.subplots(1, 2, figsize=(12.2, 4.6), constrained_layout=True)
     ax, axb = axes4
 
     if ss_src is not None:
-        t = ss_src["t"].to_numpy()
-        helix = ss_src["helix"].to_numpy() * 100.0
-        sheet = (ss_src["sheet"].to_numpy() * 100.0) if "sheet" in ss_src.columns else np.zeros_like(helix)
-        turn = ss_src["turn"].to_numpy() * 100.0
-        bend = ss_src["bend"].to_numpy() * 100.0
-        coil = (ss_src["coil"].to_numpy() * 100.0) if "coil" in ss_src.columns else np.clip(100.0 - helix - sheet - turn - bend, 0, 100)
+        t, helix, sheet, turn, bend, coil = ss_to_percent_stacks(ss_src)
         ax.stackplot(
             t, helix, sheet, turn, bend, coil,
-            labels=["α-helix", "β-sheet", "Turn", "Bend", "Coil/loop"],
-            colors=["#c0392b", "#f1c40f", "#e67e22", "#27ae60", "#bdc3c7"],
+            labels=SS_STACK_LABELS,
+            colors=SS_STACK_COLORS,
             alpha=0.92,
         )
         ax.set_title(f"{ss_label} secondary structure (%)", fontsize=11, weight="bold")
@@ -488,12 +512,13 @@ def main():
 
         cutoff = max(float(t.max()) - 20.0, float(t.min()))
         last_mask = t >= cutoff
-        names = ["α-helix", "β-sheet", "Turn", "Bend", "Coil/loop"]
+        if not np.any(last_mask):
+            last_mask = np.ones_like(t, dtype=bool)
+        names = list(SS_STACK_LABELS)
         keys = [helix, sheet, turn, bend, coil]
         means = [float(np.mean(v[last_mask])) for v in keys]
         stds = [float(np.std(v[last_mask], ddof=1)) if last_mask.sum() > 1 else 0.0 for v in keys]
-        colors = ["#c0392b", "#f1c40f", "#e67e22", "#27ae60", "#bdc3c7"]
-        axb.bar(names, means, yerr=stds, color=colors, edgecolor="black",
+        axb.bar(names, means, yerr=stds, color=SS_STACK_COLORS, edgecolor="black",
                 linewidth=0.6, capsize=3, width=0.65)
         axb.set_title("Last 20 ns occupancy (mean ± SD)", fontsize=11, weight="bold")
         axb.set_ylabel("Content (%)", fontsize=10)
@@ -692,38 +717,38 @@ def main():
     axes[3].grid(alpha=0.3, linestyle="--")
     safe_legend(axes[3])
 
-    # Panel 5: Secondary Structure (per-frame; never label a complex as monomer)
+    # Panel 5: Complex DSSP as literature-style occupancy % (not 0-1 lines)
     if ss_src is not None:
-        axes[4].plot(ss_src["t"], ss_src["helix"], label="Helix", color="tab:red", linewidth=1.1)
-        if "sheet" in ss_src.columns:
-            axes[4].plot(ss_src["t"], ss_src["sheet"], label="Sheet", color="tab:purple", linewidth=1.1)
-        axes[4].plot(ss_src["t"], ss_src["turn"], label="Turn", color="tab:orange", linewidth=1.1)
-        axes[4].plot(ss_src["t"], ss_src["bend"], label="Bend", color="tab:green", linewidth=1.1)
-        if "coil" in ss_src.columns:
-            axes[4].plot(ss_src["t"], ss_src["coil"], label="Coil", color="0.45", linewidth=1.0)
-        axes[4].set_title("Secondary Structure Fractions", fontsize=11, weight="bold")
-        axes[4].set_ylim(-0.02, 1.05)
+        t0, h0, e0, u0, b0, c0 = ss_to_percent_stacks(ss_src)
+        axes[4].stackplot(
+            t0, h0, e0, u0, b0, c0,
+            labels=SS_STACK_LABELS,
+            colors=SS_STACK_COLORS,
+            alpha=0.92,
+        )
+        axes[4].set_title("Complex secondary structure (%)", fontsize=11, weight="bold")
+        axes[4].set_ylim(0, 100)
+        safe_legend(axes[4], loc="upper right", ncol=2, fontsize=7)
     else:
-        axes[4].text(0.5, 0.5, "DSSP missing\nrun_fix_dssp_peptide.ps1",
+        axes[4].text(0.5, 0.5, "DSSP missing — run replot_<system>.ps1",
                      ha="center", va="center", fontsize=9, color="tab:red")
-        axes[4].set_title("Secondary Structure Fractions", fontsize=11, weight="bold")
+        axes[4].set_title("Complex secondary structure (%)", fontsize=11, weight="bold")
     axes[4].set_xlabel("Time (ns)", fontsize=10)
-    axes[4].set_ylabel("Fraction", fontsize=10)
-    axes[4].grid(alpha=0.3, linestyle="--")
-    safe_legend(axes[4])
+    axes[4].set_ylabel("Content (%)", fontsize=10)
+    axes[4].grid(alpha=0.3, linestyle="--", axis="y")
 
-    # Panel 6: H-bonds
-    if hb_pep_ach is not None:
-        axes[5].plot(hb_pep_ach["x"], hb_pep_ach["y"], label="AChE-Peptide", color="tab:green", linewidth=1.2)
-        axes[5].set_title("Intermolecular H-Bonds", fontsize=11, weight="bold")
-    elif hb_intra is not None:
-        axes[5].plot(hb_intra["x"], hb_intra["y"], label="Intra-AChE H-Bonds", color="tab:olive", linewidth=1.2)
-        axes[5].set_title("AChE Hydrogen Bonds", fontsize=11, weight="bold")
-    else:
-        axes[5].text(0.5, 0.5, "H-Bonds (N/A for Monomer)", ha="center", va="center", fontsize=10, color="gray")
-        axes[5].set_title("Hydrogen Bonds", fontsize=11, weight="bold")
+    # Panel 6: Complex Rg (H-bonds stay in fig_hbonds, computed after Rg)
+    if rg_com is not None:
+        axes[5].plot(rg_com["x"], rg_com["y"], label="Complex Rg", color="tab:blue", linewidth=1.2)
+    if rg_ach is not None:
+        axes[5].plot(rg_ach["x"], rg_ach["y"], label="AChE Rg", color="tab:orange",
+                     linewidth=1.2, linestyle="--")
+    if rg_com is None and rg_ach is None:
+        axes[5].text(0.5, 0.5, "Rg missing — run 6_rg.sh",
+                     ha="center", va="center", fontsize=10, color="tab:red")
+    axes[5].set_title("Radius of Gyration", fontsize=11, weight="bold")
     axes[5].set_xlabel("Time (ns)", fontsize=10)
-    axes[5].set_ylabel("Count", fontsize=10)
+    axes[5].set_ylabel("Rg (nm)", fontsize=10)
     axes[5].grid(alpha=0.3, linestyle="--")
     safe_legend(axes[5])
 

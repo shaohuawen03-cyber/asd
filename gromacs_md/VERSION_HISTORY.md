@@ -66,7 +66,8 @@ If those two exist, that system is **v1.0**.
 | `v2.3-sci-comprehensive-tables-and-clean-rmsf` | `13cfebe` (same tree) | First auto-plot extras on this branch |
 | `v2.4-dssp-perframe-and-peptide-phases` | `496632d` | Peptide-only DSSP (too sparse) — do not use for Fig 4 |
 | **`v2.5-complex-dssp-rmsd-diagnosis`** | `fe0a38e` | Complex DSSP engine (keep this DSSP logic) |
-| **`v2.6-replot-dssp-percent-rg`** | latest | **Replot pack:** DSSP as **% stacked area + occupancy bars**; fig0 has **no peptide RMSD/RMSF**; **complex Rg** before H-bonds; four single replot scripts + one-click |
+| **`v2.6-replot-dssp-percent-rg`** | `6aa707a` / `fce03fa` | Replot pack (had a fig4 legend crash) |
+| **`v2.6.1-fix-plot-legend-fig0`** | latest | **Use this to draw.** Fixes fig4 `fontsize` crash; fig0-E stacked DSSP %; fig0-F complex Rg; smart replot (OnlyPlot if analysis already exists) |
 
 `v2.0-user-custom-pipeline` is the **other** protocol (`run_split_md_workflow.ps1`, `md_0_1.xtc`). It is **not** what you used for the four 100 ns jobs.
 
@@ -114,7 +115,8 @@ All-atom MD of AChE–peptide complexes was performed with GROMACS using AMBER99
 
 | Script | After MD finished? |
 |---|---|
-| `rerun_analysis_four.ps1` | **Yes** |
+| `replot_alllhrc.ps1` / `replot_fllhttr.ps1` / `replot_ylsllqr.ps1` / `replot_ache.ps1` | **Yes** |
+| `replot_all_four.ps1` / `rerun_analysis_four.ps1` | **Yes** |
 | `run_analysis.ps1 -System X` | **Yes** |
 | `run_pipeline_all.ps1 -OnlyAnalysis` | **Yes** |
 | `run_fix_dssp_peptide.ps1 -System X` | Yes (DSSP + diagnosis + replot only) |
@@ -150,7 +152,7 @@ cd F:\0wsh\asd
 git pull origin arena/019ff90e-asd
 cd gromacs_md\scripts
 
-# already finished:
+# already finished (analysis products exist -> scripts auto OnlyPlot, no 5001-frame redo):
 .\replot_alllhrc.ps1
 .\replot_fllhttr.ps1
 
@@ -170,4 +172,36 @@ cd gromacs_md\scripts
 | `replot_ache.ps1` | only ache monomer |
 | `replot_all_four.ps1` | all that have `md.xtc` + `md.gro` |
 
-Do **not** use `-OnlyPlot` the first time on fllhttr: it still needs `gmx gyrate` and complex DSSP.
+Switches (all five scripts): `-OnlyPlot` force figures only; `-Full` recompute every analysis.
+
+After the v2.6 fig4 crash you do **not** need `-Full`. Default sees `rmsd_complex_bb.xvg` + `ss_complex_frac.xvg` and only re-runs `plot_all.py`.
+
+---
+
+## 8. v2.6.1 — why the four replot scripts "failed"
+
+The four wrappers themselves were fine (they just call `run_analysis.ps1`).  
+Analysis for the finished systems **did finish** (H-bonds / contacts / bridging waters all wrote files).  
+`plot_all.py` then died at Figure 4:
+
+```
+TypeError: legend() got multiple values for keyword argument 'fontsize'
+  safe_legend(ax, loc="upper right", ncol=2, fontsize=8)
+  -> ax.legend(frameon=False, fontsize=9, **kwargs)
+```
+
+Also in that same v2.6 tree (docs said one thing, code did another):
+
+- fig0-E was still 0–1 **fraction line** plots, not literature stacked %
+- fig0-F was still H-bonds, not complex **Rg**
+
+v2.6.1:
+
+1. `safe_legend` uses `setdefault("fontsize", 9)` so callers can pass `fontsize=`
+2. fig0-E = stacked helix/sheet/turn/bend/coil **0–100%**; fig0-F = complex/AChE **Rg**
+3. H-bonds stay in `fig_hbonds` (analysis order still DSSP → Rg → H-bonds)
+4. `replot_*.ps1` share `replot_common.ps1`: skip if `mdrun` still running; OnlyPlot if products exist
+5. Prefer v1.0 `md.tpr` / `md.xtc` over `md_0_1.*`
+6. Smoke test: `scripts/analysis/test_plot_all_smoke.py` (reproduces the legend crash and checks fig0)
+
+Do **not** stop the four `gmx mdrun` jobs. Do **not** re-run MD launchers.
