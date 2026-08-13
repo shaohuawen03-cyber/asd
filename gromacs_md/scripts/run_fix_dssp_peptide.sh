@@ -32,10 +32,13 @@ fi
 echo "[1/3] 肽 DSSP 逐帧重建 ..."
 bash "../scripts/analysis/4_secondary_structure.sh" || true
 
-echo "[2/3] 肽 RMSD 三段相位 ..."
+echo "[2/4] Peptide RMSD jump diagnosis ..."
+"${PY}" "../scripts/analysis/diagnose_peptide_rmsd.py" -d . || true
+
+echo "[3/4] Optional phase table ..."
 "${PY}" "../scripts/analysis/analyze_peptide_phases.py" -d . || true
 
-echo "[3/3] 重绘出版图 ..."
+echo "[4/4] Replot figures ..."
 "${PY}" "../scripts/analysis/plot_all.py" --dir . --out ./figures
 
 echo "========== 完成: ${WORK}/figures/ =========="
