@@ -107,7 +107,7 @@ if ($code -ne 0 -and $null -ne $code) {
 Write-Host "[OK] $System -> md_$System\figures\" -ForegroundColor Green
 Write-Host "Check:"
 Write-Host "  ss_complex_summary.txt     (~530 residues, 0-100 ns, helix ~30%+)"
-Write-Host "  figures\fig4_secondary_structure.png   stacked DSSP % + last-20 ns bars"
-Write-Host "  figures\fig0_summary_all.png           A RMSD  B AChE-RMSF  C RDF  D SASA  E DSSP%  F Rg"
-Write-Host "  (no peptide RMSD/RMSF on fig0; H-bonds are fig_hbonds)"
+Write-Host "  figures\fig4_secondary_structure.png   DSSP % lines + occupancy bars + heatmap + peptide"
+Write-Host "  figures\fig_peptide_rmsd_rmsf.png      peptide RMSD + RMSF (not on overview)"
+Write-Host "  figures\fig0_summary_all.png           A RMSD B AChE-RMSF C RDF D SASA E DSSP-bars F Rg G H-bonds H DSSP-lines"
 exit 0

@@ -67,7 +67,8 @@ If those two exist, that system is **v1.0**.
 | `v2.4-dssp-perframe-and-peptide-phases` | `496632d` | Peptide-only DSSP (too sparse) — do not use for Fig 4 |
 | **`v2.5-complex-dssp-rmsd-diagnosis`** | `fe0a38e` | Complex DSSP engine (keep this DSSP logic) |
 | **`v2.6-replot-dssp-percent-rg`** | `6aa707a` / `fce03fa` | Replot pack (had a fig4 legend crash) |
-| **`v2.6.1-fix-plot-legend-fig0`** | latest | **Use this to draw.** Fixes fig4 `fontsize` crash; fig0-E stacked DSSP %; fig0-F complex Rg; smart replot (OnlyPlot if analysis already exists) |
+| **`v2.6.1-fix-plot-legend-fig0`** | `5bfbd47` | Fixed fig4 `fontsize` crash; first fig0 with stacked DSSP + Rg (H-bonds were dropped from overview) |
+| **`v2.6.2-fig0-hbonds-dssp-peptide`** | latest | **Use this to draw.** fig0 is 2×4 and **H-bonds are back** (after Rg). DSSP = occupancy bars + % lines + residue×time map (the old full-complex stack looked flat). Peptide RMSD/RMSF have their own figure. |
 
 `v2.0-user-custom-pipeline` is the **other** protocol (`run_split_md_workflow.ps1`, `md_0_1.xtc`). It is **not** what you used for the four 100 ns jobs.
 
@@ -135,7 +136,7 @@ git log --oneline --decorate -8
 ```
 
 `v1.0-gromacs-native-pipeline` points at `13cfebe` (MD protocol).  
-**`v2.6-replot-dssp-percent-rg` (HEAD)** is what you use to **draw** the four systems.
+**`v2.6.2-fig0-hbonds-dssp-peptide` (HEAD)** is what you use to **draw** the four systems.
 
 ---
 
@@ -205,3 +206,24 @@ v2.6.1:
 6. Smoke test: `scripts/analysis/test_plot_all_smoke.py` (reproduces the legend crash and checks fig0)
 
 Do **not** stop the four `gmx mdrun` jobs. Do **not** re-run MD launchers.
+
+---
+
+## 9. v2.6.2 — H-bonds back on overview; DSSP figure; peptide RMSD/RMSF standalone
+
+Your fig0 after v2.6.1 was missing H-bonds because v2.6.1 **replaced** panel F (H-bonds) with Rg.  
+“加在氢键分析前面” means **insert Rg before H-bonds**, not delete H-bonds.
+
+DSSP numbers were already correct (complex helix ~34%, L~536). The stacked 0–100% panel looks “wrong” because AChE secondary structure is stable (±1%). That is expected, not a parser bug. Fig 4 now shows occupancy bars + a residue×time map, which is what most MD papers use.
+
+Peptide RMSD/RMSF are written to `fig_peptide_rmsd_rmsf` (self-fit RMSD, optional ligand-fit line, per-residue RMSF). Not drawn on fig0. No 3-stage labels painted on the curve.
+
+```powershell
+cd F:\0wsh\asd
+git pull origin arena/019ff90e-asd
+cd gromacs_md\scripts
+.\replot_alllhrc.ps1
+.\replot_fllhttr.ps1
+```
+
+Check: `figures\fig0_summary_all.png` (G = H-bonds), `figures\fig4_secondary_structure.png`, `figures\fig_peptide_rmsd_rmsf.png`.

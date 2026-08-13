@@ -80,6 +80,16 @@ def _make_dummy_workdir(root: Path) -> Path:
         fh.write("# time_ns helix turn bend sheet coil ppii break\n")
         for t in t_ns:
             fh.write(f"{t:.4f} 0.3428 0.1231 0.1284 0.1698 0.2091 0.0249 0.0019\n")
+    with (root / "ss_pep_frac.xvg").open("w", encoding="utf-8") as fh:
+        fh.write("# time_ns helix turn bend sheet coil ppii break\n")
+        for t in t_ns:
+            fh.write(f"{t:.4f} 0.0000 0.1881 0.0000 0.0000 0.8052 0.0067 0.0000\n")
+    # short fake complex DSSP strings (helix-rich head, coil tail)
+    with (root / "ss_complex_perres.dat").open("w", encoding="utf-8") as fh:
+        fh.write("# time_ns ss_string\n")
+        ss = ("H" * 18) + ("E" * 8) + ("T" * 6) + ("S" * 6) + ("~" * 12)
+        for t in t_ns:
+            fh.write(f"{t:.4f} {ss}\n")
 
     (root / "inter_contacts.csv").write_text(
         "residue,contacts\nA1,12.1\nL2,8.4\nL3,6.2\n", encoding="utf-8"
@@ -108,6 +118,8 @@ def test_plot_all_does_not_crash_and_writes_fig0_rg_and_dssp_percent():
 
         needed = [
             "fig1_rmsd_rmsf.png",
+            "fig_peptide_rmsd_rmsf.png",
+            "fig_peptide_rmsd_rmsf.svg",
             "fig2_rdf.png",
             "fig3_sasa.png",
             "fig4_secondary_structure.png",
@@ -124,14 +136,18 @@ def test_plot_all_does_not_crash_and_writes_fig0_rg_and_dssp_percent():
 
         svg0 = (out / "fig0_summary_all.svg").read_text(encoding="utf-8", errors="ignore")
         svg4 = (out / "fig4_secondary_structure.svg").read_text(encoding="utf-8", errors="ignore")
+        svg_pep = (out / "fig_peptide_rmsd_rmsf.svg").read_text(encoding="utf-8", errors="ignore")
         assert "Radius of Gyration" in svg0
-        assert "Complex secondary structure" in svg0
-        assert "Content (%)" in svg0
+        assert "Intermolecular H-Bonds" in svg0
+        assert "DSSP occupancy" in svg0
+        assert "Complex DSSP content" in svg0
         assert "Secondary Structure Fractions" not in svg0
-        assert "Intermolecular H-Bonds" not in svg0
-        assert "Peptide BB" not in svg0
-        assert "Content (%)" in svg4
+        assert "Peptide BB (self-fit)" not in svg0
+        assert "Peptide Backbone RMSD" in svg_pep
+        assert "Peptide Backbone RMSF" in svg_pep
         assert "Last 20 ns occupancy" in svg4
+        assert "Complex DSSP map" in svg4
+        assert "Peptide DSSP content" in svg4
 
         sci = (out / "SCI_Table1_Comprehensive_MD_Metrics.csv").read_text(encoding="utf-8")
         assert "8_Radius_of_Gyration_Rg_(nm)" in sci

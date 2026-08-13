@@ -6,7 +6,7 @@
 设计说明:
   - 采用可编辑文本矢量图规范 (svg.fonttype = "none", pdf.fonttype = 42)
   - 自动转换时间单位 (GROMACS xvg 默认 ps -> 缩放 0.001 -> ns)
-  - 批量生成图 1 至图 6 全部单图，以及一张 2x3 综合汇总分析图 (fig0_summary_all)
+  - 批量生成图 1 至图 6、肽 RMSD/RMSF 单图，以及一张 2x4 综合汇总图 (fig0_summary_all)
   - 导出统计汇总表格 summary_metrics.csv 及宽表 summary_metrics_wide.csv
 
 用法:
@@ -23,6 +23,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.colors import ListedColormap
 
 # 矢量图中文本可编辑，符合出版要求
 mpl.rcParams["svg.fonttype"] = "none"
@@ -121,6 +122,73 @@ def ss_to_percent_stacks(ss_src: pd.DataFrame):
     rest = 100.0 - helix - sheet - turn - bend - coil
     coil = np.clip(coil + rest, 0.0, 100.0)
     return t, helix, sheet, turn, bend, coil
+
+
+def ss_last_window(t, arrays, last_ns=20.0):
+    cutoff = max(float(np.max(t)) - last_ns, float(np.min(t)))
+    mask = np.asarray(t) >= cutoff
+    if not np.any(mask):
+        mask = np.ones(len(t), dtype=bool)
+    means = [float(np.mean(a[mask])) for a in arrays]
+    stds = [float(np.std(a[mask], ddof=1)) if mask.sum() > 1 else 0.0 for a in arrays]
+    return mask, means, stds
+
+
+def draw_ss_lines(ax, t, stacks, fontsize=8):
+    """Literature-style % vs time (lines). Better than a flat stack for a stable protein."""
+    for y, lab, col in zip(stacks, SS_STACK_LABELS, SS_STACK_COLORS):
+        ax.plot(t, y, label=lab, color=col, linewidth=1.15)
+    ax.set_ylim(0, 100)
+    ax.set_ylabel("Content (%)")
+    ax.set_xlabel("Time (ns)")
+    ax.grid(alpha=0.25, linestyle="--")
+    safe_legend(ax, loc="upper right", ncol=2, fontsize=fontsize)
+
+
+def draw_ss_bars(ax, means, stds):
+    """Occupancy bars (mean ± SD). This is the usual DSSP percentage panel in papers."""
+    ax.bar(SS_STACK_LABELS, means, yerr=stds, color=SS_STACK_COLORS,
+           edgecolor="black", linewidth=0.6, capsize=3, width=0.65)
+    ax.set_ylabel("Content (%)")
+    ymax = max(100.0, max(means) + max(stds) + 8)
+    ax.set_ylim(0, ymax)
+    ax.tick_params(axis="x", rotation=20)
+    ax.grid(axis="y", alpha=0.25, linestyle="--")
+    for i, (m, s) in enumerate(zip(means, stds)):
+        ax.text(i, m + s + 1.5, f"{m:.1f}", ha="center", va="bottom", fontsize=8)
+
+
+def draw_ss_heatmap(ax, times, seqs):
+    """Residue × time DSSP map (classic MD DSSP figure)."""
+    if times is None or seqs is None or len(seqs) < 5:
+        ax.text(0.5, 0.5, "DSSP per-residue missing", ha="center", va="center", color="tab:red")
+        ax.set_axis_off()
+        return
+    step = max(1, len(seqs) // 500)
+    seqs_d = seqs[::step]
+    t_d = np.asarray(times, dtype=float)[::step]
+    code_to_int = {
+        "H": 4, "G": 4, "I": 4,
+        "E": 3, "B": 3,
+        "T": 2,
+        "S": 1, "P": 1,
+        "C": 0, "~": 0, "-": 0, " ": 0, "=": 0,
+    }
+    nres = max(len(s) for s in seqs_d)
+    mat = np.zeros((nres, len(seqs_d)))
+    for i, s in enumerate(seqs_d):
+        for j, c in enumerate(s[:nres]):
+            mat[j, i] = code_to_int.get(c, 0)
+    cmap = ListedColormap(["#bdc3c7", "#27ae60", "#e67e22", "#f1c40f", "#c0392b"])
+    im = ax.imshow(
+        mat, aspect="auto", origin="lower", interpolation="nearest",
+        cmap=cmap, vmin=-0.5, vmax=4.5, rasterized=True,
+        extent=[float(t_d[0]), float(t_d[-1]), 0.5, nres + 0.5],
+    )
+    ax.set_xlabel("Time (ns)")
+    ax.set_ylabel("Residue")
+    cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04, ticks=[0, 1, 2, 3, 4])
+    cbar.ax.set_yticklabels(["Coil", "Bend", "Turn", "Sheet", "Helix"], fontsize=7)
 
 
 def detect_rmsd_phases(t, y, max_phases: int = 3, min_span_ns: float = 8.0):
@@ -409,6 +477,42 @@ def main():
     plt.close(fig)
 
     # --------------------------------------------------------
+    # Peptide RMSD / RMSF — standalone (NOT on overview)
+    # --------------------------------------------------------
+    print("\n>> [1b] Generating peptide-only RMSD / RMSF ...")
+    fig, axes_p = plt.subplots(1, 2, figsize=(12, 4.8), constrained_layout=True)
+    axp1, axp2 = axes_p
+    if rmsd_pep is not None:
+        axp1.plot(rmsd_pep["x"], rmsd_pep["y"], label="Peptide BB (self-fit)",
+                  linewidth=1.2, color="tab:green")
+    if rmsd_lig is not None:
+        axp1.plot(rmsd_lig["x"], rmsd_lig["y"], label="Peptide fit to AChE",
+                  linewidth=1.1, color="tab:purple", linestyle="--")
+    if rmsd_pep is None and rmsd_lig is None:
+        axp1.text(0.5, 0.5, "Peptide RMSD N/A (monomer)", ha="center", va="center", color="gray")
+    axp1.set_title("Peptide Backbone RMSD", fontsize=11, weight="bold")
+    axp1.set_xlabel("Time (ns)", fontsize=10)
+    axp1.set_ylabel("RMSD (nm)", fontsize=10)
+    axp1.grid(alpha=0.3, linestyle="--")
+    safe_legend(axp1)
+    add_panel_label(axp1, "A")
+
+    if rmsf_pep is not None:
+        axp2.plot(rmsf_pep["x"], rmsf_pep["y"], label="Peptide BB",
+                  linewidth=1.2, color="tab:green", marker="o", markersize=4)
+        axp2.set_title("Peptide Backbone RMSF", fontsize=11, weight="bold")
+    else:
+        axp2.text(0.5, 0.5, "Peptide RMSF N/A (monomer)", ha="center", va="center", color="gray")
+        axp2.set_title("Peptide Backbone RMSF", fontsize=11, weight="bold")
+    axp2.set_xlabel("Residue Number", fontsize=10)
+    axp2.set_ylabel("RMSF (nm)", fontsize=10)
+    axp2.grid(alpha=0.3, linestyle="--")
+    safe_legend(axp2)
+    add_panel_label(axp2, "B")
+    save_all_formats(fig, fig_dir / "fig_peptide_rmsd_rmsf")
+    plt.close(fig)
+
+    # --------------------------------------------------------
     # 图 2: 径向分布函数 RDF (论文 3.1 节 / 图2)
     # --------------------------------------------------------
     print("\n>> [2/8] Generating Figure 2: Radial Distribution Function (RDF) ...")
@@ -491,41 +595,30 @@ def main():
             "sheet": ss_bins[cols[5]] if len(cols) > 5 else 0.0,
         })
 
-    fig, axes4 = plt.subplots(1, 2, figsize=(12.2, 4.6), constrained_layout=True)
-    ax, axb = axes4
+    ss_pep_frac = read_ss_frac(work_dir / "ss_pep_frac.xvg")
+    ss_pep_src = None
+    if ss_pep_frac is not None and len(ss_pep_frac) >= 5 and ss_system != "Peptide":
+        ss_pep_src = ss_pep_frac.rename(columns={"time_ns": "t"})
+    pep_times, pep_seqs = read_ss_perres(work_dir / "ss_pep_perres.dat")
+
+    fig, axes4 = plt.subplots(2, 2, figsize=(12.6, 8.6), constrained_layout=True)
+    ax, axb, axh, axp = axes4[0, 0], axes4[0, 1], axes4[1, 0], axes4[1, 1]
 
     if ss_src is not None:
         t, helix, sheet, turn, bend, coil = ss_to_percent_stacks(ss_src)
-        ax.stackplot(
-            t, helix, sheet, turn, bend, coil,
-            labels=SS_STACK_LABELS,
-            colors=SS_STACK_COLORS,
-            alpha=0.92,
-        )
-        ax.set_title(f"{ss_label} secondary structure (%)", fontsize=11, weight="bold")
-        ax.set_xlabel("Time (ns)", fontsize=10)
-        ax.set_ylabel("Content (%)", fontsize=10)
-        ax.set_ylim(0, 100)
-        ax.grid(alpha=0.25, linestyle="--", axis="y")
-        safe_legend(ax, loc="upper right", ncol=2, fontsize=8)
+        stacks = [helix, sheet, turn, bend, coil]
+        draw_ss_lines(ax, t, stacks)
+        ax.set_title(f"{ss_label} DSSP content (%)", fontsize=11, weight="bold")
         add_panel_label(ax, "A")
 
-        cutoff = max(float(t.max()) - 20.0, float(t.min()))
-        last_mask = t >= cutoff
-        if not np.any(last_mask):
-            last_mask = np.ones_like(t, dtype=bool)
-        names = list(SS_STACK_LABELS)
-        keys = [helix, sheet, turn, bend, coil]
-        means = [float(np.mean(v[last_mask])) for v in keys]
-        stds = [float(np.std(v[last_mask], ddof=1)) if last_mask.sum() > 1 else 0.0 for v in keys]
-        axb.bar(names, means, yerr=stds, color=SS_STACK_COLORS, edgecolor="black",
-                linewidth=0.6, capsize=3, width=0.65)
+        last_mask, means, stds = ss_last_window(t, stacks, last_ns=20.0)
+        draw_ss_bars(axb, means, stds)
         axb.set_title("Last 20 ns occupancy (mean ± SD)", fontsize=11, weight="bold")
-        axb.set_ylabel("Content (%)", fontsize=10)
-        axb.set_ylim(0, max(100.0, max(means) + max(stds) + 5))
-        axb.tick_params(axis="x", rotation=20)
-        axb.grid(axis="y", alpha=0.25, linestyle="--")
         add_panel_label(axb, "B")
+
+        draw_ss_heatmap(axh, ss_times, ss_seqs)
+        axh.set_title("Complex DSSP map (residue × time)", fontsize=11, weight="bold")
+        add_panel_label(axh, "C")
 
         n_ss = int(len(ss_src))
         metric_map = (
@@ -554,6 +647,36 @@ def main():
                 ha="center", va="center", fontsize=10, color="tab:red")
         ax.set_title("Secondary structure content (%)", fontsize=11, weight="bold")
         axb.axis("off")
+        axh.axis("off")
+
+    if ss_pep_src is not None:
+        tp, hp, ep, up, bp, cp = ss_to_percent_stacks(ss_pep_src)
+        draw_ss_lines(axp, tp, [hp, ep, up, bp, cp], fontsize=7)
+        axp.set_title("Peptide DSSP content (%)  [supplement]", fontsize=11, weight="bold")
+        add_panel_label(axp, "D")
+        _m, pmeans, pstds = ss_last_window(tp, [hp, ep, up, bp, cp], last_ns=20.0)
+        for metric, arr in (
+            ("6p_Peptide_DSSP_Helix_(%)", hp),
+            ("6p_Peptide_DSSP_Sheet_(%)", ep),
+            ("6p_Peptide_DSSP_Coil_(%)", cp),
+        ):
+            last = arr[_m]
+            summary_rows.append({
+                "system": "Peptide",
+                "metric": metric,
+                "mean": float(np.mean(last)),
+                "std": float(np.std(last, ddof=1)) if len(last) > 1 else 0.0,
+                "full_traj_mean": float(np.mean(arr)),
+                "full_traj_std": float(np.std(arr, ddof=1)) if len(arr) > 1 else 0.0,
+                "min": float(np.min(arr)),
+                "max": float(np.max(arr)),
+                "status": "PEPTIDE_DSSP_SUPPLEMENT",
+                "n_points": int(len(tp)),
+            })
+    else:
+        axp.text(0.5, 0.5, "Peptide DSSP N/A", ha="center", va="center", color="gray")
+        axp.set_title("Peptide DSSP content (%)  [supplement]", fontsize=11, weight="bold")
+        add_panel_label(axp, "D")
 
     save_all_formats(fig, fig_dir / "fig4_secondary_structure")
     plt.close(fig)
@@ -654,7 +777,7 @@ def main():
     # --------------------------------------------------------
     # 图 0: 综合 2x3 汇总图 (参照你的多幅同版画图规范)
     # --------------------------------------------------------
-    print("\n>> [8/8] Generating 2x3 Master Combined Summary Figure (fig0_summary_all) ...")
+    print("\n>> [8/8] Generating 2x4 Master Combined Summary Figure (fig0_summary_all) ...")
     rg_com = read_xvg(work_dir / "gyrate_complex.xvg", x_scale=0.001)
     rg_ach = read_xvg(work_dir / "gyrate_ache.xvg", x_scale=0.001)
     if rg_com is not None:
@@ -666,10 +789,10 @@ def main():
         if s:
             summary_rows.append(s)
 
-    fig, axes = plt.subplots(2, 3, figsize=(16, 8.5), constrained_layout=True)
+    fig, axes = plt.subplots(2, 4, figsize=(18.4, 8.4), constrained_layout=True)
     axes = axes.flatten()
 
-    # Panel 1: RMSD — complex / AChE only
+    # A: RMSD — complex / AChE only
     if rmsd_com is not None:
         axes[0].plot(rmsd_com["x"], rmsd_com["y"], label="Complex BB", color="tab:blue", linewidth=1.2)
     if rmsd_ach is not None:
@@ -680,7 +803,7 @@ def main():
     axes[0].grid(alpha=0.3, linestyle="--")
     safe_legend(axes[0])
 
-    # Panel 2: AChE RMSF only
+    # B: AChE RMSF only
     if rmsf_ach is not None:
         axes[1].plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", color="tab:orange", linewidth=1.2)
         axes[1].set_title("AChE Backbone Cα RMSF", fontsize=11, weight="bold")
@@ -694,7 +817,7 @@ def main():
     axes[1].grid(alpha=0.3, linestyle="--")
     safe_legend(axes[1])
 
-    # Panel 3: RDF
+    # C: RDF
     if rdf_main is not None:
         axes[2].plot(rdf_main["x"], rdf_main["y"], label="Total RDF", color="tab:purple", linewidth=1.5)
         axes[2].set_title("Peptide-AChE COM RDF", fontsize=11, weight="bold")
@@ -706,7 +829,7 @@ def main():
     axes[2].grid(alpha=0.3, linestyle="--")
     safe_legend(axes[2])
 
-    # Panel 4: SASA
+    # D: SASA
     if sasa_com is not None:
         axes[3].plot(sasa_com["x"], sasa_com["y"], label="Complex SASA", color="tab:blue", linewidth=1.2)
     elif sasa_ach is not None:
@@ -717,27 +840,18 @@ def main():
     axes[3].grid(alpha=0.3, linestyle="--")
     safe_legend(axes[3])
 
-    # Panel 5: Complex DSSP as literature-style occupancy % (not 0-1 lines)
+    # E: DSSP occupancy bars (literature % panel; stack of a 530-res protein looks flat)
     if ss_src is not None:
         t0, h0, e0, u0, b0, c0 = ss_to_percent_stacks(ss_src)
-        axes[4].stackplot(
-            t0, h0, e0, u0, b0, c0,
-            labels=SS_STACK_LABELS,
-            colors=SS_STACK_COLORS,
-            alpha=0.92,
-        )
-        axes[4].set_title("Complex secondary structure (%)", fontsize=11, weight="bold")
-        axes[4].set_ylim(0, 100)
-        safe_legend(axes[4], loc="upper right", ncol=2, fontsize=7)
+        _mask, means0, stds0 = ss_last_window(t0, [h0, e0, u0, b0, c0], last_ns=20.0)
+        draw_ss_bars(axes[4], means0, stds0)
+        axes[4].set_title("DSSP occupancy (last 20 ns)", fontsize=11, weight="bold")
     else:
         axes[4].text(0.5, 0.5, "DSSP missing — run replot_<system>.ps1",
                      ha="center", va="center", fontsize=9, color="tab:red")
-        axes[4].set_title("Complex secondary structure (%)", fontsize=11, weight="bold")
-    axes[4].set_xlabel("Time (ns)", fontsize=10)
-    axes[4].set_ylabel("Content (%)", fontsize=10)
-    axes[4].grid(alpha=0.3, linestyle="--", axis="y")
+        axes[4].set_title("DSSP occupancy (last 20 ns)", fontsize=11, weight="bold")
 
-    # Panel 6: Complex Rg (H-bonds stay in fig_hbonds, computed after Rg)
+    # F: Complex Rg (before H-bonds)
     if rg_com is not None:
         axes[5].plot(rg_com["x"], rg_com["y"], label="Complex Rg", color="tab:blue", linewidth=1.2)
     if rg_ach is not None:
@@ -752,7 +866,37 @@ def main():
     axes[5].grid(alpha=0.3, linestyle="--")
     safe_legend(axes[5])
 
-    for idx, (ax, label) in enumerate(zip(axes, ["A", "B", "C", "D", "E", "F"])):
+    # G: H-bonds (kept on overview; detailed curve also in fig_hbonds)
+    if hb_pep_ach is not None:
+        axes[6].plot(hb_pep_ach["x"], hb_pep_ach["y"], label="AChE-Peptide", color="tab:green", linewidth=1.2)
+        axes[6].set_title("Intermolecular H-Bonds", fontsize=11, weight="bold")
+    elif hb_ach_intra is not None:
+        axes[6].plot(hb_ach_intra["x"], hb_ach_intra["y"], label="Intra-AChE", color="tab:orange", linewidth=1.2)
+        axes[6].set_title("AChE Hydrogen Bonds", fontsize=11, weight="bold")
+    elif hb_intra is not None:
+        axes[6].plot(hb_intra["x"], hb_intra["y"], label="Intra-Peptide", color="tab:olive", linewidth=1.2)
+        axes[6].set_title("Hydrogen Bonds", fontsize=11, weight="bold")
+    else:
+        axes[6].text(0.5, 0.5, "H-Bonds (N/A for Monomer)", ha="center", va="center", fontsize=10, color="gray")
+        axes[6].set_title("Hydrogen Bonds", fontsize=11, weight="bold")
+    if hb_intra is not None and hb_pep_ach is not None:
+        axes[6].plot(hb_intra["x"], hb_intra["y"], label="Intra-Peptide",
+                     color="tab:olive", linewidth=1.0, linestyle="--")
+    axes[6].set_xlabel("Time (ns)", fontsize=10)
+    axes[6].set_ylabel("Count", fontsize=10)
+    axes[6].grid(alpha=0.3, linestyle="--")
+    safe_legend(axes[6])
+
+    # H: Complex DSSP % vs time (lines, so ±1% is visible)
+    if ss_src is not None:
+        t0, h0, e0, u0, b0, c0 = ss_to_percent_stacks(ss_src)
+        draw_ss_lines(axes[7], t0, [h0, e0, u0, b0, c0], fontsize=7)
+        axes[7].set_title("Complex DSSP content (%)", fontsize=11, weight="bold")
+    else:
+        axes[7].text(0.5, 0.5, "DSSP missing", ha="center", va="center", color="tab:red")
+        axes[7].set_title("Complex DSSP content (%)", fontsize=11, weight="bold")
+
+    for idx, (ax, label) in enumerate(zip(axes, ["A", "B", "C", "D", "E", "F", "G", "H"])):
         add_panel_label(ax, label)
 
     fig.suptitle("AChE-Aβ Complex Molecular Dynamics Summary", fontsize=14, weight="bold")

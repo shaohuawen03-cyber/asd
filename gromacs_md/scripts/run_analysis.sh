@@ -121,12 +121,13 @@ else
     echo "[3/8] 计算复合物 SASA (3_sasa.sh) ..."
     bash "${SCRIPTS_DIR}/3_sasa.sh"
 
-    # 4. 二级结构分析 DSSP (论文 3.2 图4)
-    echo "[4/8] 计算 Aβ 肽二级结构演变 (4_secondary_structure.sh) ..."
+    echo "[4/9] Complex DSSP (4_secondary_structure.sh) ..."
     bash "${SCRIPTS_DIR}/4_secondary_structure.sh"
 
-    # 5. 氢键数量统计 (论文 3.3)
-    echo "[5/8] 统计间/内氢键分布 (5_hbond.sh) ..."
+    echo "[5/9] Radius of gyration Rg (6_rg.sh) ..."
+    bash "${SCRIPTS_DIR}/6_rg.sh"
+
+    echo "[6/9] Inter/Intra hydrogen bonds (5_hbond.sh) ..."
     bash "${SCRIPTS_DIR}/5_hbond.sh"
 
     # 6. 非天然接触统计 (论文 3.3 图5/表1)
@@ -147,9 +148,10 @@ echo "生成分析图表一览 (保存在 ./figures/ 下):"
 echo "  - fig1_rmsd_rmsf.{svg,png,pdf}            => 图 1 (RMSD / RMSF)"
 echo "  - fig2_rdf.{svg,png,pdf}                  => 图 2 (径向分布函数 RDF)"
 echo "  - fig3_sasa.{svg,png,pdf}                 => 图 3 (溶剂可及表面积 SASA)"
-echo "  - fig4_secondary_structure.{svg,png,pdf}  => Fig 4 (DSSP stacked %)"
+echo "  - fig_peptide_rmsd_rmsf.{svg,png,pdf}     => Peptide RMSD + RMSF (standalone)"
+echo "  - fig4_secondary_structure.{svg,png,pdf}  => DSSP % lines + occupancy bars + heatmap + peptide"
 echo "  - fig5_contacts.{svg,png,pdf}             => Fig 5 (contacts)"
 echo "  - fig6_bridging_waters.{svg,png,pdf}      => Fig 6 (bridging waters)"
 echo "  - fig_hbonds.{svg,png,pdf}                => H-bonds"
-echo "  - fig0_summary_all.{svg,png,pdf}          => 2x3: RMSD / AChE-RMSF / RDF / SASA / DSSP% / Rg"
+echo "  - fig0_summary_all.{svg,png,pdf}          => 2x4: RMSD RMSF RDF SASA | DSSP-bars Rg H-bonds DSSP-lines"
 echo "  - summary_metrics.csv & wide.csv          => 统计指标汇总表"

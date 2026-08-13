@@ -114,14 +114,15 @@ try {
 
     Write-Host "========== System $System Analysis Finished Successfully! ==========" -ForegroundColor Green
     Write-Host "Generated Figures in ./figures/ :"
-    Write-Host "  - fig1_rmsd_rmsf.{svg,png,pdf}            => Figure 1 (RMSD / RMSF)"
+    Write-Host "  - fig1_rmsd_rmsf.{svg,png,pdf}            => Complex/AChE RMSD + AChE RMSF"
+    Write-Host "  - fig_peptide_rmsd_rmsf.{svg,png,pdf}     => Peptide RMSD + RMSF (standalone)"
     Write-Host "  - fig2_rdf.{svg,png,pdf}                  => Figure 2 (RDF)"
     Write-Host "  - fig3_sasa.{svg,png,pdf}                 => Figure 3 (SASA)"
-    Write-Host "  - fig4_secondary_structure.{svg,png,pdf}  => Figure 4 (DSSP stacked %)"
+    Write-Host "  - fig4_secondary_structure.{svg,png,pdf}  => DSSP % lines + occupancy bars + heatmap + peptide"
     Write-Host "  - fig5_contacts.{svg,png,pdf}             => Figure 5 (Contacts)"
     Write-Host "  - fig6_bridging_waters.{svg,png,pdf}      => Figure 6 (Bridging Waters)"
-    Write-Host "  - fig_hbonds.{svg,png,pdf}                => Paper 3.3 (H-Bonds)"
-    Write-Host "  - fig0_summary_all.{svg,png,pdf}          => 2x3: RMSD / AChE-RMSF / RDF / SASA / DSSP% / Rg"
+    Write-Host "  - fig_hbonds.{svg,png,pdf}                => H-Bonds (standalone)"
+    Write-Host "  - fig0_summary_all.{svg,png,pdf}          => 2x4: RMSD RMSF RDF SASA | DSSP% Rg H-bonds DSSP-lines"
     Write-Host "  - summary_metrics.csv & wide.csv          => Summary Tables"
 } finally {
     Pop-Location
