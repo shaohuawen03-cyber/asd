@@ -140,6 +140,11 @@ TESTING=1 ./run_all.sh ylsllqr
 
 # 正式生产模式
 .\run_analysis.ps1 -System alllhrc
+
+# ★ 只重跑有问题的部分 (DSSP 逐帧 + 肽 RMSD 三段相位 + 出图)
+#    不重跑 RDF/SASA/氢键/接触, 也不中断后台 mdrun
+.\run_fix_dssp_peptide.ps1 -System alllhrc
+# 等价:  .\run_analysis.ps1 -System alllhrc -OnlyDsspPeptide
 ```
 
 **方法二：WSL / Git Bash 运行（`.sh` 脚本已自动支持 WSL 调用 Windows python.exe 时的路径自动转换）**

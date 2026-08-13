@@ -4,13 +4,15 @@
 # Usage:  .\run_analysis.ps1 -System alllhrc
 #         .\run_analysis.ps1 -System alllhrc -Testing
 #         .\run_analysis.ps1 -System alllhrc -OnlyPlot
+#         .\run_analysis.ps1 -System alllhrc -OnlyDsspPeptide   # 只修 DSSP+肽三段, 不重跑其它分析
 # ============================================================
 param(
     [Parameter(Mandatory=$true)]
     [string]$System,
 
     [switch]$Testing,
-    [switch]$OnlyPlot
+    [switch]$OnlyPlot,
+    [switch]$OnlyDsspPeptide
 )
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -51,7 +53,17 @@ try {
     Write-Host "========== Starting Paper Analysis for System: $System ========" -ForegroundColor Green
     Write-Host ">> Using Python Interpreter: $PY" -ForegroundColor Green
 
-    if (-not $OnlyPlot) {
+    if ($OnlyDsspPeptide) {
+        Write-Host ">> [OnlyDsspPeptide] 只重跑 DSSP + 肽三段 + 出图, 其它分析全部跳过" -ForegroundColor Yellow
+        if (-not (Test-Path "index.ndx")) {
+            Write-Host "[0] index.ndx 缺失, 补建 ..."
+            & bash "../scripts/analysis/0_make_index.sh" 2>&1 | ForEach-Object { "$_" }
+        }
+        Write-Host "[DSSP] 4_secondary_structure.sh ..."
+        & bash "../scripts/analysis/4_secondary_structure.sh" 2>&1 | ForEach-Object { "$_" }
+        Write-Host "[Peptide phases] analyze_peptide_phases.py ..."
+        & $PY "..\scripts\analysis\analyze_peptide_phases.py" -d . 2>&1 | ForEach-Object { "$_" }
+    } elseif (-not $OnlyPlot) {
         Write-Host "[0/8] Generating analysis index groups (0_make_index.sh) ..."
         & bash "../scripts/analysis/0_make_index.sh" 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

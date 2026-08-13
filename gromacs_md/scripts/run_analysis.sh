@@ -75,6 +75,7 @@ if [ ! -f "${WORK}/${XTC_FILE}" ]; then
 fi
 
 export TESTING="${TESTING:-0}"
+ONLY_DSSP_PEPTIDE="${ONLY_DSSP_PEPTIDE:-0}"
 if [ "${TESTING}" = "1" ]; then
     echo ">> [分析测试模式] 针对短时间测试轨迹自动自适应参数"
 else
@@ -87,30 +88,6 @@ SCRIPTS_DIR="$(cd ../scripts/analysis && pwd)"
 
 echo "========== 开始对体系 ${SYS} 执行论文结果分析 ========"
 
-# 0. 建立分析索引
-echo "[0/8] 建立分析分组索引 (0_make_index.sh) ..."
-bash "${SCRIPTS_DIR}/0_make_index.sh"
-
-# 1. 骨架 RMSD / RMSF (论文 3.1 图1)
-echo "[1/8] 计算骨架 RMSD / RMSF (1_rmsd_rmsf.sh) ..."
-bash "${SCRIPTS_DIR}/1_rmsd_rmsf.sh"
-
-# 2. 径向分布函数 RDF (论文 3.1 图2)
-echo "[2/8] 计算 Aβ 围绕 AChE 的径向分布函数 RDF (2_rdf.sh) ..."
-bash "${SCRIPTS_DIR}/2_rdf.sh"
-
-# 3. 溶剂可及表面积 SASA (论文 3.2 图3)
-echo "[3/8] 计算复合物 SASA (3_sasa.sh) ..."
-bash "${SCRIPTS_DIR}/3_sasa.sh"
-
-# 4. 二级结构分析 DSSP (论文 3.2 图4)
-echo "[4/8] 计算 Aβ 肽二级结构演变 (4_secondary_structure.sh) ..."
-bash "${SCRIPTS_DIR}/4_secondary_structure.sh"
-
-# 5. 氢键数量统计 (论文 3.3)
-echo "[5/8] 统计间/内氢键分布 (5_hbond.sh) ..."
-bash "${SCRIPTS_DIR}/5_hbond.sh"
-
 to_py_path() {
     local p="$1"
     if command -v wslpath >/dev/null 2>&1 && [[ "${PY}" == *".exe"* || "${PY}" == *"/mnt/"* || "${PY}" == *":"* ]]; then
@@ -120,13 +97,46 @@ to_py_path() {
     fi
 }
 
-# 6. 非天然接触统计 (论文 3.3 图5/表1)
-echo "[6/8] 统计天然与非天然相互作用接触 (contacts.py) ..."
-"${PY}" "$(to_py_path "${SCRIPTS_DIR}/contacts.py")" -t "${TPR_FILE}" -f "${XTC_FILE}"
+if [ "${ONLY_DSSP_PEPTIDE}" = "1" ]; then
+    echo ">> [OnlyDsspPeptide] 只重跑 DSSP + 肽三段 + 出图"
+    if [ ! -f index.ndx ]; then
+        bash "${SCRIPTS_DIR}/0_make_index.sh"
+    fi
+    bash "${SCRIPTS_DIR}/4_secondary_structure.sh" || true
+    "${PY}" "$(to_py_path "${SCRIPTS_DIR}/analyze_peptide_phases.py")" -d . || true
+else
+    # 0. 建立分析索引
+    echo "[0/8] 建立分析分组索引 (0_make_index.sh) ..."
+    bash "${SCRIPTS_DIR}/0_make_index.sh"
 
-# 7. 水介导桥连相互作用 (论文 3.4 图6/表2)
-echo "[7/8] 统计水介导桥连相互作用 (bridging_waters.py) ..."
-"${PY}" "$(to_py_path "${SCRIPTS_DIR}/bridging_waters.py")" -t "${TPR_FILE}" -f "${XTC_FILE}"
+    # 1. 骨架 RMSD / RMSF (论文 3.1 图1)
+    echo "[1/8] 计算骨架 RMSD / RMSF (1_rmsd_rmsf.sh) ..."
+    bash "${SCRIPTS_DIR}/1_rmsd_rmsf.sh"
+
+    # 2. 径向分布函数 RDF (论文 3.1 图2)
+    echo "[2/8] 计算 Aβ 围绕 AChE 的径向分布函数 RDF (2_rdf.sh) ..."
+    bash "${SCRIPTS_DIR}/2_rdf.sh"
+
+    # 3. 溶剂可及表面积 SASA (论文 3.2 图3)
+    echo "[3/8] 计算复合物 SASA (3_sasa.sh) ..."
+    bash "${SCRIPTS_DIR}/3_sasa.sh"
+
+    # 4. 二级结构分析 DSSP (论文 3.2 图4)
+    echo "[4/8] 计算 Aβ 肽二级结构演变 (4_secondary_structure.sh) ..."
+    bash "${SCRIPTS_DIR}/4_secondary_structure.sh"
+
+    # 5. 氢键数量统计 (论文 3.3)
+    echo "[5/8] 统计间/内氢键分布 (5_hbond.sh) ..."
+    bash "${SCRIPTS_DIR}/5_hbond.sh"
+
+    # 6. 非天然接触统计 (论文 3.3 图5/表1)
+    echo "[6/8] 统计天然与非天然相互作用接触 (contacts.py) ..."
+    "${PY}" "$(to_py_path "${SCRIPTS_DIR}/contacts.py")" -t "${TPR_FILE}" -f "${XTC_FILE}"
+
+    # 7. 水介导桥连相互作用 (论文 3.4 图6/表2)
+    echo "[7/8] 统计水介导桥连相互作用 (bridging_waters.py) ..."
+    "${PY}" "$(to_py_path "${SCRIPTS_DIR}/bridging_waters.py")" -t "${TPR_FILE}" -f "${XTC_FILE}"
+fi
 
 # 8. 批量生成矢量/位图出版图与统计表 (plot_all.py)
 echo "[8/8] 批量绘制论文出版级图表 (SVG / PNG / PDF) ..."

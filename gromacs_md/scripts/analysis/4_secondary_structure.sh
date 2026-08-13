@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ============================================================
-# 图4: 肽(Aβ) 二级结构倾向随时间的演变
-# 论文 3.2 节 (helix, beta-turn, bend 倾向, 每 50 ns 统计)
-# gmx do_dssp 基于 DSSP 判定二级结构, -ssdump 输出逐帧 SS 字符串
+# 图4: 肽二级结构倾向随时间的演变
+# v2.4: GROMACS 2025 正确选区 + 逐帧 DSSP + 1 ns 分箱
+#       gmx dssp 失败时自动回退到 Kabsch-Sander / Ramachandran
 # ============================================================
 set -eu
 
@@ -48,7 +48,6 @@ if ! grep -q "\[ *Peptide *\]" index.ndx 2>/dev/null; then
     exit 0
 fi
 
-# 计算肽的二级结构随时间的分布
 TPR_FILE="md_0_1.tpr"
 if [ ! -f "${TPR_FILE}" ]; then
     TPR_FILE="md.tpr"
@@ -62,12 +61,32 @@ if [ ! -f "${TRAJ_FILE}" ]; then
     fi
 fi
 
+run_gmx_dssp() {
+    local sel="$1"
+    echo ">> [gmx dssp] -sel ${sel}  -hmode dssp -clear  (只分析 Peptide, 避开 4ey6 三段受体)"
+    gmx dssp -s "${TPR_FILE}" -f "${TRAJ_FILE}" -n index.ndx \
+        -sel "${sel}" -o ss_pep.dat -num ss_pep_num.xvg \
+        -hmode dssp -clear
+}
+
+# gmx dssp 失败不得中断整个分析: 后面的 compute_peptide_ss.py 会回退
+set +e
+DSSP_OK=0
 if gmx dssp -h 2>&1 | grep -q -- "-sel "; then
-    # GROMACS >= 2023 新版内置 dssp (支持 -sel Peptide -o .dat -num .xvg)
-    gmx dssp -s "${TPR_FILE}" -f "${TRAJ_FILE}" -n index.ndx -sel "Peptide" -o ss_pep.dat -num ss_pep_num.xvg
-    SS_FILE="ss_pep.dat"
+    for SEL in 'group "Peptide"' 'group Peptide' 'Peptide' 'resid 531 to 537'; do
+        if run_gmx_dssp "${SEL}"; then
+            NROW=$(grep -v '^[#@;]' ss_pep_num.xvg 2>/dev/null | grep -c '[0-9]' || true)
+            if [ "${NROW}" -ge 10 ]; then
+                echo ">> [gmx dssp] 成功  sel=${SEL}  帧数=${NROW}"
+                DSSP_OK=1
+                break
+            fi
+            echo ">> [gmx dssp] 输出帧数过少 (${NROW})，换一种 -sel 再试 ..."
+        else
+            echo ">> [gmx dssp] 命令失败，换一种 -sel 再试 ..."
+        fi
+    done
 else
-    # GROMACS <= 2022 传统版 (do_dssp / dssp -sc / -ssdump)
     if gmx help dssp >/dev/null 2>&1; then
         DSSP_CMD="dssp"
     else
@@ -82,33 +101,33 @@ else
                 ${SC_FLAG} ss_pep.sc -o ss_pep.xpm << EOF
 Peptide
 EOF
-    SS_FILE="ss_pep.sc"
+    if [ -f ss_pep.sc ]; then
+        DSSP_OK=1
+    fi
 fi
+set -e
 
-# 将二级结构输出分箱统计每 50 ns 的 helix / turn / bend 倾向 (测试模式下自适应窗口)
 TESTING="${TESTING:-0}"
 if [ "${TESTING}" = "1" ]; then
     WIN_NS=0.05
 else
-    WIN_NS=50
+    # 100 ns 轨迹用 1 ns 窗 (~100 点); 绝不能再用 50 ns (只会得到 2 个点)
+    WIN_NS=1
 fi
 
-if [ -f "ss_pep_num.xvg" ]; then
-    echo ">> [优先使用 DSSP -num] 正在解析 ss_pep_num.xvg 生成 ss_pep_bins.dat ..."
+to_py_path() {
+    local p="$1"
     if command -v wslpath >/dev/null 2>&1 && [[ "${PY}" == *".exe"* || "${PY}" == *"/mnt/"* || "${PY}" == *":"* ]]; then
-        NUM_SCRIPT=$(wslpath -w "$(dirname "$0")/parse_dssp_num.py" 2>/dev/null || echo "$(dirname "$0")/parse_dssp_num.py")
+        wslpath -w "$p" 2>/dev/null || echo "$p"
     else
-        NUM_SCRIPT="$(dirname "$0")/parse_dssp_num.py"
+        echo "$p"
     fi
-    "${PY}" "${NUM_SCRIPT}" "ss_pep_num.xvg" "ss_pep_bins.dat" "${WIN_NS}" "7.0"
-else
-    if command -v wslpath >/dev/null 2>&1 && [[ "${PY}" == *".exe"* || "${PY}" == *"/mnt/"* || "${PY}" == *":"* ]]; then
-        SCRIPT_PATH=$(wslpath -w "$(dirname "$0")/dssp_bins.py" 2>/dev/null || echo "$(dirname "$0")/dssp_bins.py")
-    else
-        SCRIPT_PATH="$(dirname "$0")/dssp_bins.py"
-    fi
-    "${PY}" "${SCRIPT_PATH}" "${SS_FILE}" ss_pep_bins.dat "${WIN_NS}"
-fi
+}
 
-echo "二级结构输出: ${SS_FILE}, ss_pep_bins.dat"
-echo "ss_pep_bins.dat 列: 时间窗口(ns)  helix倾向  turn倾向  bend倾向"
+SS_SCRIPT="$(dirname "$0")/compute_peptide_ss.py"
+echo ">> [DSSP rebuild] 逐帧解析 / 必要时 Kabsch-Sander 回退 ..."
+"${PY}" "$(to_py_path "${SS_SCRIPT}")" --dir . --nres 7 --window-ns "${WIN_NS}" || {
+    echo "!!! compute_peptide_ss.py 返回非零。若已有 ss_pep_frac.xvg 仍可继续绘图。"
+}
+
+echo "二级结构输出: ss_pep_frac.xvg (逐帧), ss_pep_bins.dat (${WIN_NS} ns 窗), ss_pep_perres.dat, ss_pep_summary.txt"

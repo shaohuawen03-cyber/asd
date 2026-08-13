@@ -96,6 +96,151 @@ def safe_legend(ax: plt.Axes, **kwargs) -> None:
         ax.legend(frameon=False, fontsize=9, **kwargs)
 
 
+def detect_rmsd_phases(t, y, max_phases: int = 3, min_span_ns: float = 8.0):
+    """Greedy jump detection on a smoothed RMSD trace."""
+    t = np.asarray(t, dtype=float)
+    y = np.asarray(y, dtype=float)
+    n = len(y)
+    if n < 20:
+        return [(float(t[0]), float(t[-1]), float(y.mean()),
+                 float(y.std(ddof=1) if n > 1 else 0.0), int(n))]
+    win = max(7, (int(round(n * 0.015)) | 1))
+    pad = win // 2
+    yp = np.pad(y, (pad, pad), mode="edge")
+    ys = np.convolve(yp, np.ones(win) / win, mode="valid")
+    if len(ys) > n:
+        ys = ys[:n]
+    elif len(ys) < n:
+        ys = np.pad(ys, (0, n - len(ys)), mode="edge")
+    dy = np.abs(np.diff(ys))
+    thr = float(np.percentile(dy, 85))
+    cand = []
+    for i in range(1, len(dy) - 1):
+        if dy[i] >= dy[i - 1] and dy[i] >= dy[i + 1] and dy[i] >= thr:
+            cand.append((float(dy[i]), i + 1))
+    cand.sort(reverse=True)
+    span = float(t[-1] - t[0])
+    min_span = min(min_span_ns, span / (max_phases + 1))
+    jumps = []
+    for _mag, idx in cand:
+        tt = float(t[idx])
+        if tt - float(t[0]) < min_span or float(t[-1]) - tt < min_span:
+            continue
+        if all(abs(tt - float(t[j])) >= min_span for j in jumps):
+            jumps.append(idx)
+        if len(jumps) >= max_phases - 1:
+            break
+    bounds = [0] + sorted(jumps) + [n]
+    phases = []
+    for a, b in zip(bounds[:-1], bounds[1:]):
+        b_end = n if b == n else b
+        if b_end <= a:
+            continue
+        seg = y[a:b_end]
+        t1 = float(t[b_end - 1] if b_end == n else t[b_end])
+        phases.append((float(t[a]), t1, float(seg.mean()),
+                       float(seg.std(ddof=1) if len(seg) > 1 else 0.0), int(len(seg))))
+    return phases
+
+
+def phase_label(i: int, n: int) -> str:
+    if n <= 1:
+        return "STABLE"
+    if n == 2:
+        return ("INITIAL_POSE", "EQUILIBRATED_BOUND")[i]
+    names = ["INITIAL_BOUND", "METASTABLE_REARRANGE", "EQUILIBRATED_BOUND"]
+    return names[i] if i < len(names) else f"PHASE_{i+1}"
+
+
+def read_ss_frac(path: Path) -> Optional[pd.DataFrame]:
+    """Per-frame DSSP fractions: time_ns helix turn bend sheet coil ..."""
+    if not path.exists():
+        return None
+    rows = []
+    with open(path, "r", encoding="utf-8", errors="ignore") as fh:
+        for line in fh:
+            s = line.strip()
+            if not s or s.startswith(("#", "@", ";")):
+                continue
+            parts = s.split()
+            if len(parts) < 4:
+                continue
+            try:
+                rec = {
+                    "time_ns": float(parts[0]),
+                    "helix": float(parts[1]),
+                    "turn": float(parts[2]),
+                    "bend": float(parts[3]),
+                }
+                rec["sheet"] = float(parts[4]) if len(parts) > 4 else 0.0
+                rec["coil"] = float(parts[5]) if len(parts) > 5 else 0.0
+                if len(parts) >= 5 and len(parts) < 6:
+                    rec["coil"] = float(parts[4])
+                    rec["sheet"] = 0.0
+                rows.append(rec)
+            except ValueError:
+                continue
+    if not rows:
+        return None
+    return pd.DataFrame(rows)
+
+
+def read_ss_perres(path: Path):
+    if not path.exists():
+        return None, []
+    times, seqs = [], []
+    with open(path, "r", encoding="utf-8", errors="ignore") as fh:
+        for line in fh:
+            s = line.strip()
+            if not s or s.startswith(("#", "@", ";")):
+                continue
+            parts = s.split()
+            if len(parts) < 2:
+                continue
+            try:
+                times.append(float(parts[0]))
+            except ValueError:
+                continue
+            seqs.append("".join(parts[1:]))
+    if not seqs:
+        return None, []
+    return np.asarray(times), seqs
+
+
+def ss_string_heatmap(times, seqs):
+    code_to_int = {
+        "H": 3, "G": 3, "I": 3,
+        "E": 2, "B": 2,
+        "T": 1, "S": 1, "P": 1,
+        "C": 0, "~": 0, "-": 0, " ": 0, "=": 0,
+    }
+    nres = max(len(s) for s in seqs)
+    mat = np.zeros((len(seqs), nres))
+    for i, s in enumerate(seqs):
+        for j, c in enumerate(s[:nres]):
+            mat[i, j] = code_to_int.get(c, 0)
+    return mat
+
+
+def summarize_rmsf(df: Optional[pd.DataFrame], metric: str, system_label: str):
+    """RMSF x-axis is residue number — never treat it as a time series."""
+    if df is None or df.empty:
+        return None
+    y = df["y"]
+    return {
+        "system": system_label,
+        "metric": metric,
+        "mean": float(y.mean()),
+        "std": float(y.std(ddof=1)) if len(y) > 1 else 0.0,
+        "full_traj_mean": float(y.mean()),
+        "full_traj_std": float(y.std(ddof=1)) if len(y) > 1 else 0.0,
+        "min": float(y.min()),
+        "max": float(y.max()),
+        "status": "PER_RESIDUE_FLEXIBILITY (逐残基柔性, 非时间序列)",
+        "n_points": int(len(y)),
+    }
+
+
 def summarize_rdf(df: Optional[pd.DataFrame], metric: str, system_label: str):
     """针对径向分布函数 g(r)，提取峰高度 g_max 及主峰位置 r(nm)"""
     if df is None or df.empty:
@@ -134,8 +279,10 @@ def summarize_last_ns(df: Optional[pd.DataFrame], metric: str, system_label: str
     min_val = float(df["y"].min())
     max_val = float(df["y"].max())
     status = "STABLE (稳定收敛)"
-    if "pep" in metric.lower() and "rmsd" in metric.lower():
-        status = "INDUCED_FIT_EXPLORATION (两阶段诱导契合构象探索)"
+    if "rmsd" in metric.lower() and (
+        "pep" in metric.lower() or "peptide" in system_label.lower()
+    ):
+        status = "INDUCED_FIT_3PHASE (三段诱导契合: 初态/亚稳态/终态)"
     return {
         "system": system_label,
         "metric": metric,
@@ -190,10 +337,54 @@ def main():
         ax1.plot(rmsd_ach["x"], rmsd_ach["y"], label="AChE BB", linewidth=1.2, linestyle="--", color="tab:orange")
         s = summarize_last_ns(rmsd_ach, "1_Backbone_RMSD_(nm)", "AChE")
         if s: summary_rows.append(s)
+    pep_phases = []
+    ss_src = None
     if rmsd_pep is not None:
-        ax1.plot(rmsd_pep["x"], rmsd_pep["y"], label="Peptide BB", linewidth=1.5, color="tab:green")
+        ax1.plot(rmsd_pep["x"], rmsd_pep["y"], label="Peptide BB (self-fit)", linewidth=1.5, color="tab:green")
         s = summarize_last_ns(rmsd_pep, "1_Backbone_RMSD_(nm)", "Peptide")
         if s: summary_rows.append(s)
+        phase_file = work_dir / "peptide_rmsd_phases.dat"
+        if phase_file.exists():
+            try:
+                phdf = pd.read_csv(phase_file, sep=r"\s+", comment="#", header=None,
+                                   names=["id", "t0", "t1", "mu", "sd", "n", "lab"], engine="python")
+                pep_phases = [(float(r.t0), float(r.t1), float(r.mu), float(r.sd), int(r.n), str(r.lab))
+                              for _, r in phdf.iterrows()]
+            except Exception:
+                pep_phases = []
+        if not pep_phases:
+            raw = detect_rmsd_phases(rmsd_pep["x"].to_numpy(), rmsd_pep["y"].to_numpy())
+            pep_phases = [(a, b, mu, sd, n, phase_label(i, len(raw)))
+                          for i, (a, b, mu, sd, n) in enumerate(raw)]
+        phase_colors = ["#dbeafe", "#fef3c7", "#dcfce7", "#fce7f3"]
+        for i, ph in enumerate(pep_phases):
+            ax1.axvspan(ph[0], ph[1], color=phase_colors[i % len(phase_colors)],
+                        alpha=0.35, zorder=0, label=None)
+            if i > 0:
+                ax1.axvline(ph[0], color="0.45", linestyle=":", linewidth=0.9)
+            mid = 0.5 * (ph[0] + ph[1])
+            ax1.text(mid, 0.98, f"P{i+1}\n{ph[2]:.2f} nm", transform=ax1.get_xaxis_transform(),
+                     ha="center", va="top", fontsize=7, color="0.25")
+            summary_rows.append({
+                "system": "Peptide",
+                "metric": f"1b_Peptide_RMSD_Phase{i+1}_(nm)",
+                "mean": ph[2],
+                "std": ph[3],
+                "full_traj_mean": ph[2],
+                "full_traj_std": ph[3],
+                "min": ph[2],
+                "max": ph[2],
+                "status": f"{ph[5]} ({ph[0]:.1f}-{ph[1]:.1f} ns, n={ph[4]})",
+                "n_points": ph[4],
+            })
+    rmsd_lig = read_xvg(work_dir / "rmsd_pep_on_ache.xvg", x_scale=0.001)
+    if rmsd_lig is not None:
+        ax1.plot(rmsd_lig["x"], rmsd_lig["y"], label="Peptide (fit to AChE)",
+                 linewidth=1.1, color="tab:red", alpha=0.85)
+        s = summarize_last_ns(rmsd_lig, "1c_Ligand_RMSD_fit_to_AChE_(nm)", "Peptide")
+        if s:
+            s["status"] = "LIGAND_POSE (叠合受体后的配体 RMSD)"
+            summary_rows.append(s)
     ax1.set_title("Backbone Cα RMSD", fontsize=11, weight="bold")
     ax1.set_xlabel("Time (ns)", fontsize=10)
     ax1.set_ylabel("RMSD (nm)", fontsize=10)
@@ -204,18 +395,18 @@ def main():
     # RMSF (重点绘制 AChE 1-530 与多肽 531-537 的逐残基柔性，彻底消除 GROMACS 复合体分组导致的连接直线)
     if rmsf_ach is not None:
         ax2.plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", linewidth=1.0, color="tab:orange", alpha=0.9)
-        s = summarize_last_ns(rmsf_ach, "2_Backbone_RMSF_Avg_(nm)", "AChE")
+        s = summarize_rmsf(rmsf_ach, "2_Backbone_RMSF_Avg_(nm)", "AChE")
         if s: summary_rows.append(s)
     elif rmsf_com is not None:
         ax2.plot(rmsf_com["x"], rmsf_com["y"], label="Complex BB", linewidth=1.0, color="tab:blue", alpha=0.6)
-        s = summarize_last_ns(rmsf_com, "2_Backbone_RMSF_Avg_(nm)", "Complex")
+        s = summarize_rmsf(rmsf_com, "2_Backbone_RMSF_Avg_(nm)", "Complex")
         if s: summary_rows.append(s)
     if rmsf_pep is not None:
         px = rmsf_pep["x"].copy()
         if rmsf_ach is not None and px.min() < 10:
             px = px + rmsf_ach["x"].max()
         ax2.plot(px, rmsf_pep["y"], label="Peptide BB", linewidth=1.5, color="tab:green", marker="o", markersize=3)
-        s = summarize_last_ns(rmsf_pep, "2_Backbone_RMSF_Avg_(nm)", "Peptide")
+        s = summarize_rmsf(rmsf_pep, "2_Backbone_RMSF_Avg_(nm)", "Peptide")
         if s: summary_rows.append(s)
     ax2.set_title("Backbone Cα RMSF", fontsize=11, weight="bold")
     ax2.set_xlabel("Residue Number", fontsize=10)
@@ -283,48 +474,91 @@ def main():
     # 图 4: 肽二级结构演变 (论文 3.2 节 / 图4)
     # --------------------------------------------------------
     print("\n>> [4/8] Generating Figure 4: Peptide Secondary Structure Evolution ...")
+    ss_frac = read_ss_frac(work_dir / "ss_pep_frac.xvg")
     ss_bins = read_dat_or_csv(work_dir / "ss_pep_bins.dat")
-    fig, ax = plt.subplots(figsize=(8, 4.5), constrained_layout=True)
-    if ss_bins is not None and len(ss_bins.columns) >= 4:
-        cols = ss_bins.columns
-        ax.plot(ss_bins[cols[0]], ss_bins[cols[1]], label="Helix", linewidth=1.8, marker="o", color="tab:blue")
-        ax.plot(ss_bins[cols[0]], ss_bins[cols[2]], label="Turn", linewidth=1.8, marker="s", color="tab:orange")
-        ax.plot(ss_bins[cols[0]], ss_bins[cols[3]], label="Bend", linewidth=1.8, marker="^", color="tab:green")
-        if len(cols) >= 5:
-            ax.plot(ss_bins[cols[0]], ss_bins[cols[4]], label="Coil/Loop", linewidth=1.8, marker="d", color="tab:purple")
-        ax.set_title("Peptide Secondary Structure Fraction over Time (Paper Fig 4)", fontsize=11, weight="bold")
-        ax.set_xlabel("Time Window (ns)", fontsize=10)
-        ax.set_ylabel("Fraction", fontsize=10)
-        ax.grid(alpha=0.3, linestyle="--")
-        safe_legend(ax)
-        h_mean = float(ss_bins[cols[1]].mean())
-        c_mean = float(ss_bins[cols[4]].mean()) if len(cols) >= 5 else 0.0
-        summary_rows.append({
-            "system": "Peptide",
-            "metric": "6_DSSP_Helix_Fraction_(%)",
-            "mean": h_mean * 100.0,
-            "std": float(ss_bins[cols[1]].std()) * 100.0,
-            "full_traj_mean": h_mean * 100.0,
-            "full_traj_std": float(ss_bins[cols[1]].std()) * 100.0,
-            "min": float(ss_bins[cols[1]].min()) * 100.0,
-            "max": float(ss_bins[cols[1]].max()) * 100.0,
-            "status": "SECONDARY_STRUCTURE",
-            "n_points": len(ss_bins),
+    ss_times, ss_seqs = read_ss_perres(work_dir / "ss_pep_perres.dat")
+    # Prefer per-frame fractions; fall back to bins (but refuse to treat 2-point 50 ns bins as success)
+    ss_src = None
+    if ss_frac is not None and len(ss_frac) >= 5:
+        ss_src = ss_frac.rename(columns={"time_ns": "t"})
+    elif ss_bins is not None and len(ss_bins) >= 5 and len(ss_bins.columns) >= 4:
+        cols = list(ss_bins.columns)
+        ss_src = pd.DataFrame({
+            "t": ss_bins[cols[0]],
+            "helix": ss_bins[cols[1]],
+            "turn": ss_bins[cols[2]],
+            "bend": ss_bins[cols[3]],
+            "coil": ss_bins[cols[4]] if len(cols) > 4 else 0.0,
         })
-        summary_rows.append({
-            "system": "Peptide",
-            "metric": "6_DSSP_Coil_Fraction_(%)",
-            "mean": c_mean * 100.0,
-            "std": float(ss_bins[cols[4]].std()) * 100.0 if len(cols) >= 5 else 0.0,
-            "full_traj_mean": c_mean * 100.0,
-            "full_traj_std": float(ss_bins[cols[4]].std()) * 100.0 if len(cols) >= 5 else 0.0,
-            "min": float(ss_bins[cols[4]].min()) * 100.0 if len(cols) >= 5 else 0.0,
-            "max": float(ss_bins[cols[4]].max()) * 100.0 if len(cols) >= 5 else 0.0,
-            "status": "SECONDARY_STRUCTURE",
-            "n_points": len(ss_bins),
-        })
+
+    have_heat = ss_seqs is not None and len(ss_seqs) >= 5
+    if have_heat:
+        fig, axes4 = plt.subplots(1, 2, figsize=(12.5, 4.6), constrained_layout=True)
+        ax, axh = axes4
     else:
-        ax.text(0.5, 0.5, "Secondary structure data not available", ha="center", va="center")
+        fig, ax = plt.subplots(figsize=(8.2, 4.6), constrained_layout=True)
+        axh = None
+
+    if ss_src is not None:
+        ax.fill_between(ss_src["t"], 0, ss_src["helix"], label="Helix (H/G/I)", color="tab:red", alpha=0.25, linewidth=0)
+        ax.plot(ss_src["t"], ss_src["helix"], color="tab:red", linewidth=1.2)
+        ax.plot(ss_src["t"], ss_src["turn"], label="Turn (T)", color="tab:orange", linewidth=1.3)
+        ax.plot(ss_src["t"], ss_src["bend"], label="Bend (S)", color="tab:green", linewidth=1.3)
+        if "coil" in ss_src.columns:
+            ax.plot(ss_src["t"], ss_src["coil"], label="Coil/Loop (~)", color="0.45", linewidth=1.1)
+        ax.set_title("Peptide DSSP Fraction vs Time (per-frame)", fontsize=11, weight="bold")
+        ax.set_xlabel("Time (ns)", fontsize=10)
+        ax.set_ylabel("Fraction", fontsize=10)
+        ax.set_ylim(-0.02, 1.05)
+        ax.grid(alpha=0.3, linestyle="--")
+        safe_legend(ax, loc="upper right")
+        add_panel_label(ax, "A")
+        n_ss = int(len(ss_src))
+        for key, metric in (("helix", "6_DSSP_Helix_Fraction_(%)"),
+                            ("turn", "6_DSSP_Turn_Fraction_(%)"),
+                            ("bend", "6_DSSP_Bend_Fraction_(%)"),
+                            ("coil", "6_DSSP_Coil_Fraction_(%)")):
+            if key not in ss_src.columns:
+                continue
+            series = ss_src[key]
+            # last 20 ns if time-like
+            tcol = ss_src["t"]
+            cutoff = max(float(tcol.max()) - 20.0, float(tcol.min()))
+            last = series[tcol >= cutoff]
+            summary_rows.append({
+                "system": "Peptide",
+                "metric": metric,
+                "mean": float(last.mean()) * 100.0,
+                "std": float(last.std(ddof=1)) * 100.0 if len(last) > 1 else 0.0,
+                "full_traj_mean": float(series.mean()) * 100.0,
+                "full_traj_std": float(series.std(ddof=1)) * 100.0 if len(series) > 1 else 0.0,
+                "min": float(series.min()) * 100.0,
+                "max": float(series.max()) * 100.0,
+                "status": f"PER_FRAME_DSSP (n={n_ss} frames)",
+                "n_points": n_ss,
+            })
+    else:
+        msg = ("DSSP not computed\n"
+               "Run:  .\\run_fix_dssp_peptide.ps1 -System <name>\n"
+               "(do NOT treat this as monomer N/A)")
+        ax.text(0.5, 0.5, msg, ha="center", va="center", fontsize=10, color="tab:red")
+        ax.set_title("Peptide Secondary Structure (MISSING)", fontsize=11, weight="bold")
+        ax.set_xlabel("Time (ns)")
+        ax.set_ylabel("Fraction")
+
+    if axh is not None:
+        mat = ss_string_heatmap(ss_times, ss_seqs)
+        extent = [0.5, mat.shape[1] + 0.5, float(ss_times[-1]), float(ss_times[0])]
+        cmap = mpl.colors.ListedColormap(["#f3f4f6", "#fdba74", "#facc15", "#ef4444"])
+        im = axh.imshow(mat, aspect="auto", interpolation="nearest",
+                        cmap=cmap, vmin=-0.5, vmax=3.5, extent=extent)
+        axh.set_title("Per-residue DSSP (heatmap)", fontsize=11, weight="bold")
+        axh.set_xlabel("Peptide residue (1 = N-term)", fontsize=10)
+        axh.set_ylabel("Time (ns)", fontsize=10)
+        cbar = fig.colorbar(im, ax=axh, fraction=0.046, pad=0.04, ticks=[0, 1, 2, 3])
+        cbar.ax.set_yticklabels(["Coil", "Turn/Bend", "Sheet", "Helix"])
+        add_panel_label(axh, "B")
+
     save_all_formats(fig, fig_dir / "fig4_secondary_structure")
     plt.close(fig)
 
@@ -428,11 +662,19 @@ def main():
     fig, axes = plt.subplots(2, 3, figsize=(16, 8.5), constrained_layout=True)
     axes = axes.flatten()
 
-    # Panel 1: RMSD
+    # Panel 1: RMSD (shade peptide induced-fit phases if detected)
+    if pep_phases:
+        phase_colors = ["#dbeafe", "#fef3c7", "#dcfce7", "#fce7f3"]
+        for i, ph in enumerate(pep_phases):
+            axes[0].axvspan(ph[0], ph[1], color=phase_colors[i % len(phase_colors)], alpha=0.30, zorder=0)
+            if i > 0:
+                axes[0].axvline(ph[0], color="0.45", linestyle=":", linewidth=0.8)
     if rmsd_com is not None:
         axes[0].plot(rmsd_com["x"], rmsd_com["y"], label="Complex BB", color="tab:blue", linewidth=1.2)
     if rmsd_ach is not None:
         axes[0].plot(rmsd_ach["x"], rmsd_ach["y"], label="AChE BB", color="tab:orange", linewidth=1.2, linestyle="--")
+    if rmsd_pep is not None:
+        axes[0].plot(rmsd_pep["x"], rmsd_pep["y"], label="Peptide BB", color="tab:green", linewidth=1.2)
     axes[0].set_title("Backbone Cα RMSD", fontsize=11, weight="bold")
     axes[0].set_xlabel("Time (ns)", fontsize=10)
     axes[0].set_ylabel("RMSD (nm)", fontsize=10)
@@ -483,17 +725,18 @@ def main():
     axes[3].grid(alpha=0.3, linestyle="--")
     safe_legend(axes[3])
 
-    # Panel 5: Secondary Structure
-    if ss_bins is not None and len(ss_bins.columns) >= 4:
-        cols = ss_bins.columns
-        axes[4].plot(ss_bins[cols[0]], ss_bins[cols[1]], label="Helix", marker="o", color="tab:blue")
-        axes[4].plot(ss_bins[cols[0]], ss_bins[cols[2]], label="Turn", marker="s", color="tab:orange")
-        axes[4].plot(ss_bins[cols[0]], ss_bins[cols[3]], label="Bend", marker="^", color="tab:green")
-        if len(cols) >= 5:
-            axes[4].plot(ss_bins[cols[0]], ss_bins[cols[4]], label="Coil/Loop", marker="d", color="tab:purple")
+    # Panel 5: Secondary Structure (per-frame; never label a complex as monomer)
+    if ss_src is not None:
+        axes[4].plot(ss_src["t"], ss_src["helix"], label="Helix", color="tab:red", linewidth=1.1)
+        axes[4].plot(ss_src["t"], ss_src["turn"], label="Turn", color="tab:orange", linewidth=1.1)
+        axes[4].plot(ss_src["t"], ss_src["bend"], label="Bend", color="tab:green", linewidth=1.1)
+        if "coil" in ss_src.columns:
+            axes[4].plot(ss_src["t"], ss_src["coil"], label="Coil", color="0.45", linewidth=1.0)
         axes[4].set_title("Secondary Structure Fractions", fontsize=11, weight="bold")
+        axes[4].set_ylim(-0.02, 1.05)
     else:
-        axes[4].text(0.5, 0.5, "DSSP (N/A for Monomer)", ha="center", va="center", fontsize=10, color="gray")
+        axes[4].text(0.5, 0.5, "DSSP missing\nrun_fix_dssp_peptide.ps1",
+                     ha="center", va="center", fontsize=9, color="tab:red")
         axes[4].set_title("Secondary Structure Fractions", fontsize=11, weight="bold")
     axes[4].set_xlabel("Time (ns)", fontsize=10)
     axes[4].set_ylabel("Fraction", fontsize=10)

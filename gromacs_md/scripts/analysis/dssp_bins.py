@@ -1,79 +1,39 @@
 #!/usr/bin/env python3
 """
-将 gmx do_dssp -ssdump 输出的二级结构字符串按时间窗口统计
-helix / turn / bend 倾向, 复现论文图4.
+Backward-compatible wrapper around compute_peptide_ss.parse_ss_dat.
 
 用法:
-    python3 dssp_bins.py ss_pep.sc output.dat [window_ns]
-
-DSSP 码说明:
-    H=alpha螺旋  G=3-10螺旋  I=pi螺旋  -> helix
-    T=转角(turn)                        -> turn
-    S=弯曲(bend)   B=孤立桥(bridge)    -> bend (近似论文的 bend)
-    E=伸展链(strand)                    -> 未计入上述三类
-    C=无规卷曲(coil)
+    python3 dssp_bins.py ss_pep.dat output.dat [window_ns]
 """
 import sys
-import numpy as np
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+from compute_peptide_ss import (  # noqa: E402
+    auto_window_ns,
+    parse_ss_dat,
+    seqs_to_fracs,
+    write_outputs,
+)
+
 
 def main():
-    src, dst = sys.argv[1], sys.argv[2]
-    window = float(sys.argv[3]) if len(sys.argv) > 3 else 50.0
-
-    times, seqs = [], []
-    with open(src) as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#") or line.startswith("@") or line.startswith(";"):
-                continue
-            parts = line.split()
-            if len(parts) < 2:
-                continue
-            try:
-                t = float(parts[0])
-            except ValueError:
-                continue
-            ss = "".join(parts[1:])
-            times.append(t)
-            seqs.append(ss)
-
-    if len(times) == 0:
+    src = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("ss_pep.dat")
+    window_ns = float(sys.argv[3]) if len(sys.argv) > 3 else 0.0
+    times, seqs = parse_ss_dat(src, nres=7)
+    if not seqs:
         print(">> 提示: 二级结构序列数据为空，跳过统计。")
         return
+    if window_ns <= 0:
+        window_ns = auto_window_ns(float(times[0]), float(times[-1]))
+    fracs = seqs_to_fracs(seqs)
+    write_outputs(src.parent if src.parent.as_posix() != "" else Path("."),
+                  times, fracs, seqs, window_ns,
+                  source=f"dssp_bins.py:{src.name}")
 
-    times = np.array(times)
-    nres = len(seqs[0])
-    t0, t1 = times[0], times[-1]
-    nwin = max(1, int(np.ceil((t1 - t0) / window)))
-
-    print(f"帧数: {len(times)}, 残基数: {nres}, 时间范围: {t0}-{t1} ns, 窗口: {window} ns -> {nwin} 窗")
-
-    with open(dst, "w") as out:
-        out.write("time_ns helix_frac turn_frac bend_frac coil_frac\n")
-        for i in range(nwin):
-            lo = t0 + i * window
-            hi = lo + window
-            mask = (times >= lo) & (times < hi)
-            if mask.sum() == 0:
-                continue
-            sub = [seqs[j] for j in range(len(times)) if mask[j]]
-            helix = turn = bend = coil = 0
-            total = 0
-            for s in sub:
-                for c in s:
-                    total += 1
-                    if c in "HGI":
-                        helix += 1
-                    elif c == "T":
-                        turn += 1
-                    elif c in "SB":
-                        bend += 1
-                    else:
-                        coil += 1
-            mid = lo + window / 2
-            out.write(f"{mid:.1f} {helix/total:.4f} {turn/total:.4f} {bend/total:.4f} {coil/total:.4f}\n")
-
-    print(f"已写入 {dst}")
 
 if __name__ == "__main__":
     main()
