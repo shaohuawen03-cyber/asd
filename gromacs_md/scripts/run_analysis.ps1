@@ -37,8 +37,8 @@ if (-not (Test-Path "$WorkDir\md_0_1.xtc") -and -not (Test-Path "$WorkDir\md.xtc
     exit 1
 }
 
-$TprFile = if (Test-Path "$WorkDir\md_0_1.tpr") { "md_0_1.tpr" } else { "md.tpr" }
-$XtcFile = if (Test-Path "$WorkDir\md_0_1.xtc") { "md_0_1.xtc" } else { "md.xtc" }
+$TprFile = if (Test-Path "$WorkDir\md.tpr") { "md.tpr" } else { "md_0_1.tpr" }
+$XtcFile = if (Test-Path "$WorkDir\md.xtc") { "md.xtc" } else { "md_0_1.xtc" }
 
 if ($Testing -or $env:TESTING -eq "1") {
     Write-Host ">> [TESTING MODE] 5000-step short trajectory parameters" -ForegroundColor Yellow
@@ -80,15 +80,19 @@ try {
         & bash "../scripts/analysis/3_sasa.sh" 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-        Write-Host "[4/8] Peptide Secondary Structure Evolution (4_secondary_structure.sh) ..."
+        Write-Host "[4/9] Complex DSSP (4_secondary_structure.sh) ..."
         & bash "../scripts/analysis/4_secondary_structure.sh" 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-        Write-Host "[5/8] Inter/Intra Hydrogen Bonds (5_hbond.sh) ..."
+        Write-Host "[5/9] Radius of gyration Rg (6_rg.sh) ..."
+        & bash "../scripts/analysis/6_rg.sh" 2>&1 | ForEach-Object { "$_" }
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+        Write-Host "[6/9] Inter/Intra Hydrogen Bonds (5_hbond.sh) ..."
         & bash "../scripts/analysis/5_hbond.sh" 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-        Write-Host "[6/8] Native/Non-native Intermolecular Contacts (contacts.py) ..."
+        Write-Host "[7/9] Native/Non-native Intermolecular Contacts (contacts.py) ..."
         & $PY "..\scripts\analysis\contacts.py" -t $TprFile -f $XtcFile 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -99,7 +103,7 @@ try {
         Write-Host ">> [OnlyPlot Mode] Skipping GROMACS analysis steps [0-7], directly generating figures via plot_all.py ..." -ForegroundColor Yellow
     }
 
-    Write-Host "[8/8] Generating publication SVG / PNG / PDF figures (plot_all.py) ..."
+    Write-Host "[9/9] Generating publication SVG / PNG / PDF figures (plot_all.py) ..."
     & $PY "..\scripts\analysis\plot_all.py" --dir . --out ./figures 2>&1 | ForEach-Object { "$_" }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

@@ -65,13 +65,13 @@ if [ ! -d "${WORK}" ] || ( [ ! -f "${WORK}/md_0_1.xtc" ] && [ ! -f "${WORK}/md.x
     exit 1
 fi
 
-TPR_FILE="md_0_1.tpr"
+TPR_FILE="md.tpr"
 if [ ! -f "${WORK}/${TPR_FILE}" ]; then
-    TPR_FILE="md.tpr"
+    TPR_FILE="md_0_1.tpr"
 fi
-XTC_FILE="md_0_1.xtc"
+XTC_FILE="md.xtc"
 if [ ! -f "${WORK}/${XTC_FILE}" ]; then
-    XTC_FILE="md.xtc"
+    XTC_FILE="md_0_1.xtc"
 fi
 
 export TESTING="${TESTING:-0}"
