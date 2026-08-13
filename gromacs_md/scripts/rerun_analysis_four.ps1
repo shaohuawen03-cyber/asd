@@ -55,6 +55,8 @@ foreach ($Sys in $Systems) {
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Green
 $Results | Format-Table -AutoSize
-Write-Host "Do NOT run run_split_md_workflow.ps1 or run_all_four_user_workflow.ps1"
-Write-Host "again: those scripts DELETE md_* and restart MD from zero."
+Write-Host "Do NOT run these again (they DELETE md_* and restart MD):"
+Write-Host "  run_all_four_100ns_formal.ps1 / run_100ns_formal.ps1 / run_all.sh"
+Write-Host "  run_split_md_workflow.ps1 / run_all_four_user_workflow.ps1"
+Write-Host "  clean_test_results.ps1"
 Write-Host "============================================================" -ForegroundColor Green
