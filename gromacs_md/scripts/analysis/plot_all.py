@@ -134,7 +134,7 @@ def summarize_last_ns(df: Optional[pd.DataFrame], metric: str, system_label: str
     min_val = float(df["y"].min())
     max_val = float(df["y"].max())
     status = "STABLE (稳定收敛)"
-    if "pep" in metric.lower() and "rmsd" in metric.lower():
+    if system_label.lower() == "peptide" and "rmsd" in metric.lower():
         status = "INDUCED_FIT_EXPLORATION (两阶段诱导契合构象探索)"
     return {
         "system": system_label,
@@ -147,6 +147,30 @@ def summarize_last_ns(df: Optional[pd.DataFrame], metric: str, system_label: str
         "max": max_val,
         "status": status,
         "n_points": int(len(sub)),
+    }
+
+
+def summarize_profile(df: Optional[pd.DataFrame], metric: str, system_label: str):
+    """针对逐残基分布数据 (如 RMSF, x 轴为残基号而非时间):
+    统计全部残基的均值/标准差/极值, n_points = 残基总数。
+    注意: 不能套用 summarize_last_ns 的"后 20 ns"时间窗逻辑,
+    否则 7 残基小肽会只剩 4 个点 (x 轴跨度的一半)。"""
+    if df is None or df.empty:
+        return None
+    y = df["y"]
+    mean = float(y.mean())
+    std = float(y.std(ddof=1)) if len(y) > 1 else 0.0
+    return {
+        "system": system_label,
+        "metric": metric,
+        "mean": mean,
+        "std": std,
+        "full_traj_mean": mean,
+        "full_traj_std": std,
+        "min": float(y.min()),
+        "max": float(y.max()),
+        "status": "PER-RESIDUE_PROFILE (逐残基全序列分布)",
+        "n_points": int(len(y)),
     }
 
 
@@ -202,20 +226,21 @@ def main():
     add_panel_label(ax1, "A")
 
     # RMSF (重点绘制 AChE 1-530 与多肽 531-537 的逐残基柔性，彻底消除 GROMACS 复合体分组导致的连接直线)
+    # 统计表: RMSF 为逐残基分布, 必须对全部残基统计 (小肽 7 个残基 => n_points=7, 而非后 20 ns 截断的 4)
     if rmsf_ach is not None:
         ax2.plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", linewidth=1.0, color="tab:orange", alpha=0.9)
-        s = summarize_last_ns(rmsf_ach, "2_Backbone_RMSF_Avg_(nm)", "AChE")
+        s = summarize_profile(rmsf_ach, "2_Backbone_RMSF_Avg_(nm)", "AChE")
         if s: summary_rows.append(s)
     elif rmsf_com is not None:
         ax2.plot(rmsf_com["x"], rmsf_com["y"], label="Complex BB", linewidth=1.0, color="tab:blue", alpha=0.6)
-        s = summarize_last_ns(rmsf_com, "2_Backbone_RMSF_Avg_(nm)", "Complex")
+        s = summarize_profile(rmsf_com, "2_Backbone_RMSF_Avg_(nm)", "Complex")
         if s: summary_rows.append(s)
     if rmsf_pep is not None:
         px = rmsf_pep["x"].copy()
         if rmsf_ach is not None and px.min() < 10:
             px = px + rmsf_ach["x"].max()
         ax2.plot(px, rmsf_pep["y"], label="Peptide BB", linewidth=1.5, color="tab:green", marker="o", markersize=3)
-        s = summarize_last_ns(rmsf_pep, "2_Backbone_RMSF_Avg_(nm)", "Peptide")
+        s = summarize_profile(rmsf_pep, "2_Backbone_RMSF_Avg_(nm)", "Peptide")
         if s: summary_rows.append(s)
     ax2.set_title("Backbone Cα RMSF", fontsize=11, weight="bold")
     ax2.set_xlabel("Residue Number", fontsize=10)
@@ -297,32 +322,31 @@ def main():
         ax.set_ylabel("Fraction", fontsize=10)
         ax.grid(alpha=0.3, linestyle="--")
         safe_legend(ax)
-        h_mean = float(ss_bins[cols[1]].mean())
-        c_mean = float(ss_bins[cols[4]].mean()) if len(cols) >= 5 else 0.0
-        summary_rows.append({
-            "system": "Peptide",
-            "metric": "6_DSSP_Helix_Fraction_(%)",
-            "mean": h_mean * 100.0,
-            "std": float(ss_bins[cols[1]].std()) * 100.0,
-            "full_traj_mean": h_mean * 100.0,
-            "full_traj_std": float(ss_bins[cols[1]].std()) * 100.0,
-            "min": float(ss_bins[cols[1]].min()) * 100.0,
-            "max": float(ss_bins[cols[1]].max()) * 100.0,
-            "status": "SECONDARY_STRUCTURE",
-            "n_points": len(ss_bins),
-        })
-        summary_rows.append({
-            "system": "Peptide",
-            "metric": "6_DSSP_Coil_Fraction_(%)",
-            "mean": c_mean * 100.0,
-            "std": float(ss_bins[cols[4]].std()) * 100.0 if len(cols) >= 5 else 0.0,
-            "full_traj_mean": c_mean * 100.0,
-            "full_traj_std": float(ss_bins[cols[4]].std()) * 100.0 if len(cols) >= 5 else 0.0,
-            "min": float(ss_bins[cols[4]].min()) * 100.0 if len(cols) >= 5 else 0.0,
-            "max": float(ss_bins[cols[4]].max()) * 100.0 if len(cols) >= 5 else 0.0,
-            "status": "SECONDARY_STRUCTURE",
-            "n_points": len(ss_bins),
-        })
+        # 统计表: 论文图4 关注 helix / turn / bend / coil 四大类占比, 全部写入汇总表
+        ss_metric_rows = [
+            (1, "6_DSSP_Helix_Fraction_(%)"),
+            (2, "6_DSSP_Turn_Fraction_(%)"),
+            (3, "6_DSSP_Bend_Fraction_(%)"),
+            (4, "6_DSSP_Coil_Fraction_(%)"),
+        ]
+        for col_i, mname in ss_metric_rows:
+            if col_i >= len(ss_bins.columns):
+                continue
+            col = ss_bins.columns[col_i]
+            mean = float(ss_bins[col].mean())
+            std = float(ss_bins[col].std(ddof=1)) if len(ss_bins) > 1 else 0.0
+            summary_rows.append({
+                "system": "Peptide",
+                "metric": mname,
+                "mean": mean * 100.0,
+                "std": std * 100.0,
+                "full_traj_mean": mean * 100.0,
+                "full_traj_std": std * 100.0,
+                "min": float(ss_bins[col].min()) * 100.0,
+                "max": float(ss_bins[col].max()) * 100.0,
+                "status": "SECONDARY_STRUCTURE",
+                "n_points": len(ss_bins),
+            })
     else:
         ax.text(0.5, 0.5, "Secondary structure data not available", ha="center", va="center")
     save_all_formats(fig, fig_dir / "fig4_secondary_structure")
