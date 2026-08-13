@@ -133,4 +133,41 @@ git log --oneline --decorate -8
 ```
 
 `v1.0-gromacs-native-pipeline` points at `13cfebe` (MD protocol).  
-HEAD / `v2.5` is what you use to **draw** the four systems.
+**`v2.6-replot-dssp-percent-rg` (HEAD)** is what you use to **draw** the four systems.
+
+---
+
+## 7. How to replot the first two finished systems (and the last two later)
+
+DSSP is still the **v2.5 complex** calculation (`ss_complex_*`, ~530 residues).  
+Fig 4 is now a **literature-style percentage figure**: stacked α-helix / β-sheet / turn / bend / coil (0–100%) plus a last-20 ns occupancy bar chart.
+
+Fig 0 (2×3): A RMSD (Complex+AChE) · B AChE RMSF · C RDF · D Complex SASA · E DSSP % · F **Rg**.  
+No peptide RMSD/RMSF on the overview. H-bonds stay in `fig_hbonds` (computed after Rg).
+
+```powershell
+cd F:\0wsh\asd
+git pull origin arena/019ff90e-asd
+cd gromacs_md\scripts
+
+# already finished:
+.\replot_alllhrc.ps1
+.\replot_fllhttr.ps1
+
+# when the last two mdrun jobs write md.gro:
+.\replot_ylsllqr.ps1
+.\replot_ache.ps1
+
+# or one click for every finished system:
+.\replot_all_four.ps1
+```
+
+| Script | What |
+|---|---|
+| `replot_alllhrc.ps1` | only alllhrc |
+| `replot_fllhttr.ps1` | only fllhttr |
+| `replot_ylsllqr.ps1` | only ylsllqr |
+| `replot_ache.ps1` | only ache monomer |
+| `replot_all_four.ps1` | all that have `md.xtc` + `md.gro` |
+
+Do **not** use `-OnlyPlot` the first time on fllhttr: it still needs `gmx gyrate` and complex DSSP.
