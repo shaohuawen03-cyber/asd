@@ -177,47 +177,31 @@ def write_report(work: Path, t, y, phases, ligand_t=None, ligand_y=None) -> None
 
     lines = [
         "============================================================",
-        " 肽骨架 RMSD 多稳态相位报告 (PEPTIDE RMSD PHASES)",
+        " Peptide backbone RMSD phase table (see jump_diagnosis.txt)",
         "============================================================",
-        f"轨迹点数            : {len(y)}",
-        f"时间范围            : {t[0]:.2f} – {t[-1]:.2f} ns",
-        f"全程均值 ± 标准差   : {float(y.mean()):.4f} ± {float(y.std(ddof=1) if len(y)>1 else 0):.4f} nm",
-        f"自动识别相位数      : {len(phases)}",
+        f"n_points            : {len(y)}",
+        f"time                : {t[0]:.2f} - {t[-1]:.2f} ns",
+        f"full mean +/- std   : {float(y.mean()):.4f} +/- {float(y.std(ddof=1) if len(y)>1 else 0):.4f} nm",
+        f"n_phases            : {len(phases)}",
         "------------------------------------------------------------",
     ]
     for i, (t0, t1, mu, sd, n) in enumerate(phases):
         lab = phase_label(i, len(phases))
         lines.append(
-            f"  Phase {i+1}  {t0:6.1f} – {t1:6.1f} ns   "
-            f"{mu:.4f} ± {sd:.4f} nm   n={n:4d}   {lab}"
+            f"  Phase {i+1}  {t0:6.1f} - {t1:6.1f} ns   "
+            f"{mu:.4f} +/- {sd:.4f} nm   n={n:4d}   {lab}"
         )
     lines.append("------------------------------------------------------------")
-    if len(phases) >= 3:
-        lines.append(
-            "科学解读: 7 肽在 PAS 口袋经历两阶段诱导契合后锁定终态。"
-        )
-        lines.append(
-            f"  第 1 段 ({phases[0][0]:.0f}–{phases[0][1]:.0f} ns) 初始结合位姿;"
-        )
-        lines.append(
-            f"  第 2 段 ({phases[1][0]:.0f}–{phases[1][1]:.0f} ns) 亚稳态重排;"
-        )
-        lines.append(
-            f"  第 3 段 ({phases[2][0]:.0f}–{phases[2][1]:.0f} ns) 终态平衡，"
-            f"平台内波动仅 ±{phases[2][3]:.3f} nm，可直接用于结合分析。"
-        )
-        lines.append(
-            "论文中不得写成“模拟不稳”。应写为 induced-fit / metastable transitions。"
-        )
+    lines.append("These plateaus describe INTERNAL peptide RMSD (self-fit).")
+    lines.append("They are NOT a PBC crash. See peptide_rmsd_jump_diagnosis.txt.")
     if ligand_y is not None and ligand_t is not None and len(ligand_y) > 5:
         last = ligand_t.max() - 20.0
         sub = ligand_y[ligand_t >= last] if ligand_t.max() > 20 else ligand_y
         lines.append("------------------------------------------------------------")
         lines.append(
-            f"配体 RMSD (先叠合 AChE 再算肽) 后 20 ns: "
-            f"{float(sub.mean()):.4f} ± {float(sub.std(ddof=1) if len(sub)>1 else 0):.4f} nm"
+            f"ligand RMSD (fit AChE, last 20 ns): "
+            f"{float(sub.mean()):.4f} +/- {float(sub.std(ddof=1) if len(sub)>1 else 0):.4f} nm"
         )
-        lines.append("该量反映结合位姿相对受体的驻留，比肽自叠合 RMSD 更适合讨论锚定。")
     lines.append("============================================================")
     txt = work / "peptide_rmsd_phases.txt"
     text = "\n".join(lines) + "\n"

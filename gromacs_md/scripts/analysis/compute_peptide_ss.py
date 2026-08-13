@@ -106,8 +106,8 @@ def trim_ss_to_peptide(ss: str, nres: int) -> str:
 # Parsers
 # ---------------------------------------------------------------------------
 
-def parse_ss_dat(path: Path, nres: int = 7, dt_ns: float = 0.1):
-    """Parse gmx dssp -o / do_dssp -ssdump / free-form SS strings."""
+def parse_ss_dat(path: Path, nres: int = 7, dt_ns: float = 0.0, trim: bool = False, **_kwargs):
+    """Parse gmx dssp -o. trim=False keeps the full complex SS string."""
     if not path.exists():
         return None, []
     times: List[float] = []
@@ -128,23 +128,24 @@ def parse_ss_dat(path: Path, nres: int = 7, dt_ns: float = 0.1):
                 if raw:
                     has_time = True
                 else:
-                    # A pure numeric token that is actually not an SS string
                     continue
             except ValueError:
                 raw = "".join(parts)
             if not raw:
                 continue
-            seqs.append(trim_ss_to_peptide(raw, nres))
+            raw = "".join(ch for ch in raw if not ch.isspace())
+            if trim:
+                raw = trim_ss_to_peptide(raw, nres)
+            seqs.append(raw)
             times.append(t_val if (has_time and t_val is not None) else float(len(seqs) - 1))
     if not seqs:
         return None, []
     if has_time:
         t = np.asarray(times, dtype=float)
-        # classic do_dssp dumps ns or ps; if max > 500 treat as ps
         if t.max() > 500:
             t = t * 0.001
-        return t, seqs
-    return infer_times(len(seqs), dt_ns), seqs
+        return correct_time_axis(t), seqs
+    return correct_time_axis(infer_times(len(seqs), dt_ns)), seqs
 
 
 def _legend_key(label: str) -> str:
@@ -523,20 +524,25 @@ def compute_from_trajectory(work: Path, nres_hint: int = 7):
     return t, seqs, rama
 
 
-def try_gmx_dssp(work: Path) -> bool:
+def try_gmx_dssp(work: Path, sels=None, out_dat: str = "ss_pep.dat",
+                 out_num: str = "ss_pep_num.xvg", **_kwargs) -> bool:
     gmx = shutil.which("gmx") or shutil.which("gmx.exe")
     if not gmx:
+        print(">> [gmx dssp] gmx not found on PATH")
         return False
     tpr, traj = _pick_files(work)
     if tpr is None or traj is None:
+        print(">> [gmx dssp] missing tpr/xtc")
         return False
     ndx = work / "index.ndx"
-    sels = ['group "Peptide"', "group Peptide", "Peptide", "resid 531 to 537"]
+    if sels is None:
+        sels = ['group "Peptide"', "group Peptide", "Peptide", "resid 531 to 537"]
+    want_complex = "complex" in str(out_dat).lower()
     for sel in sels:
         cmd = [
             gmx, "dssp",
             "-s", tpr.name, "-f", traj.name,
-            "-o", "ss_pep.dat", "-num", "ss_pep_num.xvg",
+            "-o", out_dat, "-num", out_num,
             "-hmode", "dssp", "-clear",
             "-sel", sel,
         ]
@@ -545,24 +551,37 @@ def try_gmx_dssp(work: Path) -> bool:
         print(">> [gmx dssp]", " ".join(cmd))
         try:
             proc = subprocess.run(
-                cmd, cwd=str(work), capture_output=True, text=True, timeout=900
+                cmd, cwd=str(work), capture_output=True, text=True, timeout=1800
             )
         except Exception as exc:
-            print(f"   调用失败: {exc}")
+            print(f"   gmx dssp call failed: {exc}")
             continue
+        if proc.stderr:
+            tail = "\n".join(proc.stderr.splitlines()[-8:])
+            print("   stderr tail:")
+            print(tail)
         n_num = 0
-        num = work / "ss_pep_num.xvg"
+        num = work / out_num
         if num.exists():
             with open(num, encoding="utf-8", errors="ignore") as fh:
                 n_num = sum(1 for ln in fh if ln.strip() and not ln.lstrip().startswith(("#", "@")))
         n_dat = 0
-        dat = work / "ss_pep.dat"
+        slen = 0
+        dat = work / out_dat
         if dat.exists():
             with open(dat, encoding="utf-8", errors="ignore") as fh:
-                n_dat = sum(1 for ln in fh if ln.strip() and not ln.lstrip().startswith(("#", "@", ";")))
-        print(f"   return={proc.returncode}  num_rows={n_num}  dat_rows={n_dat}")
-        if proc.returncode == 0 and (n_num >= 10 or n_dat >= 10):
-            return True
+                for ln in fh:
+                    if ln.strip() and not ln.lstrip().startswith(("#", "@", ";")):
+                        n_dat += 1
+                        if slen == 0:
+                            slen = len("".join(ln.split()))
+        print(f"   return={proc.returncode}  num_rows={n_num}  dat_rows={n_dat}  SS_len={slen}")
+        if proc.returncode != 0 or (n_num < 10 and n_dat < 10):
+            continue
+        if want_complex and slen and slen < 50:
+            print(f"   reject: SS_len={slen} is peptide-sized, not complex")
+            continue
+        return True
     return False
 
 
@@ -674,7 +693,7 @@ def write_outputs(
         lines.append("   4ey6 受体本身有两处缺失环，是三段式多肽；肽分析必须只取 Peptide 组。")
         lines.append("   若断裂出现在 7 肽内部，请确认已使用 md_fit.xtc（去 PBC）再算 DSSP。")
     lines.append("============================================================")
-    summary = work / "ss_pep_summary.txt"
+    summary = work / f"{prefix}_summary.txt"
     text = "\n".join(lines) + "\n"
     summary.write_text(text, encoding="utf-8")
     print(text)
@@ -762,6 +781,7 @@ def run(work: Path, nres: int, window_ns: float, testing: bool, allow_gmx: bool,
 
     ok_c = ok_p = True
     if target in ("complex", "both"):
+      try:
         ok_c = _process_one(
             work,
             dat_names=["ss_complex.dat", "ss_ache.dat"],
@@ -779,7 +799,13 @@ def run(work: Path, nres: int, window_ns: float, testing: bool, allow_gmx: bool,
             out_dat="ss_complex.dat", out_num="ss_complex_num.xvg",
             allow_ks=False,
         )
+      except Exception as exc:
+        print(f"!!! Complex DSSP exception: {exc}")
+        import traceback
+        traceback.print_exc()
+        ok_c = False
     if target in ("peptide", "both"):
+      try:
         ok_p = _process_one(
             work,
             dat_names=["ss_pep.dat", "ss_pep.sc"],
@@ -791,6 +817,11 @@ def run(work: Path, nres: int, window_ns: float, testing: bool, allow_gmx: bool,
             out_dat="ss_pep.dat", out_num="ss_pep_num.xvg",
             allow_ks=True,
         )
+      except Exception as exc:
+        print(f"!!! Peptide DSSP exception: {exc}")
+        import traceback
+        traceback.print_exc()
+        ok_p = False
     if target == "complex":
         return 0 if ok_c else 1
     if target == "peptide":
