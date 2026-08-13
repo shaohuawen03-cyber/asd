@@ -1,110 +1,135 @@
-# Version history
-
-Two **different MD protocols** live in this repo. They are not the same.
+# Version history & how to re-plot the four v1.0 systems
 
 ---
 
-## 1. Which protocol is which (how to tell on disk)
+## 0. One-sentence map
 
-| | **A. Original complete pipeline (first version)** | **B. Later 12-step user split-topology** |
-|---|---|---|
-| **Name in old notes** | `v1.0-gromacs-native-pipeline` | `v2.0-user-custom-pipeline` |
-| **Entry scripts** | `run_all.sh` / `run_all.ps1` | `run_split_md_workflow.ps1` |
-| **One-click 4 systems** | `run_all_four_100ns_formal.ps1` | `run_all_four_user_workflow.ps1` |
-| **Wrapper** | `run_pipeline_all.ps1` → `run_all.ps1` + `run_analysis.ps1` | 12-step then `run_analysis.ps1` |
-| **MDP** | `gromacs_md/mdp/100ns/` | `mdp_templates/` or same 100ns if templates missing |
-| **How topology is built** | **One** `pdb2gmx` on the whole `*_complex.pdb` | Split `pro.pdb` + `tai.pdb`, two `pdb2gmx`, merge gro |
-| **Production files** | **`md.xtc` + `md.tpr`** | **`md_0_1.xtc` + `md_0_1.tpr`** |
-| **Other fingerprints** | `equil_free.gro`, `heat.gro`, `complex.gro`, `box.gro` | `pro.pdb`, `tai.pdb`, `pro_processed.gro`, `tai.gro` |
-
-**Look in `md_alllhrc/` (do not delete anything):**
-
-```powershell
-dir F:\0wsh\asd\gromacs_md\md_alllhrc\md.xtc, F:\0wsh\asd\gromacs_md\md_alllhrc\md_0_1.xtc, F:\0wsh\asd\gromacs_md\md_alllhrc\equil_free.gro, F:\0wsh\asd\gromacs_md\md_alllhrc\pro.pdb
-```
-
-- If you see **`md.xtc` + `equil_free.gro`** → you ran **protocol A** (original complete pipeline). That is the first version.
-- If you see **`md_0_1.xtc` + `pro.pdb`/`tai.pdb`** → that folder was (re)built with protocol B.
-
-Analysis scripts already accept **both** `md.xtc` and `md_0_1.xtc`.
+| You asked | Answer |
+|---|---|
+| Which version ran the original 100 ns MD? | **`v1.0-gromacs-native-pipeline`** |
+| What do I wait for? | The four `gmx mdrun` jobs. Do not stop them. |
+| What do I re-run after they finish? | **Analysis only** (`rerun_analysis_four.ps1` / `run_analysis.ps1`). Never the MD launchers. |
+| Which code draws the new figures? | Current analysis (`v2.5`), on the **same v1.0 trajectories**. |
 
 ---
 
-## 2. Your original 100 ns MD = protocol A
+## 1. `v1.0-gromacs-native-pipeline` = your original full MD
 
-The first complete workflow in this project is:
+This is the **first complete protocol** in this project (not the later 12-step split-topology).
+
+**Launchers (do not run again on a finished folder):**
 
 ```
 run_all_four_100ns_formal.ps1
   → run_100ns_formal.ps1
-      → run_all.ps1 / run_all.sh     (mdp/100ns)
-          pdb2gmx (whole complex)
-          editconf -bt triclinic -d 1.0
-          solvate + genion 0.15 M
-          EM → NVT anneal 0→300 K → NPT restrained → NPT free
-          mdrun -deffnm md            → md.xtc / md.tpr
-      → run_analysis.ps1
+      → run_all.ps1 / run_all.sh     using mdp/100ns/
+      → run_analysis.ps1             (old auto-plots; replace later)
 ```
 
-Single-system equivalent:
+Single system:
 
 ```powershell
 .\run_pipeline_all.ps1 -System alllhrc
-# or
 .\run_100ns_formal.ps1 -System alllhrc
 ```
 
-**Do not re-run those scripts** on a finished system: `run_100ns_formal.ps1` and `run_all.sh` **delete** the work directory / intermediate files and start MD from zero.
+**What v1.0 actually does**
 
-The 12-step split-topology scripts were added later as an alternate path. They are **not** the original production protocol.
+1. One `pdb2gmx` on the whole `input/<sys>_complex.pdb` (`amber99sb-ildn`, TIP3P, `-ignh`)
+2. `editconf -c -bt triclinic -d 1.0`
+3. `solvate` + `genion -neutral -conc 0.15`
+4. EM (`1_min.mdp`)
+5. NVT 0→300 K, 1.0 ns, POSRES + simulated annealing (`2_heat.mdp`)
+6. NPT restrained 1.0 ns (`3_equil_npt.mdp`, Berendsen, `tau_p=5.0`)
+7. NPT free 1.0 ns (`4_equil_npt_free.mdp`)
+8. Production 100 ns, 2 fs, 300 K / 1 bar, frame every 20 ps → **5000 frames** (`5_md.mdp`)
+9. Output: **`md.xtc` + `md.tpr`** (also `equil_free.gro`, `heat.gro`, `complex.gro`)
+
+**Git tag:** `v1.0-gromacs-native-pipeline` → commit `13cfebe`  
+(the first tree on this branch that already contains `run_all.sh` + `mdp/100ns/`)
+
+Check a folder (do not delete):
+
+```powershell
+dir F:\0wsh\asd\gromacs_md\md_alllhrc\md.xtc, F:\0wsh\asd\gromacs_md\md_alllhrc\equil_free.gro
+```
+
+If those two exist, that system is **v1.0**.
 
 ---
 
-## 3. After the four `mdrun` jobs finish
+## 2. Later tags (analysis only — MD physics unchanged)
 
-1. Leave running jobs alone.
-2. Pull current **analysis** code (does not change the trajectories).
-3. Re-plot only — never call `run_all_four_100ns_formal.ps1` / `run_100ns_formal.ps1` / `clean_test_results.ps1` again.
+| Tag | Commit | Role |
+|---|---|---|
+| **`v1.0-gromacs-native-pipeline`** | `13cfebe` | **Your production MD.** Keep all `md.xtc`. |
+| `v2.3-sci-comprehensive-tables-and-clean-rmsf` | `13cfebe` (same tree) | First auto-plot extras on this branch |
+| `v2.4-dssp-perframe-and-peptide-phases` | `496632d` | Peptide-only DSSP (too sparse) — do not use for Fig 4 |
+| **`v2.5-complex-dssp-rmsd-diagnosis`** | latest | **Use this to re-draw figures** on v1.0 trajectories |
+
+`v2.0-user-custom-pipeline` is the **other** protocol (`run_split_md_workflow.ps1`, `md_0_1.xtc`). It is **not** what you used for the four 100 ns jobs.
+
+---
+
+## 3. After the four v1.0 jobs finish: re-draw figures (no new MD)
+
+Old auto-plots (step after `mdrun` in `run_100ns_formal.ps1`) used the early analysis code.  
+New figures = **v1.0 `md.xtc` + current `run_analysis.ps1`** (PBC `md_fit.xtc` + complex DSSP).
 
 ```powershell
 cd F:\0wsh\asd
 git pull origin arena/019ff90e-asd
 cd gromacs_md\scripts
+
+# only systems whose mdrun has written md.gro (or md_0_1.gro)
 .\rerun_analysis_four.ps1
 ```
 
-Or one finished system:
+One system:
 
 ```powershell
 .\run_analysis.ps1 -System fllhttr
 ```
 
-Step 0 of analysis rebuilds `md_fit.xtc` (PBC: whole → nojump → center → fit) from `md.xtc` or `md_0_1.xtc`, then RMSD / complex DSSP / figures with **v2.5** scripts.
+What this does (does **not** touch `md.xtc`):
 
-`alllhrc` you already re-analyzed; the command will just refresh it.
+1. `0_make_index.sh` — groups AChE / Peptide; if needed rebuild  
+   `md_fit.xtc` = `whole → nojump → center -pbc mol -ur compact → fit rot+trans`
+2. RMSD / RMSF / RDF / SASA / **complex DSSP** / H-bonds / contacts / waters
+3. `plot_all.py` → `md_<sys>/figures/`
+
+`-OnlyPlot` is **not** enough for fllhttr / ylsllqr / ache: they still need step 1–2.  
+`alllhrc` you already re-analyzed; the four-system script will just refresh it.
 
 ---
 
-## 4. Git tags (analysis code, not a second MD)
+## 4. SCI methods text for v1.0 (can go in the paper)
 
-| Tag | Commit | What it is |
-|---|---|---|
-| `v2.3-sci-comprehensive-tables-and-clean-rmsf` | `13cfebe` | First snapshot on this branch: **protocol A + B both present**; first auto-plots |
-| `v2.4-dssp-perframe-and-peptide-phases` | `496632d` | Peptide-only DSSP (too sparse) |
-| `v2.5-complex-dssp-rmsd-diagnosis` | latest | Complex DSSP + RMSD diagnosis — **use this to re-plot** |
-
-MD physics (mdp/100ns, `run_all.sh`) did not change between these tags. Only post-processing did.
+All-atom MD of AChE–peptide complexes was performed with GROMACS using AMBER99SB-ILDN and TIP3P. Each complex PDB was processed with a single `pdb2gmx` (`-ignh`). The solute was centered in a triclinic box with a 1.0 nm solute–wall distance, solvated, and neutralized at 0.15 M NaCl. After energy minimization, the system was heated from 10 K to 300 K over 1.0 ns (NVT, heavy-atom position restraints, v-rescale, GROMACS simulated annealing), then equilibrated for 1.0 ns NPT with restraints and 1.0 ns NPT without restraints (Berendsen barostat, 1 bar, τP = 5.0 ps). Production MD was 100 ns NPT (300 K, 1 bar, 2 fs, LINCS on H-bonds, PME, Verlet 1.2 nm). Coordinates were saved every 20 ps (5000 frames). Trajectories were made whole, jump-corrected, centered, and fitted (`gmx trjconv`) before analysis. Backbone RMSD/RMSF, COM RDF, SASA, DSSP (complex and peptide), hydrogen bonds, contacts, and bridging waters were computed with the v2.5 analysis scripts.
 
 ---
 
 ## 5. Script safety
 
-| Script | After MD is done? |
+| Script | After MD finished? |
 |---|---|
-| `rerun_analysis_four.ps1` | **Yes** — analyze finished systems, never deletes |
+| `rerun_analysis_four.ps1` | **Yes** |
 | `run_analysis.ps1 -System X` | **Yes** |
+| `run_pipeline_all.ps1 -OnlyAnalysis` | **Yes** |
 | `run_fix_dssp_peptide.ps1 -System X` | Yes (DSSP + diagnosis + replot only) |
-| `run_pipeline_all.ps1 -OnlyAnalysis` | Yes |
-| `run_all.sh` / `run_100ns_formal.ps1` / `run_all_four_100ns_formal.ps1` | **NO** — wipe and restart MD |
+| `run_all_four_100ns_formal.ps1` / `run_100ns_formal.ps1` / `run_all.sh` | **NO** — delete and restart v1.0 MD |
 | `run_split_md_workflow.ps1` / `run_all_four_user_workflow.ps1` | **NO** — different protocol + deletes `md_*` |
 | `clean_test_results.ps1` | **NO** — deletes all four `md_*` |
+
+---
+
+## 6. Create / list tags
+
+```powershell
+git fetch --tags
+git tag -l
+git log --oneline --decorate -8
+```
+
+`v1.0-gromacs-native-pipeline` points at `13cfebe` (MD protocol).  
+HEAD / `v2.5` is what you use to **draw** the four systems.

@@ -22,7 +22,8 @@ $Results = @()
 foreach ($Sys in $Systems) {
     $Work = "..\md_$Sys"
     $Xtc = $null
-    foreach ($c in @("$Work\md_0_1.xtc", "$Work\md.xtc")) {
+    # v1.0 native pipeline writes md.xtc; 12-step writes md_0_1.xtc
+    foreach ($c in @("$Work\md.xtc", "$Work\md_0_1.xtc")) {
         if (Test-Path $c) { $Xtc = $c; break }
     }
     if (-not $Xtc) {
@@ -32,9 +33,9 @@ foreach ($Sys in $Systems) {
     }
 
     # gro is written when mdrun finishes; if missing, production is probably still running
-    $GroDone = (Test-Path "$Work\md_0_1.gro") -or (Test-Path "$Work\md.gro")
+    $GroDone = (Test-Path "$Work\md.gro") -or (Test-Path "$Work\md_0_1.gro")
     if (-not $GroDone) {
-        Write-Host "[SKIP] $Sys : xtc exists but no md_0_1.gro -- mdrun likely still running" -ForegroundColor Yellow
+        Write-Host "[SKIP] $Sys : xtc exists but no md.gro -- mdrun likely still running" -ForegroundColor Yellow
         $Results += [PSCustomObject]@{ System = $Sys; Status = "SKIP_MDRUN_STILL_RUNNING" }
         continue
     }
