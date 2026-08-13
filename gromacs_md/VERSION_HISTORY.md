@@ -65,7 +65,8 @@ If those two exist, that system is **v1.0**.
 | **`v1.0-gromacs-native-pipeline`** | `13cfebe` | **Your production MD.** Keep all `md.xtc`. |
 | `v2.3-sci-comprehensive-tables-and-clean-rmsf` | `13cfebe` (same tree) | First auto-plot extras on this branch |
 | `v2.4-dssp-perframe-and-peptide-phases` | `496632d` | Peptide-only DSSP (too sparse) — do not use for Fig 4 |
-| **`v2.5-complex-dssp-rmsd-diagnosis`** | latest | **Use this to re-draw figures** on v1.0 trajectories |
+| **`v2.5-complex-dssp-rmsd-diagnosis`** | `fe0a38e` | Complex DSSP engine (keep this DSSP logic) |
+| **`v2.6-replot-dssp-percent-rg`** | latest | **Replot pack:** DSSP as **% stacked area + occupancy bars**; fig0 has **no peptide RMSD/RMSF**; **complex Rg** before H-bonds; four single replot scripts + one-click |
 
 `v2.0-user-custom-pipeline` is the **other** protocol (`run_split_md_workflow.ps1`, `md_0_1.xtc`). It is **not** what you used for the four 100 ns jobs.
 
