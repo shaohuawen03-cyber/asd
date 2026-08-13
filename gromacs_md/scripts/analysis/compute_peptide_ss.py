@@ -73,12 +73,29 @@ def _is_comment(line: str) -> bool:
     return (not s) or s.startswith(("#", "@", ";"))
 
 
-def infer_times(n: int, dt_ns: float = 0.1) -> np.ndarray:
-    return np.arange(n, dtype=float) * float(dt_ns)
+def infer_times(n: int, dt_ns: float = 0.0) -> np.ndarray:
+    """Map frame index to ns. 5000-frame production is 100 ns (0.02 ns/frame), not 0.1."""
+    n = int(n)
+    if dt_ns and dt_ns > 0:
+        return np.arange(n, dtype=float) * float(dt_ns)
+    if n >= 200:
+        return np.linspace(0.0, 100.0, n)
+    return np.arange(n, dtype=float) * 0.1
+
+
+def correct_time_axis(t) -> np.ndarray:
+    """5001 frames labeled 0-500 ns means dt was wrongly 0.1 ns; production is 100 ns."""
+    t = np.asarray(t, dtype=float)
+    if t.size == 0:
+        return t
+    if t.size >= 2000 and float(t.max()) > 150.0:
+        print(f">> [time-axis fix] {t.max():.1f} ns / {t.size} frames -> rescale to 0-100 ns")
+        t = t * (100.0 / float(t.max()))
+    return t
 
 
 def trim_ss_to_peptide(ss: str, nres: int) -> str:
-    """Keep the peptide. Long strings are AChE(+peptide); take the tail."""
+    """Only trim when we explicitly want the peptide tail of a long protein string."""
     ss = "".join(ch for ch in ss if not ch.isspace())
     if nres > 0 and len(ss) > nres + 2:
         return ss[-nres:]
@@ -207,9 +224,10 @@ def parse_ss_num_xvg(path: Path, nres: int = 7):
     if not rows:
         return None, None
     arr = np.asarray(rows, dtype=float)
-    t = arr[:, 1 - 1]
+    t = arr[:, 0]
     if t.max() > 500:
         t = t * 0.001
+    t = correct_time_axis(t)
 
     ncols = arr.shape[1] - 1
     # Build per-category counts
@@ -560,8 +578,10 @@ def write_outputs(
     window_ns: float,
     rama_seqs: Optional[Sequence[str]] = None,
     source: str = "unknown",
+    prefix: str = "ss_pep",
+    title: str = "Peptide",
 ) -> None:
-    perres = work / "ss_pep_perres.dat"
+    perres = work / f"{prefix}_perres.dat"
     with open(perres, "w", encoding="utf-8") as fh:
         fh.write("# time_ns ss_string\n")
         if seqs:
@@ -569,7 +589,7 @@ def write_outputs(
                 fh.write(f"{t:.4f} {s}\n")
     print(f">> [SAVED] {perres}  ({len(seqs)} frames)")
 
-    frac_path = work / "ss_pep_frac.xvg"
+    frac_path = work / f"{prefix}_frac.xvg"
     with open(frac_path, "w", encoding="utf-8") as fh:
         fh.write("# time_ns helix turn bend sheet coil ppii break\n")
         for i, t in enumerate(times):
@@ -582,7 +602,7 @@ def write_outputs(
     print(f">> [SAVED] {frac_path}  ({len(times)} frames, per-frame DSSP)")
 
     bins = bin_fracs(times, fracs, window_ns)
-    bins_path = work / "ss_pep_bins.dat"
+    bins_path = work / f"{prefix}_bins.dat"
     with open(bins_path, "w", encoding="utf-8") as fh:
         fh.write("time_ns helix_frac turn_frac bend_frac coil_frac sheet_frac ppii_frac break_frac n_frames\n")
         for rec in bins:
@@ -595,7 +615,7 @@ def write_outputs(
 
     if rama_seqs:
         rama_fracs = seqs_to_fracs(rama_seqs)
-        rama_path = work / "ss_pep_rama.dat"
+        rama_path = work / f"{prefix}_rama.dat"
         with open(rama_path, "w", encoding="utf-8") as fh:
             fh.write("# time_ns helix_like extended turn_like coil ss_string\n")
             for i, t in enumerate(times):
@@ -611,15 +631,15 @@ def write_outputs(
     break_mean = float(np.mean(fracs["break"])) if n else 0.0
     lines = [
         "============================================================",
-        " 肽段二级结构 (DSSP) 分析报告",
+        f" {title} secondary structure (DSSP) report",
         "============================================================",
-        f"数据来源          : {source}",
-        f"帧数              : {n}",
-        f"时间范围          : {times[0]:.3f} – {times[-1]:.3f} ns" if n else "时间范围          : n/a",
-        f"分箱窗口          : {window_ns:g} ns  -> {len(bins)} 窗",
-        f"肽残基长度(众数)  : {Counter(len(s) for s in seqs).most_common(1)[0] if seqs else 'n/a'}",
+        f"source            : {source}",
+        f"n_frames          : {n}",
+        f"time_range        : {times[0]:.3f} – {times[-1]:.3f} ns" if n else "time_range        : n/a",
+        f"bin_window        : {window_ns:g} ns  -> {len(bins)} bins",
+        f"SS_string_length  : {Counter(len(s) for s in seqs).most_common(1)[0] if seqs else 'n/a'}",
         "------------------------------------------------------------",
-        "全程占比 (mean ± std):",
+        "full-trajectory fraction (mean ± std):",
     ]
     for k in CATEGORIES:
         if n:
@@ -633,13 +653,19 @@ def write_outputs(
         for j in range(L):
             col = [s[j] if j < len(s) else "C" for s in seqs]
             cons.append(Counter(col).most_common(1)[0][0])
-        lines.append(f"共识二级结构串    : {''.join(cons)}")
-        # occupancy per residue
-        lines.append("逐残基最频 DSSP 码:")
-        for j in range(L):
+        cons_s = "".join(cons)
+        if L <= 20:
+            lines.append(f"consensus SS      : {cons_s}")
+        else:
+            n_h = cons_s.count("H") + cons_s.count("G") + cons_s.count("I")
+            n_e = cons_s.count("E") + cons_s.count("B")
+            lines.append(f"consensus length  : {L} residues  helix_sites={n_h}  sheet_sites={n_e}")
+        lines.append("most-frequent DSSP code per residue (first/last 8 if long):")
+        show = range(L) if L <= 16 else list(range(8)) + list(range(L - 8, L))
+        for j in show:
             col = [s[j] if j < len(s) else "C" for s in seqs]
             code, cnt = Counter(col).most_common(1)[0]
-            lines.append(f"  res {j+1:2d}  {code}  ({100.0*cnt/len(col):5.1f} %)")
+            lines.append(f"  res {j+1:4d}  {code}  ({100.0*cnt/len(col):5.1f} %)")
     if break_mean > 0.05:
         lines.append("------------------------------------------------------------")
         lines.append(
@@ -662,97 +688,129 @@ def _fracs_look_empty(fracs: Dict[str, np.ndarray]) -> bool:
     return float(np.nanmax(stacked)) < 1e-12
 
 
-def run(work: Path, nres: int, window_ns: float, testing: bool, allow_gmx: bool) -> int:
-    work = work.resolve()
-    print("=" * 60)
-    print(f" Peptide DSSP rebuild in: {work}")
-    print("=" * 60)
-
+def _process_one(work: Path, dat_names, num_name: str, nres: int, trim: bool,
+                 prefix: str, title: str, window_ns: float, testing: bool,
+                 allow_gmx: bool, gmx_sels: Optional[Sequence[str]],
+                 out_dat: str, out_num: str, allow_ks: bool) -> bool:
     times = None
     seqs: List[str] = []
     fracs = None
     rama = None
     source = ""
 
-    dat_candidates = [
-        work / "ss_pep.dat",
-        work / "ss_pep.sc",
-        work / "ss_pep.xpm",
-    ]
-    num_path = work / "ss_pep_num.xvg"
-
-    # 1) prefer per-residue strings (heatmap needs them)
-    for cand in dat_candidates:
-        t, s = parse_ss_dat(cand, nres=nres)
+    for cand in dat_names:
+        p = work / cand if not isinstance(cand, Path) else cand
+        t, s = parse_ss_dat(p, nres=nres, trim=trim)
         if s and len(s) >= 5:
             times, seqs = t, s
             fracs = seqs_to_fracs(seqs)
-            source = f"parsed {cand.name} ({len(seqs)} frames)"
-            print(f">> 使用 {cand.name}: {len(seqs)} 帧, 残基长={len(seqs[0])}")
-            # If the string is still the whole protein, trim already applied.
-            if len(seqs[0]) > nres + 2:
-                print(f"   !! 原始串长 {len(seqs[0])}，已截取最后 {nres} 个残基（排除 3 段式 AChE）")
+            source = f"parsed {p.name} ({len(seqs)} frames, L={len(seqs[0])})"
+            print(f">> {title}: {p.name}  frames={len(seqs)}  SS_len={len(seqs[0])}")
             break
 
-    # 2) -num xvg (may be the only GROMACS 2025 product)
-    t_num, f_num = parse_ss_num_xvg(num_path, nres=nres)
+    t_num, f_num = parse_ss_num_xvg(work / num_name, nres=max(nres, 50) if not trim else nres)
     if f_num is not None and (fracs is None or _fracs_look_empty(fracs)):
         times, fracs = t_num, f_num
-        source = f"parsed {num_path.name} ({len(times)} frames)"
-        print(f">> 使用 {num_path.name}: {len(times)} 帧")
+        source = f"parsed {num_name} ({len(times)} frames)"
+        print(f">> {title}: {num_name}  frames={len(times)}")
 
-    need_fallback = (
-        times is None
-        or fracs is None
-        or _fracs_look_empty(fracs)
-        or (len(times) < 10)
-    )
+    need = times is None or fracs is None or _fracs_look_empty(fracs) or (len(times) < 10)
+    # complex must be long
+    if not trim and seqs and len(seqs[0]) < 50:
+        print(f">> {title}: SS length {len(seqs[0])} is too short for a complex; will retry gmx")
+        need = True
 
-    if need_fallback:
-        print(">> 现有 DSSP 文件不足，启动回退计算 ...")
-        if allow_gmx:
-            if try_gmx_dssp(work):
-                t, s = parse_ss_dat(work / "ss_pep.dat", nres=nres)
-                t2, f2 = parse_ss_num_xvg(work / "ss_pep_num.xvg", nres=nres)
-                if s and len(s) >= 5:
-                    times, seqs, fracs = t, s, seqs_to_fracs(s)
-                    source = "gmx dssp -o ss_pep.dat"
-                elif f2 is not None:
-                    times, fracs = t2, f2
-                    source = "gmx dssp -num ss_pep_num.xvg"
-                    need_fallback = False
-                if times is not None and len(times) >= 10:
-                    need_fallback = False
+    if need and allow_gmx and gmx_sels:
+        print(f">> {title}: running gmx dssp ...")
+        if try_gmx_dssp(work, sels=gmx_sels, out_dat=out_dat, out_num=out_num):
+            t, s = parse_ss_dat(work / out_dat, nres=nres, trim=trim)
+            t2, f2 = parse_ss_num_xvg(work / out_num, nres=max(nres, 50) if not trim else nres)
+            if s and len(s) >= 5 and (trim or len(s[0]) >= 50):
+                times, seqs, fracs = t, s, seqs_to_fracs(s)
+                source = f"gmx dssp -o {out_dat}"
+                need = False
+            elif f2 is not None:
+                times, fracs = t2, f2
+                source = f"gmx dssp -num {out_num}"
+                need = False
 
-    if need_fallback:
+    if need and allow_ks and trim:
         t3, s3, r3 = compute_from_trajectory(work, nres_hint=nres)
         if s3 and len(s3) >= 5:
             times, seqs, rama = t3, s3, r3
             fracs = seqs_to_fracs(seqs)
-            source = "Kabsch-Sander fallback on md_fit/md trajectory"
-            need_fallback = False
+            source = "Kabsch-Sander fallback"
+            need = False
 
-    if need_fallback or times is None or fracs is None:
-        print("!!! DSSP 仍未成功：没有可用的 gmx 输出，也无法从轨迹计算。")
-        print("    请确认 md_fit.xtc / md_0_1.xtc 与 index.ndx 中存在 Peptide 组。")
-        return 1
+    if need or times is None or fracs is None:
+        print(f"!!! {title} DSSP failed")
+        return False
 
     if window_ns <= 0:
         window_ns = auto_window_ns(float(times[0]), float(times[-1]), testing=testing)
-    write_outputs(work, times, fracs, seqs, window_ns, rama_seqs=rama, source=source)
-    return 0
+    write_outputs(work, times, fracs, seqs, window_ns, rama_seqs=rama,
+                  source=source, prefix=prefix, title=title)
+    return True
+
+
+def run(work: Path, nres: int, window_ns: float, testing: bool, allow_gmx: bool,
+        target: str = "both") -> int:
+    work = work.resolve()
+    print("=" * 60)
+    print(f" DSSP rebuild (target={target}) in: {work}")
+    print("=" * 60)
+
+    ok_c = ok_p = True
+    if target in ("complex", "both"):
+        ok_c = _process_one(
+            work,
+            dat_names=["ss_complex.dat", "ss_ache.dat"],
+            num_name="ss_complex_num.xvg",
+            nres=537, trim=False,
+            prefix="ss_complex", title="Complex(AChE+Peptide)",
+            window_ns=window_ns, testing=testing, allow_gmx=allow_gmx,
+            gmx_sels=[
+                'group "Protein" or group "Peptide"',
+                "group Protein or group Peptide",
+                "group Protein",
+                'group "AChE" or group "Peptide"',
+                "resid 1 to 537",
+            ],
+            out_dat="ss_complex.dat", out_num="ss_complex_num.xvg",
+            allow_ks=False,
+        )
+    if target in ("peptide", "both"):
+        ok_p = _process_one(
+            work,
+            dat_names=["ss_pep.dat", "ss_pep.sc"],
+            num_name="ss_pep_num.xvg",
+            nres=nres, trim=True,
+            prefix="ss_pep", title="Peptide",
+            window_ns=window_ns, testing=testing, allow_gmx=allow_gmx,
+            gmx_sels=['group "Peptide"', "group Peptide", "Peptide", "resid 531 to 537"],
+            out_dat="ss_pep.dat", out_num="ss_pep_num.xvg",
+            allow_ks=True,
+        )
+    if target == "complex":
+        return 0 if ok_c else 1
+    if target == "peptide":
+        return 0 if ok_p else 1
+    # both: succeed if complex worked (main request); peptide is extra
+    return 0 if ok_c or ok_p else 1
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    ap = argparse.ArgumentParser(description="Rebuild per-frame peptide DSSP tables")
+    ap = argparse.ArgumentParser(description="Rebuild per-frame DSSP tables")
     ap.add_argument("-d", "--dir", default=".", help="MD working directory")
     ap.add_argument("--nres", type=int, default=7, help="Peptide residue count")
     ap.add_argument("--window-ns", type=float, default=0.0, help="Bin width; 0 = auto")
+    ap.add_argument("--target", choices=("complex", "peptide", "both"), default="both")
     ap.add_argument("--testing", action="store_true")
     ap.add_argument("--no-gmx", action="store_true", help="Do not invoke gmx dssp")
     args = ap.parse_args(argv)
     testing = args.testing or (str(__import__("os").environ.get("TESTING", "0")) == "1")
-    return run(Path(args.dir), args.nres, args.window_ns, testing, allow_gmx=not args.no_gmx)
+    return run(Path(args.dir), args.nres, args.window_ns, testing,
+               allow_gmx=not args.no_gmx, target=args.target)
 
 
 if __name__ == "__main__":

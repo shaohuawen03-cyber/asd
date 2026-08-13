@@ -473,11 +473,20 @@ def main():
     # --------------------------------------------------------
     # 图 4: 肽二级结构演变 (论文 3.2 节 / 图4)
     # --------------------------------------------------------
-    print("\n>> [4/8] Generating Figure 4: Peptide Secondary Structure Evolution ...")
-    ss_frac = read_ss_frac(work_dir / "ss_pep_frac.xvg")
-    ss_bins = read_dat_or_csv(work_dir / "ss_pep_bins.dat")
-    ss_times, ss_seqs = read_ss_perres(work_dir / "ss_pep_perres.dat")
-    # Prefer per-frame fractions; fall back to bins (but refuse to treat 2-point 50 ns bins as success)
+    print("\n>> [4/8] Generating Figure 4: Complex + Peptide DSSP ...")
+    ss_frac = read_ss_frac(work_dir / "ss_complex_frac.xvg")
+    ss_label = "Complex (AChE+Peptide)"
+    ss_system = "Complex"
+    if ss_frac is None or len(ss_frac) < 5:
+        ss_frac = read_ss_frac(work_dir / "ss_pep_frac.xvg")
+        ss_label = "Peptide only"
+        ss_system = "Peptide"
+    ss_bins = read_dat_or_csv(work_dir / "ss_complex_bins.dat")
+    if ss_bins is None:
+        ss_bins = read_dat_or_csv(work_dir / "ss_pep_bins.dat")
+    ss_times, ss_seqs = read_ss_perres(work_dir / "ss_complex_perres.dat")
+    if ss_seqs is None or len(ss_seqs) < 5:
+        ss_times, ss_seqs = read_ss_perres(work_dir / "ss_pep_perres.dat")
     ss_src = None
     if ss_frac is not None and len(ss_frac) >= 5:
         ss_src = ss_frac.rename(columns={"time_ns": "t"})
@@ -502,11 +511,13 @@ def main():
     if ss_src is not None:
         ax.fill_between(ss_src["t"], 0, ss_src["helix"], label="Helix (H/G/I)", color="tab:red", alpha=0.25, linewidth=0)
         ax.plot(ss_src["t"], ss_src["helix"], color="tab:red", linewidth=1.2)
+        if "sheet" in ss_src.columns:
+            ax.plot(ss_src["t"], ss_src["sheet"], label="Sheet (E/B)", color="tab:purple", linewidth=1.2)
         ax.plot(ss_src["t"], ss_src["turn"], label="Turn (T)", color="tab:orange", linewidth=1.3)
         ax.plot(ss_src["t"], ss_src["bend"], label="Bend (S)", color="tab:green", linewidth=1.3)
         if "coil" in ss_src.columns:
             ax.plot(ss_src["t"], ss_src["coil"], label="Coil/Loop (~)", color="0.45", linewidth=1.1)
-        ax.set_title("Peptide DSSP Fraction vs Time (per-frame)", fontsize=11, weight="bold")
+        ax.set_title(f"{ss_label} DSSP vs Time", fontsize=11, weight="bold")
         ax.set_xlabel("Time (ns)", fontsize=10)
         ax.set_ylabel("Fraction", fontsize=10)
         ax.set_ylim(-0.02, 1.05)
@@ -526,7 +537,7 @@ def main():
             cutoff = max(float(tcol.max()) - 20.0, float(tcol.min()))
             last = series[tcol >= cutoff]
             summary_rows.append({
-                "system": "Peptide",
+                "system": ss_system,
                 "metric": metric,
                 "mean": float(last.mean()) * 100.0,
                 "std": float(last.std(ddof=1)) * 100.0 if len(last) > 1 else 0.0,
@@ -548,12 +559,15 @@ def main():
 
     if axh is not None:
         mat = ss_string_heatmap(ss_times, ss_seqs)
+        if mat.shape[0] > 800:
+            step = int(np.ceil(mat.shape[0] / 800.0))
+            mat = mat[::step]
         extent = [0.5, mat.shape[1] + 0.5, float(ss_times[-1]), float(ss_times[0])]
         cmap = mpl.colors.ListedColormap(["#f3f4f6", "#fdba74", "#facc15", "#ef4444"])
         im = axh.imshow(mat, aspect="auto", interpolation="nearest",
                         cmap=cmap, vmin=-0.5, vmax=3.5, extent=extent)
         axh.set_title("Per-residue DSSP (heatmap)", fontsize=11, weight="bold")
-        axh.set_xlabel("Peptide residue (1 = N-term)", fontsize=10)
+        axh.set_xlabel("Residue index (AChE+peptide if complex)", fontsize=10)
         axh.set_ylabel("Time (ns)", fontsize=10)
         cbar = fig.colorbar(im, ax=axh, fraction=0.046, pad=0.04, ticks=[0, 1, 2, 3])
         cbar.ax.set_yticklabels(["Coil", "Turn/Bend", "Sheet", "Helix"])
@@ -728,6 +742,8 @@ def main():
     # Panel 5: Secondary Structure (per-frame; never label a complex as monomer)
     if ss_src is not None:
         axes[4].plot(ss_src["t"], ss_src["helix"], label="Helix", color="tab:red", linewidth=1.1)
+        if "sheet" in ss_src.columns:
+            axes[4].plot(ss_src["t"], ss_src["sheet"], label="Sheet", color="tab:purple", linewidth=1.1)
         axes[4].plot(ss_src["t"], ss_src["turn"], label="Turn", color="tab:orange", linewidth=1.1)
         axes[4].plot(ss_src["t"], ss_src["bend"], label="Bend", color="tab:green", linewidth=1.1)
         if "coil" in ss_src.columns:
