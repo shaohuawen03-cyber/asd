@@ -511,8 +511,11 @@ Check afterwards:
 New launcher `run_apo_ache_100ns.ps1` does it end-to-end with safety checks:
 
 1. extracts/validates `input/ache.pdb` (single chain, no chain B, ~530
-   residues; refuses to run if `input/ache_complex.pdb` exists or the PDB
-   has a second chain);
+   residues; refuses to run if `input/ache_complex.pdb` exists);
+   if the file exists but has a second chain (e.g. the old buggy
+   extraction kept the peptide), it is renamed to
+   `input\ache.pdb.bak-<timestamp>` and rebuilt automatically from
+   `input\alllhrc_complex.pdb` chain A (extractor is now chain-A-only);
 2. renames the current `md_ache` to `md_ache_complex_backup` (instant,
    nothing deleted);
 3. runs the same v1.0 100 ns protocol (mdp/100ns) via run_all.ps1;
@@ -540,3 +543,14 @@ which garbles UTF-8 Chinese text inside STRINGS and breaks parsing
 parser errors). All .ps1 scripts must stay **ASCII-only (English)**;
 Chinese text belongs in the .sh/.py/.md files only (bash/python read UTF-8
 fine).
+
+**input/ache.pdb chain-B bug (v2.7.3 follow-up):** the old
+`extract_ache_monomer.py` fallback kept atoms with
+`chain_id == "A" or resseq <= 530` — the `resseq <= 530` clause pulled the
+peptide chain B (numbered 1-7) into the "monomer" file, so
+`input\ache.pdb` had 2 chains and the apo launcher's validation aborted
+(it printed "chains=2 residues=533"). The extractor is now chain-A-only
+(single-chain verification + TER/END on output), and the launcher detects
+a 2-chain ache.pdb and rebuilds it automatically (old file backed up to
+`input\ache.pdb.bak-<timestamp>`). Requires `input\alllhrc_complex.pdb`
+to be present locally.

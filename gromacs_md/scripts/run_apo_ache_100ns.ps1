@@ -52,6 +52,30 @@ $py = Get-Command python -ErrorAction SilentlyContinue
 if (-not $py) { $py = Get-Command py -ErrorAction SilentlyContinue }
 if (-not $py) { $py = Get-Command python3 -ErrorAction SilentlyContinue }
 
+function Get-PdbChainInfo {
+    param([string]$Path)
+    $chains = @{}
+    $resids = @{}
+    foreach ($line in Get-Content $Path -ErrorAction SilentlyContinue) {
+        if ($line.Length -ge 26 -and ($line.StartsWith("ATOM") -or $line.StartsWith("HETATM"))) {
+            $resname = $line.Substring(17, 3).Trim()
+            if ($resname -in @("SOL", "HOH", "WAT", "NA", "CL")) { continue }
+            $chain = $line.Substring(21, 1).Trim()
+            $resseq = $line.Substring(22, 4).Trim()
+            $chains[$chain] = $true
+            $resids[$resseq] = $true
+        }
+    }
+    return @{ Chains = $chains; Residues = $resids }
+}
+
+function Test-ApoPdb {
+    param([string]$Path)
+    $info = Get-PdbChainInfo $Path
+    $ok = ($info.Chains.Count -eq 1) -and ($info.Residues.Count -ge 400) -and ($info.Residues.Count -le 650)
+    return @{ Ok = $ok; Chains = $info.Chains.Count; Residues = $info.Residues.Count }
+}
+
 if (-not $OnlyAnalyze) {
 
     # ---------- 1. prepare and validate the apo input PDB ----------
@@ -60,46 +84,52 @@ if (-not $OnlyAnalyze) {
         Write-Host "   If it is not a pure apo monomer, move/rename it before running this script." -ForegroundColor Red
         exit 1
     }
-    if (-not (Test-Path $InputPdb)) {
+
+    $apoOk = $false
+    if (Test-Path $InputPdb) {
+        $chk = Test-ApoPdb $InputPdb
+        if ($chk.Ok) {
+            $apoOk = $true
+            Write-Host ">> [OK] input\ache.pdb: single chain, $($chk.Residues) residues" -ForegroundColor Green
+        } else {
+            Write-Host "!! input\ache.pdb is NOT a single-chain apo PDB (chains=$($chk.Chains), residues=$($chk.Residues))." -ForegroundColor Yellow
+            Write-Host "   It still contains a second chain (probably the peptide). Rebuilding it from chain A only." -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host ">> input\ache.pdb not found - will extract chain A from alllhrc_complex.pdb." -ForegroundColor Yellow
+    }
+
+    if (-not $apoOk) {
         if (-not (Test-Path $SrcPdb)) {
-            Write-Host "ERROR: neither input\ache.pdb nor input\alllhrc_complex.pdb exists" -ForegroundColor Red
+            Write-Host "ERROR: input\alllhrc_complex.pdb not found - cannot rebuild the apo PDB." -ForegroundColor Red
+            Write-Host "       Provide a single-chain AChE PDB at input\ache.pdb (no chain B), or restore the source complex PDB, then re-run." -ForegroundColor Red
             exit 1
         }
-        Write-Host ">> extracting pure AChE monomer (chain A) from $SrcPdb -> input\ache.pdb ..." -ForegroundColor Yellow
+        if (-not $py) {
+            Write-Host "ERROR: python not found on PATH - needed to extract chain A." -ForegroundColor Red
+            exit 1
+        }
+        if (Test-Path $InputPdb) {
+            $bakPdb = "$InputPdb.bak-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+            Move-Item -Path $InputPdb -Destination $bakPdb
+            Write-Host "   [BACKUP] old input\ache.pdb -> $bakPdb" -ForegroundColor Yellow
+        }
+        Write-Host ">> extracting chain A only from $SrcPdb -> input\ache.pdb ..." -ForegroundColor Cyan
         Push-Location $Here
         try {
             & $py.Source ".\extract_ache_monomer.py" $SrcPdb $InputPdb
         } finally { Pop-Location }
         if ($LASTEXITCODE -ne 0 -or -not (Test-Path $InputPdb)) {
-            Write-Host "ERROR: failed to extract the AChE monomer" -ForegroundColor Red
+            Write-Host "ERROR: extraction of the AChE monomer failed." -ForegroundColor Red
             exit 1
         }
-    }
-
-    Write-Host ">> validating input\ache.pdb is a single-chain apo PDB (no peptide chain) ..." -ForegroundColor Yellow
-    $chains = @{}
-    $resids = @{}
-    foreach ($line in Get-Content $InputPdb -ErrorAction SilentlyContinue) {
-        if ($line.Length -ge 26 -and ($line.StartsWith("ATOM") -or $line.StartsWith("HETATM"))) {
-            $resname = $line.Substring(17, 3).Trim()
-            if ($resname -in @("SOL", "HOH", "WAT", "NA", "CL")) { continue }
-            $chain = $line.Substring(21, 1)
-            $resseq = $line.Substring(22, 4).Trim()
-            $chains[$chain] = $true
-            $resids[$resseq] = $true
+        $chk = Test-ApoPdb $InputPdb
+        if (-not $chk.Ok) {
+            Write-Host "ERROR: rebuilt input\ache.pdb is still not a single-chain apo PDB (chains=$($chk.Chains), residues=$($chk.Residues))." -ForegroundColor Red
+            Write-Host "       Check $SrcPdb: chain A should be AChE, chain B the peptide." -ForegroundColor Red
+            exit 1
         }
-    }
-    $nChains = $chains.Count
-    $nRes = $resids.Count
-    Write-Host "   chains=$nChains  residues=$nRes" -ForegroundColor White
-    if ($nChains -gt 1) {
-        Write-Host "ERROR: input\ache.pdb has $nChains chains ($($chains.Keys -join ', ')) - this is NOT a protein-only control!" -ForegroundColor Red
-        Write-Host "       Fix input\ache.pdb first (single chain A, no chain B), then re-run." -ForegroundColor Red
-        exit 1
-    }
-    if ($nRes -lt 400 -or $nRes -gt 650) {
-        Write-Host "ERROR: residue count $nRes is abnormal (expect ~530 for the AChE monomer) - check input\ache.pdb" -ForegroundColor Red
-        exit 1
+        Write-Host ">> [OK] rebuilt input\ache.pdb: single chain, $($chk.Residues) residues" -ForegroundColor Green
     }
 
     # ---------- 2. back up the existing md_ache (complex results) ----------
