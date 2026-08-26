@@ -110,7 +110,7 @@ if (-not $OnlyAnalyze) {
             exit 1
         }
         if (Test-Path $InputPdb) {
-            $bakPdb = "$InputPdb.bak-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+            $bakPdb = "${InputPdb}.bak-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
             Move-Item -Path $InputPdb -Destination $bakPdb
             Write-Host "   [BACKUP] old input\ache.pdb -> $bakPdb" -ForegroundColor Yellow
         }
@@ -126,7 +126,7 @@ if (-not $OnlyAnalyze) {
         $chk = Test-ApoPdb $InputPdb
         if (-not $chk.Ok) {
             Write-Host "ERROR: rebuilt input\ache.pdb is still not a single-chain apo PDB (chains=$($chk.Chains), residues=$($chk.Residues))." -ForegroundColor Red
-            Write-Host "       Check $SrcPdb: chain A should be AChE, chain B the peptide." -ForegroundColor Red
+            Write-Host "       Check ${SrcPdb}: chain A should be AChE, chain B the peptide." -ForegroundColor Red
             exit 1
         }
         Write-Host ">> [OK] rebuilt input\ache.pdb: single chain, $($chk.Residues) residues" -ForegroundColor Green

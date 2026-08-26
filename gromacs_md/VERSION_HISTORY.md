@@ -544,6 +544,14 @@ parser errors). All .ps1 scripts must stay **ASCII-only (English)**;
 Chinese text belongs in the .sh/.py/.md files only (bash/python read UTF-8
 fine).
 
+**PowerShell string gotcha:** inside a double-quoted string, `$Var:`
+is parsed as a drive-qualified variable reference and is a syntax error
+(`InvalidVariableReferenceWithDrive`). Always write `${Var}` before a
+colon, e.g. `"Check ${SrcPdb}: chain A ..."`. (`$env:NAME` is the one
+valid built-in form.) Likewise `"$Var.suffix"` is parsed as MEMBER ACCESS
+(and yields nothing for strings) — write `"${Var}.suffix"` or
+`"$($Var).suffix"` for literal dots after a variable.
+
 **input/ache.pdb chain-B bug (v2.7.3 follow-up):** the old
 `extract_ache_monomer.py` fallback kept atoms with
 `chain_id == "A" or resseq <= 530` — the `resseq <= 530` clause pulled the
