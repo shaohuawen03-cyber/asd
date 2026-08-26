@@ -274,3 +274,23 @@ cd gromacs_md\scripts
 
 Check: `md_*\figures\fig0_summary_all.png` (identical panels/axes, complex-only)
 and `gromacs_md\compare_ache_vs_*\fig_compare.png` + `compare_summary.csv`.
+
+---
+
+## 11. v2.7.1 — RMSF straight-line artifact removed
+
+Cause: `gmx rmsf` restarts residue numbering per chain, so `rmsf_complex_bb.xvg`
+is chain A 4-258 / 265-494 / 498-542 (missing residues 259-264, 495-497 are gaps)
+then chain B restarts at 1-7. Plotting that as one polyline connected (542, y)
+to (1, y) with a long straight diagonal line across the RMSF panel (fig0 B,
+fig1 B and every compare figure — hence "everywhere").
+
+Fix: `plot_rmsf_profile()` splits the profile at every residue-numbering
+discontinuity (gap > 1 or restart), keeps real numbering for gap segments,
+renumbers the peptide chain to continue after chain A (543-549), and draws
+each segment separately — a small visual gap instead of a diagonal line.
+`rmsf_segments()` + unit test `test_rmsf_profile_splits_at_chain_numbering_restart`
+lock the behavior (4/4 smoke tests pass).
+
+No other figure logic changed. Re-run `.\run_unified_replot.ps1` to refresh
+fig0/fig1/compare RMSF panels.

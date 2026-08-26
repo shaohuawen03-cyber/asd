@@ -162,11 +162,46 @@ def test_plot_all_does_not_crash_and_writes_fig0_rg_and_dssp_percent():
         assert "INDUCED_FIT_3PHASE" not in sci
 
 
+def test_rmsf_profile_splits_at_chain_numbering_restart():
+    """GROMACS restarts residue numbering per chain (AChE 4-542, peptide 1-7).
+
+    Plotting that as one polyline draws a straight diagonal line from (542, y)
+    back to (1, y). plot_rmsf_profile must split the profile into separate
+    segments and renumber the peptide chain after the AChE chain — also when
+    chain A itself contains numbering gaps (missing residues, e.g. 259-264).
+    """
+    # realistic complex profile: chain A 4-258, gap, 265-494, then peptide 1-7
+    x = np.concatenate([
+        np.arange(4, 259, dtype=float),
+        np.arange(265, 495, dtype=float),
+        np.arange(1, 8, dtype=float),
+    ])
+    y = 0.1 + 0.001 * x
+
+    segs = plot_all.rmsf_segments(x, y)
+    assert len(segs) == 3, f"gaps + chain restart must split into 3 segments, got {len(segs)}"
+    assert segs[0][0][-1] == 258.0 and segs[1][0][0] == 265.0 and segs[2][0][0] == 1.0
+
+    fig, ax = plt.subplots()
+    plot_all.plot_rmsf_profile(ax, x, y, label="Complex BB", color="tab:blue")
+    lines = ax.get_lines()
+    assert len(lines) == 3, "three separate segments, no artificial connector lines"
+    xs_pep = lines[2].get_xdata()
+    # xmax after chain A (with gaps) is 494 -> peptide renumbered 495..501
+    assert xs_pep[0] == 495.0 and xs_pep[-1] == 501.0, \
+        f"peptide chain must continue after chain A, got {xs_pep[0]}..{xs_pep[-1]}"
+    # middle gap segment keeps its real residue numbers (265-494)
+    assert lines[1].get_xdata()[0] == 265.0 and lines[1].get_xdata()[-1] == 494.0
+    assert len(ax.get_legend_handles_labels()[0]) == 1, "one legend entry for all segments"
+    plt.close(fig)
+
+
 def main() -> int:
     tests = [
         test_safe_legend_accepts_fontsize,
         test_ss_percent_stacks_sum_to_100,
         test_plot_all_does_not_crash_and_writes_fig0_rg_and_dssp_percent,
+        test_rmsf_profile_splits_at_chain_numbering_restart,
     ]
     failed = 0
     for fn in tests:

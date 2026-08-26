@@ -25,6 +25,7 @@ from plot_all import (  # noqa: E402
     SS_STACK_COLORS,
     SS_STACK_LABELS,
     add_panel_label,
+    plot_rmsf_profile,
     read_ss_frac,
     read_xvg,
     safe_legend,
@@ -126,9 +127,11 @@ def main():
 
     # B: RMSF
     if rmsf_r is not None:
-        axb.plot(rmsf_r["x"], rmsf_r["y"], label=f"{args.ref_name} Complex BB", color=COL_REF, linewidth=1.0, alpha=0.9)
+        plot_rmsf_profile(axb, rmsf_r["x"], rmsf_r["y"], label=f"{args.ref_name} Complex BB",
+                          color=COL_REF, alpha=0.9, linewidth=1.0)
     if rmsf_c is not None:
-        axb.plot(rmsf_c["x"], rmsf_c["y"], label=f"{args.cmp_name} Complex BB", color=COL_CMP, linewidth=1.0, alpha=0.9)
+        plot_rmsf_profile(axb, rmsf_c["x"], rmsf_c["y"], label=f"{args.cmp_name} Complex BB",
+                          color=COL_CMP, alpha=0.9, linewidth=1.0)
     axb.set_title("Backbone Cα RMSF (Complex, residues 1-537)")
     axb.set_xlabel("Residue Number"); axb.set_ylabel("RMSF (nm)")
     axb.grid(alpha=0.3, linestyle="--")

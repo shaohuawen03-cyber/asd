@@ -105,6 +105,54 @@ def safe_legend(ax: plt.Axes, **kwargs) -> None:
     ax.legend(**kwargs)
 
 
+def rmsf_segments(x, y):
+    """Split a per-residue RMSF profile into contiguous residue segments.
+
+    GROMACS restarts residue numbering for every chain, so a complex profile
+    can contain a back-jump (chain A ends at residue 542, chain B restarts at
+    residue 1). Plotting such data as one polyline connects the two points
+    with a long straight diagonal line across the whole panel. Splitting the
+    profile at numbering jumps (or gaps > 1 residue) removes that artifact.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    if len(x) == 0:
+        return []
+    dx = np.diff(x)
+    cut = np.where((dx <= 0) | (dx > 1.5))[0] + 1  # start index of each new segment
+    segs = []
+    start = 0
+    for c in list(cut) + [len(x)]:
+        if c > start:
+            segs.append((x[start:c], y[start:c]))
+        start = c
+    return segs
+
+
+def plot_rmsf_profile(ax, x, y, label=None, color=None, alpha=1.0, linewidth=1.0):
+    """Plot a per-residue RMSF profile with NO artificial connector lines.
+
+    Chains whose numbering restarts (e.g. peptide chain B numbered 1-7 after
+    AChE chain A 4-542) are renumbered to continue after the previous chain
+    and drawn as separate segments, leaving a small gap instead of a diagonal
+    line between the chains.
+    """
+    segs = rmsf_segments(x, y)
+    if not segs:
+        return
+    xmax = float(segs[0][0][-1])
+    for i, (xs, ys) in enumerate(segs):
+        if i > 0 and xs[0] <= xmax:
+            # numbering restart (new chain): continue after the previous chain
+            off = xmax + 1.0 - xs[0]
+            xs = xs + off
+        ax.plot(xs, ys, label=(label if i == 0 else None), color=color,
+                alpha=alpha, linewidth=linewidth)
+        # track the largest residue number seen so far (update even for
+        # non-offset gap segments, e.g. missing residues 259-264)
+        xmax = max(xmax, float(xs[-1]))
+
+
 SS_STACK_LABELS = ["α-helix", "β-sheet", "Turn", "Bend", "Coil/loop"]
 SS_STACK_COLORS = ["#c0392b", "#f1c40f", "#e67e22", "#27ae60", "#bdc3c7"]
 
@@ -489,13 +537,15 @@ def main():
     safe_legend(ax1)
     add_panel_label(ax1, "A")
 
-    # RMSF — complex backbone (residues 1-537) only; peptide RMSF lives in fig_peptide_rmsd_rmsf
+    # RMSF — complex backbone only; peptide RMSF lives in fig_peptide_rmsd_rmsf
     if rmsf_com is not None:
-        ax2.plot(rmsf_com["x"], rmsf_com["y"], label="Complex BB", linewidth=1.0, color="tab:blue", alpha=0.9)
+        plot_rmsf_profile(ax2, rmsf_com["x"], rmsf_com["y"], label="Complex BB",
+                          color="tab:blue", alpha=0.9, linewidth=1.0)
         s = summarize_rmsf(rmsf_com, "2_Backbone_RMSF_Avg_(nm)", "Complex")
         if s: summary_rows.append(s)
     elif rmsf_ach is not None:
-        ax2.plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", linewidth=1.0, color="tab:orange", alpha=0.9)
+        plot_rmsf_profile(ax2, rmsf_ach["x"], rmsf_ach["y"], label="AChE BB",
+                          color="tab:orange", alpha=0.9, linewidth=1.0)
         s = summarize_rmsf(rmsf_ach, "2_Backbone_RMSF_Avg_(nm)", "AChE")
         if s: summary_rows.append(s)
     if rmsf_com is not None and rmsf_ach is not None:
@@ -855,10 +905,12 @@ def main():
 
     # B: Complex RMSF only (no AChE-only curve on complex figures)
     if rmsf_com is not None:
-        axes[1].plot(rmsf_com["x"], rmsf_com["y"], label="Complex BB", color="tab:blue", linewidth=1.2)
+        plot_rmsf_profile(axes[1], rmsf_com["x"], rmsf_com["y"], label="Complex BB",
+                          color="tab:blue", linewidth=1.2)
         axes[1].set_title("Complex Backbone Cα RMSF", fontsize=11, weight="bold")
     elif rmsf_ach is not None:
-        axes[1].plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", color="tab:orange", linewidth=1.2)
+        plot_rmsf_profile(axes[1], rmsf_ach["x"], rmsf_ach["y"], label="AChE BB",
+                          color="tab:orange", linewidth=1.2)
         axes[1].set_title("Backbone Cα RMSF", fontsize=11, weight="bold")
     else:
         axes[1].set_title("Backbone RMSF", fontsize=11, weight="bold")
