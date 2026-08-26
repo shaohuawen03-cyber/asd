@@ -61,9 +61,12 @@ def _make_dummy_workdir(root: Path) -> Path:
     rmsd = 0.15 + 0.02 * np.sin(np.linspace(0, 6, t_ps.size))
     rmsf_x = np.arange(1, 531)
     rmsf_y = 0.08 + 0.02 * np.sin(rmsf_x / 20.0)
+    rmsf_cx = np.arange(1, 538)
+    rmsf_cy = 0.08 + 0.02 * np.sin(rmsf_cx / 20.0)
     _write_xvg(root / "rmsd_complex_bb.xvg", t_ps, rmsd)
     _write_xvg(root / "rmsd_ache_bb.xvg", t_ps, rmsd * 0.95)
     _write_xvg(root / "rmsd_pep_bb.xvg", t_ps, 0.05 + 0.20 * (t_ps / t_ps.max()))
+    _write_xvg(root / "rmsf_complex_bb.xvg", rmsf_cx, rmsf_cy)
     _write_xvg(root / "rmsf_ache_bb.xvg", rmsf_x, rmsf_y)
     _write_xvg(root / "rmsf_pep_bb.xvg", np.arange(531, 538), np.linspace(0.05, 0.20, 7))
     _write_xvg(root / "rdf_pep_ache.xvg", np.linspace(0, 3, 60),
@@ -143,6 +146,10 @@ def test_plot_all_does_not_crash_and_writes_fig0_rg_and_dssp_percent():
         assert "Complex DSSP content" in svg0
         assert "Secondary Structure Fractions" not in svg0
         assert "Peptide BB (self-fit)" not in svg0
+        # v2.7: complex-only figures — no AChE-only overlay curves on fig0
+        assert "AChE BB" not in svg0, "fig0 must not contain AChE-only curves (complex-only)"
+        assert "AChE Rg" not in svg0, "fig0 must not contain AChE-only Rg curve (complex-only)"
+        assert "Complex BB" in svg0
         assert "Peptide Backbone RMSD" in svg_pep
         assert "Peptide Backbone RMSF" in svg_pep
         assert "Last 20 ns occupancy" in svg4
