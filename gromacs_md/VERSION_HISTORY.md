@@ -505,3 +505,30 @@ Check afterwards:
   current data (ache = complex) panel F contains both systems' AChE-peptide
   H-bond curves; once a real apo run replaces md_ache, ache disappears from
   that panel automatically.
+
+**Re-running the true apo control (md_ache)**
+
+New launcher `run_apo_ache_100ns.ps1` does it end-to-end with safety checks:
+
+1. extracts/validates `input/ache.pdb` (single chain, no chain B, ~530
+   residues; refuses to run if `input/ache_complex.pdb` exists or the PDB
+   has a second chain);
+2. renames the current `md_ache` to `md_ache_complex_backup` (instant,
+   nothing deleted);
+3. runs the same v1.0 100 ns protocol (mdp/100ns) via run_all.ps1;
+4. verifies the new topology has no `topol_Protein_chain_B.itp`;
+5. re-runs analysis (monomer index) + `run_unified_replot.ps1`, so fig0
+   says "apo control" and the compare H-bond panels exclude ache
+   automatically.
+
+```powershell
+cd F:\0wsh\asd\gromacs_md\scripts
+.\run_apo_ache_100ns.ps1            # 正式 100 ns
+# .\run_apo_ache_100ns.ps1 -Testing # 先用 5000 步验证贯通
+```
+
+After it finishes: `md_ache\figures\fig0_summary_all.png` shows
+"AChE MD summary (apo control...)", and
+`compare_ache_vs_*\fig_compare.png` panel F contains only the complex's
+AChE-Peptide curve. The old complex results stay in
+`md_ache_complex_backup\` (analysis scripts ignore it).
