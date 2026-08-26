@@ -1,0 +1,36 @@
+============================================================
+ Complex(AChE+Peptide) secondary structure (DSSP) report
+============================================================
+source            : parsed ss_complex.dat (5001 frames, L=536)
+n_frames          : 5001
+time_range        : 0.000 – 100.000 ns
+bin_window        : 1 ns  -> 100 bins
+SS_string_length  : (536, 5001)
+------------------------------------------------------------
+full-trajectory fraction (mean ± std):
+  helix     33.73 ±  1.08 %
+  turn      12.63 ±  1.15 %
+  bend      12.94 ±  0.91 %
+  sheet     16.88 ±  0.77 %
+  coil      21.53 ±  0.92 %
+  ppii       2.11 ±  0.53 %
+  break      0.19 ±  0.00 %
+consensus length  : 536 residues  helix_sites=190  sheet_sites=93
+most-frequent DSSP code per residue (first/last 8 if long):
+  res    1  ~  (100.0 %)
+  res    2  ~  (100.0 %)
+  res    3  T  ( 58.1 %)
+  res    4  T  ( 61.2 %)
+  res    5  T  ( 53.7 %)
+  res    6  E  ( 96.9 %)
+  res    7  E  ( 96.9 %)
+  res    8  E  ( 99.1 %)
+  res  529  ~  (100.0 %)
+  res  530  =  (100.0 %)
+  res  531  ~  ( 92.3 %)
+  res  532  ~  ( 92.3 %)
+  res  533  S  ( 98.4 %)
+  res  534  ~  ( 99.7 %)
+  res  535  ~  (100.0 %)
+  res  536  ~  (100.0 %)
+============================================================

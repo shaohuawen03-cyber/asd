@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # ============================================================
 # 建立用于分析的分组索引 (AChE / 肽 / 骨架 / 水)
-# 体系划分:
-#   ache  = 单独 AChE 单体对照组 (apo, 无肽):   AChE(1-530)
-#   其余  = AChE + 7 肽对接复合物:              AChE(1-530), Peptide(531-537)
-# 论文 Aβ(1-42) 体系:                          AChE(1-537), Peptide(538-579)
+#
+# v2.7.3: 分组直接由 pdb2gmx 拓扑推导, 与 PDB 残基编号完全无关:
+#   - topol_Protein_chain_A.itp 的 [ atoms ] 行数 = NA (AChE 链原子数)
+#   - topol_Protein_chain_B.itp 的 [ atoms ] 行数 = NB (肽链原子数; 无肽时文件不存在)
+#   - tpr 中蛋白原子按 itp 顺序连续: AChE = 原子 1..NA, 肽 = 原子 NA+1..NA+NB
+# 这样 4-542+1-7 编号的 PDB 与 1-530+531-537 编号的 PDB 都能正确分组。
+#
 # 用法: 在产物工作目录中运行
 # ============================================================
 set -eu
@@ -27,29 +30,43 @@ fi
 N_PROT_RES=$(echo "q" | gmx make_ndx -f "${TPR_FILE}" -o /dev/null 2>&1 | grep "Protein residues" | grep -oE "[0-9]+" | head -n 1 || true)
 N_PROT_RES="${N_PROT_RES:-537}"
 
+# ---------- 从 pdb2gmx 拓扑推导链组成 (编号无关, v2.7.3) ----------
+count_itp_atoms() {
+    local f="$1"
+    [ -f "$f" ] || { echo 0; return; }
+    awk '/^[[:space:]]*\[[[:space:]]*atoms[[:space:]]*\]/{f=1; next}
+         /^[[:space:]]*\[/{f=0}
+         f && $1 ~ /^[0-9]+$/ {c++}
+         END{print c+0}' "$f"
+}
+
+NA=$(count_itp_atoms "topol_Protein_chain_A.itp")
+NB=$(count_itp_atoms "topol_Protein_chain_B.itp")
+NP=$((NA + NB))
+
 HAS_PEP=1
-case "${N_PROT_RES}" in
-    530)
-        # 单独 AChE 单体对照组 (apo, 无肽): input/ache.pdb -> ri 1-530
-        HAS_PEP=0
-        ACHE_SEL="ri 1-530"
-        ;;
-    537)
-        # 7 肽对接构象体系: AChE(1-530), Peptide(531-537)
-        ACHE_SEL="ri 1-530"
-        PEP_SEL="ri 531-537"
-        ;;
-    579)
-        # 论文 Aβ(1-42) 体系: AChE(1-537), Peptide(538-579)
-        ACHE_SEL="ri 1-537"
-        PEP_SEL="ri 538-579"
-        ;;
-    *)
-        # 自适应后退: 默认最后 7 个残基为小肽 (非本项目已知体系才走到这里)
-        ACHE_SEL="ri 1-$((N_PROT_RES - 7))"
-        PEP_SEL="ri $((N_PROT_RES - 6))-${N_PROT_RES}"
-        ;;
-esac
+if [ ! -f "topol_Protein_chain_B.itp" ] || [ "${NB}" -lt 2 ]; then
+    HAS_PEP=0
+fi
+
+if [ "${NP}" -lt 1 ]; then
+    # 极少数没有 topol itp 的环境: 退回老逻辑 (残基编号, 仅最后手段)
+    echo "!! 找不到 topol_Protein_chain_A.itp，回退到残基编号猜测 (可能不准确) ..."
+    HAS_PEP=1
+    case "${N_PROT_RES}" in
+        530) HAS_PEP=0; ACHE_SEL="ri 1-530" ;;
+        537) ACHE_SEL="ri 1-530"; PEP_SEL="ri 531-537" ;;
+        579) ACHE_SEL="ri 1-537"; PEP_SEL="ri 538-579" ;;
+        *)   ACHE_SEL="ri 1-$((N_PROT_RES - 7))"; PEP_SEL="ri $((N_PROT_RES - 6))-${N_PROT_RES}" ;;
+    esac
+else
+    # 标准路径: 原子区间分组, 编号无关
+    ACHE_SEL="a 1-${NA}"
+    if [ "${HAS_PEP}" = "1" ]; then
+        PEP_SEL="a $((NA + 1))-${NP}"
+    fi
+    echo ">> [topol] chain A = ${NA} atoms; chain B = ${NB} atoms; N_PROT_RES(提示) = ${N_PROT_RES}"
+fi
 
 # 自动检测该体系 tpr 中原有默认组的最大编号(如 16 或 18 等)
 LAST_IDX=$(echo "q" | gmx make_ndx -f "${TPR_FILE}" -o /dev/null 2>&1 | grep -E "^ *Group +[0-9]+" | tail -n 1 | awk '{print $2}' || true)
@@ -66,6 +83,13 @@ if [ "${HAS_PEP}" = "1" ]; then
     PEP_CNT=$(echo "${PEP_SEL}" | gmx make_ndx -f "${TPR_FILE}" -o /dev/null 2>&1 | grep -E "Found [1-9][0-9]* atoms" | wc -l || echo "0")
     if [ "${PEP_CNT}" -eq "0" ]; then
         HAS_PEP=0
+    fi
+fi
+if [ "${HAS_PEP}" = "1" ] && [ "${NB}" -ge 2 ]; then
+    # 拓扑链 B 原子数应等于 Peptide 组原子数; 不一致说明原子区间推导有误
+    PEP_ATOMS=$(echo "${PEP_SEL}" | gmx make_ndx -f "${TPR_FILE}" -o /dev/null 2>&1 | grep -oE "Found [0-9]+ atoms" | grep -oE "[0-9]+" | head -n 1 || echo "0")
+    if [ "${PEP_ATOMS:-0}" -ne "${NB}" ]; then
+        echo "!! [警告] Peptide 组原子数(${PEP_ATOMS})与拓扑 chain B(${NB})不一致，但仍按拓扑分组继续。"
     fi
 fi
 
@@ -86,7 +110,7 @@ q
 EOF
     echo ">> 已成功生成复合物 index.ndx, 包含组: AChE, Peptide, AChE_Backbone, Peptide_Backbone, Peptide_Calpha。"
 else
-    echo ">> [单体蛋白模式] 无肽 (单独 AChE 对照, ri 1-530)，自动配置单体 index.ndx ..."
+    echo ">> [单体蛋白模式] 无肽 (单独 AChE 单体对照, 拓扑中无 chain B)，自动配置单体 index.ndx ..."
     gmx make_ndx -f "${TPR_FILE}" -o index.ndx << EOF
 ${ACHE_SEL}
 name ${G1} AChE

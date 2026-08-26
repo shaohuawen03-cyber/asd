@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Reproduce the v2.6 fig4 legend crash and check the v2.6.1+ plot pack.
 
-Also locks the v2.7.2 apo-control behavior:
-  - ache is the standalone AChE protein control (no peptide).
-  - AChE-peptide H-bond comparison exists for complexes only:
-    apo systems never get an "AChE-Peptide" curve or legend entry.
+Also locks the v2.7.2/v2.7.3 apo-control behavior:
+  - apo vs complex is decided by the pdb2gmx topology (chain B itp), which is
+    what was actually simulated;
+  - AChE-peptide H-bond comparison exists for complexes only: apo systems
+    never get an "AChE-Peptide" curve or legend entry;
+  - header-only/empty xvg files count as MISSING (xvg_has_data);
+  - the Rg panel is never silently blank (notice shown when data is missing).
 
 Run:
     python3 test_plot_all_smoke.py
@@ -34,6 +37,28 @@ def _write_xvg(path: Path, xs, ys, comment="# dummy"):
         fh.write("@    title \"dummy\"\n")
         for x, y in zip(xs, ys):
             fh.write(f"{x:.4f}  {y:.6f}\n")
+
+
+def _write_itp(path: Path, natoms: int):
+    """Minimal pdb2gmx-style chain itp with a [ atoms ] section."""
+    with path.open("w", encoding="utf-8") as fh:
+        fh.write("; dummy chain itp\n")
+        fh.write("[ moleculetype ]\nProtein_chain_A 3\n")
+        fh.write("[ atoms ]\n; nr type resnr residue atom cgnr charge mass\n")
+        for i in range(1, natoms + 1):
+            fh.write(f"{i:6d} C 1 ALA CA {i} 0.0 12.01\n")
+
+
+def _write_topol_files(root: Path, has_chain_b: bool, nb_atoms: int = 122):
+    """pdb2gmx topology: topol.top + chain itps (chain B only for complexes)."""
+    _write_itp(root / "topol_Protein_chain_A.itp", 8145)
+    (root / "topol.top").write_text(
+        "#include \"topol_Protein_chain_A.itp\"\n"
+        + ("#include \"topol_Protein_chain_B.itp\"\n" if has_chain_b else ""),
+        encoding="utf-8",
+    )
+    if has_chain_b:
+        _write_itp(root / "topol_Protein_chain_B.itp", nb_atoms)
 
 
 def test_safe_legend_accepts_fontsize():
@@ -115,6 +140,7 @@ def _make_dummy_workdir(root: Path) -> Path:
         "[ AChE ]\n[ Peptide ]\n[ AChE_Backbone ]\n[ Peptide_Backbone ]\n",
         encoding="utf-8",
     )
+    _write_topol_files(root, has_chain_b=True)
     return root
 
 
@@ -150,6 +176,7 @@ def _make_dummy_apo_workdir(root: Path) -> Path:
     (root / "index.ndx").write_text(
         "[ AChE ]\n[ AChE_Backbone ]\n", encoding="utf-8"
     )
+    _write_topol_files(root, has_chain_b=False)
     return root
 
 
@@ -281,6 +308,53 @@ def test_plot_all_apo_control_no_ache_peptide_hbond():
             f"apo tables must use system label 'AChE', got {set(sm['system'].unique())}"
 
 
+def test_is_apo_topology_driven_and_xvg_validation():
+    """is_apo must follow the pdb2gmx topology (chain B itp), and
+    xvg_has_data must reject header-only/empty xvg files."""
+    with tempfile.TemporaryDirectory() as tmp:
+        base = Path(tmp)
+        complex_dir = base / "complex"
+        apo_dir = base / "apo"
+        _make_dummy_workdir(complex_dir)
+        _make_dummy_apo_workdir(apo_dir)
+
+        # complex: chain B itp present -> NOT apo, even if index were stale
+        assert plot_all.is_apo(complex_dir) is False
+        # apo: no chain B itp -> apo, even if a stale index claimed a peptide
+        (apo_dir / "index.ndx").write_text(
+            "[ AChE ]\n[ Peptide ]\n[ Peptide_Backbone ]\n", encoding="utf-8"
+        )
+        assert plot_all.is_apo(apo_dir) is True
+
+        # header-only xvg = missing data
+        empty = base / "empty.xvg"
+        empty.write_text("# comment\n@ title \"x\"\n", encoding="utf-8")
+        assert plot_all.xvg_has_data(empty) is False
+        good = base / "good.xvg"
+        _write_xvg(good, [0.0, 1.0, 2.0], [1.0, 2.0, 3.0])
+        assert plot_all.xvg_has_data(good) is True
+
+
+def test_plot_all_rg_panel_never_blank_when_complex_rg_missing():
+    """If gyrate_complex.xvg is missing but gyrate_ache.xvg exists, fig0 panel F
+    must still show the 'Rg missing' notice — never a silently blank panel."""
+    with tempfile.TemporaryDirectory() as tmp:
+        work = Path(tmp)
+        out = work / "figures"
+        _make_dummy_workdir(work)   # complex dummy has both gyrate files
+        (work / "gyrate_complex.xvg").unlink()
+        argv = ["plot_all.py", "--dir", str(work), "--out", str(out)]
+        old = sys.argv
+        try:
+            sys.argv = argv
+            plot_all.main()
+        finally:
+            sys.argv = old
+        svg0 = (out / "fig0_summary_all.svg").read_text(encoding="utf-8", errors="ignore")
+        assert "Rg missing" in svg0, "fig0 panel F must show a notice, not be blank"
+        assert "Complex Rg" not in svg0
+
+
 def test_compare_apo_vs_complex_hbond_panel_is_complex_only():
     """ache (apo) vs complex: the AChE-Peptide H-bond panel F and its legend
     contain ONLY the complex curve; apo columns of the hbond CSV row are empty."""
@@ -328,6 +402,8 @@ def main() -> int:
         test_ss_percent_stacks_sum_to_100,
         test_plot_all_does_not_crash_and_writes_fig0_rg_and_dssp_percent,
         test_rmsf_profile_splits_at_chain_numbering_restart,
+        test_is_apo_topology_driven_and_xvg_validation,
+        test_plot_all_rg_panel_never_blank_when_complex_rg_missing,
         test_plot_all_apo_control_no_ache_peptide_hbond,
         test_compare_apo_vs_complex_hbond_panel_is_complex_only,
     ]

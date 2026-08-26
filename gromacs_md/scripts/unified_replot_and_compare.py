@@ -21,6 +21,7 @@ AChE-肽氢键面板只画复合物系统 — ache 不参与氢键对比, 也不
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -36,7 +37,7 @@ COMPARE_PAIRS = [("ache", s) for s in ("alllhrc", "fllhttr", "ylsllqr")]
 LIMITS_JSON = HERE / "unified_limits.json"
 
 sys.path.insert(0, str(ANALYSIS))
-from plot_all import read_ss_frac, read_xvg, ss_to_percent_stacks  # noqa: E402
+from plot_all import read_ss_frac, read_xvg, ss_to_percent_stacks, xvg_has_data  # noqa: E402
 
 
 def load(path: Path, x_scale: float):
@@ -100,20 +101,113 @@ def compute_unified_limits():
     return limits
 
 
+def _last_lines(text: str, n: int = 400) -> str:
+    if not text:
+        return ""
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    return "\n".join(lines[-n:])
+
+
 def ensure_gyrate(system_dir: Path) -> bool:
-    if (system_dir / "gyrate_complex.xvg").exists():
+    """Fill gyrate_complex.xvg for ONE system if it is missing or empty.
+
+    v2.7.3 rewrite — the old version only checked file EXISTENCE and called
+    6_rg.sh through `bash <absolute Windows path>`, which fails when the
+    machine's `bash` is WSL (System32\\bash.exe) and can silently leave an
+    empty/header-only xvg behind (every later run then saw the file "exists"
+    and the Rg panel stayed blank). Now:
+
+      1. a file that has no numeric data rows counts as MISSING and is removed;
+      2. GROMACS is called directly (gmx.exe/gmx on PATH), groups
+         Protein -> System -> Backbone -> AChE, output validated;
+      3. only as a last resort falls back to 6_rg.sh via bash (path converted
+         to POSIX / /mnt/<drive>/ form for WSL bash);
+      4. failures print the actual gmx/bash error tail.
+    """
+    out = system_dir / "gyrate_complex.xvg"
+    if xvg_has_data(out):
         return True
+    if out.exists():
+        print(f"    [Rg] {out.name} exists but has no data rows -> regenerating")
+        try:
+            out.unlink()
+        except OSError:
+            pass
+
+    tpr = system_dir / "md.tpr"
+    if not tpr.exists():
+        tpr = system_dir / "md_0_1.tpr"
+    traj = system_dir / "md_fit.xtc"
+    if not traj.exists():
+        traj = system_dir / "md.xtc"
+    if not traj.exists():
+        traj = system_dir / "md_0_1.xtc"
+    if not tpr.exists() or not traj.exists():
+        print(f"    [WARN] cannot compute Rg: missing {tpr.name} / {traj.name}")
+        return False
+
+    ndx = system_dir / "index.ndx"
+    groups = ["Protein", "System", "Backbone", "AChE"] if ndx.exists() else ["Protein", "System"]
+
+    gmx = shutil.which("gmx.exe") or shutil.which("gmx")
+    if gmx:
+        for group in groups:
+            cmd = [gmx, "gyrate", "-s", str(tpr), "-f", str(traj),
+                   "-o", str(out)]
+            if ndx.exists():
+                cmd += ["-n", str(ndx)]
+            try:
+                r = subprocess.run(
+                    cmd, input=f"{group}\n", capture_output=True, text=True,
+                    errors="replace", cwd=str(system_dir),
+                )
+            except OSError as exc:
+                print(f"    [Rg] direct gmx call failed: {exc}")
+                r = None
+            if r is not None and xvg_has_data(out):
+                print(f"    [OK] Rg filled with gmx directly (group {group})")
+                return True
+            tail = _last_lines((r.stderr if r is not None else "") or (r.stdout if r is not None else ""))
+            print(f"    [Rg] gmx gyrate (group {group}) failed rc={r.returncode if r is not None else '?'}: {tail}")
+            if out.exists():
+                try:
+                    out.unlink()
+                except OSError:
+                    pass
+    else:
+        print("    [Rg] gmx not found on PATH; trying 6_rg.sh via bash")
+
+    # ---- last resort: bash 6_rg.sh (Git Bash or WSL) ----
     bash = shutil.which("bash")
-    if not bash:
-        print(f"    [WARN] no bash found on PATH -> cannot auto-run 6_rg.sh for {system_dir.name}")
-        return False
-    r = subprocess.run([bash, str(ANALYSIS / "6_rg.sh")], cwd=system_dir,
-                       capture_output=True, text=True)
-    if r.returncode != 0:
-        tail = (r.stdout or "")[-1200:] + (r.stderr or "")[-1200:]
-        print(f"    [WARN] 6_rg.sh failed for {system_dir.name}: {tail}")
-        return False
-    return (system_dir / "gyrate_complex.xvg").exists()
+    if bash:
+        script = str(ANALYSIS / "6_rg.sh").replace("\\", "/")
+        try:
+            probe = subprocess.run([bash, "-c", "uname -r 2>/dev/null"],
+                                   capture_output=True, text=True, errors="replace", timeout=30)
+            uname = (probe.stdout or "").strip()
+            if "microsoft" in uname.lower() or "wsl" in uname.lower():
+                m = re.match(r"^([A-Za-z]):/(.*)$", script)
+                if m:
+                    script = f"/mnt/{m.group(1).lower()}/{m.group(2)}"
+        except Exception:
+            pass
+        try:
+            r = subprocess.run([bash, script], cwd=str(system_dir),
+                               capture_output=True, text=True, errors="replace")
+        except OSError as exc:
+            print(f"    [Rg] bash 6_rg.sh failed to start: {exc}")
+            r = None
+        if r is not None and xvg_has_data(out):
+            print("    [OK] Rg filled via 6_rg.sh (bash)")
+            return True
+        tail = _last_lines((r.stdout if r is not None else "") + "\n" + (r.stderr if r is not None else ""))
+        print(f"    [WARN] 6_rg.sh failed rc={r.returncode if r is not None else '?'}: {tail}")
+    else:
+        print("    [WARN] no bash found on PATH -> cannot run 6_rg.sh fallback")
+
+    print(f"    [WARN] gyrate_complex.xvg still missing for {system_dir.name}; "
+          f"fig0 panel F will show 'Rg missing'")
+    return False
 
 
 def main():
@@ -126,10 +220,10 @@ def main():
     for s in SYSTEMS:
         d = GMX_ROOT / f"md_{s}"
         print(f"\n>> [{s}] ensuring Rg files ...")
-        if not (d / "gyrate_complex.xvg").exists():
+        if not xvg_has_data(d / "gyrate_complex.xvg"):
             ok = ensure_gyrate(d)
             if not ok:
-                print(f"    [WARN] {s}: gyrate_complex.xvg still missing -> fig0 panel F will show a notice.")
+                print(f"    [WARN] {s}: gyrate_complex.xvg still missing/empty -> fig0 panel F will show a notice.")
                 print(f"           Fix: run replot_{s}.ps1 once (needs md_fit.xtc + gmx).")
         else:
             print(f"    [OK] gyrate present")

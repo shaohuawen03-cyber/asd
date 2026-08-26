@@ -24,12 +24,18 @@ from MDAnalysis.lib.distances import distance_array
 def select_ache_and_pep(u, arg_a, arg_p):
     if arg_a != "default" and arg_p != "default":
         return u.select_atoms(f"resid {arg_a}"), u.select_atoms(f"resid {arg_p}")
-    # 自动识别: 检查蛋白总残基数
     prot = u.select_atoms("protein")
+    # 首选: 按链识别 (与 PDB 残基编号无关)。
+    # 本项目 PDB 链 A = 4-542 编号(或 1-542), 肽链 B 单独编号 1-7,
+    # 旧版 "resid 531-537" 会误选 AChE 自身的 531-537 号残基!
+    pep = u.select_atoms("segid B or chainID B")
+    if pep.n_residues >= 2:
+        return prot - pep, pep
+    # 后退: 残基编号 (旧逻辑, 仅对无 chainID 的体系)
     nres = prot.n_residues
     if nres == 530:  # 单独 AChE 单体对照组 (apo, 无肽)
         return u.select_atoms("protein"), u.select_atoms("protein and resid 531-537")
-    if nres == 537:  # 你的 7 肽对接复合物体系
+    if nres == 537:  # 7 肽对接复合物体系 (残基编号 1-537 布局)
         return u.select_atoms("resid 1-530"), u.select_atoms("resid 531-537")
     elif nres == 579:  # 论文 42 肽 Aβ(1-42) 体系
         return u.select_atoms("resid 1-537"), u.select_atoms("resid 538-579")

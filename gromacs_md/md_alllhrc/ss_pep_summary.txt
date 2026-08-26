@@ -1,0 +1,26 @@
+============================================================
+ Peptide secondary structure (DSSP) report
+============================================================
+source            : parsed ss_pep.dat (5001 frames, L=6)
+n_frames          : 5001
+time_range        : 0.000 – 100.000 ns
+bin_window        : 1 ns  -> 100 bins
+SS_string_length  : (6, 5001)
+------------------------------------------------------------
+full-trajectory fraction (mean ± std):
+  helix      0.00 ±  0.00 %
+  turn      18.81 ± 16.60 %
+  bend       0.67 ±  3.35 %
+  sheet      0.00 ±  0.00 %
+  coil      80.52 ± 16.18 %
+  ppii       0.00 ±  0.00 %
+  break      0.00 ±  0.00 %
+consensus SS      : ~~TT~~
+most-frequent DSSP code per residue (first/last 8 if long):
+  res    1  ~  (100.0 %)
+  res    2  ~  (100.0 %)
+  res    3  T  ( 56.3 %)
+  res    4  T  ( 56.3 %)
+  res    5  ~  ( 99.7 %)
+  res    6  ~  (100.0 %)
+============================================================

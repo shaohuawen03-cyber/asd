@@ -52,18 +52,53 @@ PEPTIDE_MARKER_FILES = (
 )
 
 
+def _count_itp_atoms(path: Path) -> int:
+    """Number of atoms in a pdb2gmx chain itp ([ atoms ] section)."""
+    if not path.exists():
+        return 0
+    n = 0
+    in_atoms = False
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as fh:
+            for line in fh:
+                s = line.strip()
+                if not s or s.startswith((";", "#")):
+                    continue
+                if s.startswith("[") and s.endswith("]"):
+                    in_atoms = s.lower() == "[ atoms ]"
+                    continue
+                if in_atoms:
+                    parts = s.split()
+                    if parts and parts[0].isdigit():
+                        n += 1
+    except OSError:
+        return 0
+    return n
+
+
 def is_apo(work_dir: Path) -> bool:
     """True when the system is the standalone AChE protein control (no peptide).
 
-    The four systems are: ache = AChE alone (apo control), the other three =
-    AChE + peptide complexes. Peptide-dependent analyses (AChE-peptide
+    The AChE monomer control has no peptide chain; the three complexes have a
+    7-residue peptide as chain B. Peptide-dependent analyses (AChE-peptide
     H-bonds, RDF, peptide RMSD/DSSP) only exist for the complexes, so an apo
     system must never appear in those comparisons.
 
-    Detection order:
-      1. index.ndx is authoritative: no [ Peptide ] group -> apo.
-      2. Otherwise: no peptide-dependent analysis products -> apo.
+    Detection order (most -> least authoritative):
+      1. pdb2gmx topology: `topol.top` exists and `topol_Protein_chain_B.itp`
+         is absent/empty -> apo. Chain B present with atoms -> complex.
+         This reflects the system that was actually simulated.
+      2. index.ndx: no [ Peptide ] group -> apo.
+         (NOTE: old 0_make_index.sh versions could fake a [ Peptide ] group
+         out of AChE's own residues, so the topology check comes first.)
+      3. No peptide-dependent analysis products -> apo.
     """
+    top = work_dir / "topol.top"
+    chain_b = work_dir / "topol_Protein_chain_B.itp"
+    if top.exists():
+        if not chain_b.exists():
+            return True
+        return _count_itp_atoms(chain_b) < 2
     idx = work_dir / "index.ndx"
     if idx.exists():
         try:
@@ -74,6 +109,17 @@ def is_apo(work_dir: Path) -> bool:
             return False
         return True
     return not any((work_dir / f).exists() for f in PEPTIDE_MARKER_FILES)
+
+
+def xvg_has_data(path: Path, min_rows: int = 2) -> bool:
+    """True when an xvg contains at least min_rows numeric data rows.
+
+    GROMACS tools can leave an empty/header-only .xvg behind when they fail
+    mid-run; such files must be treated as MISSING (and regenerated), not as
+    valid data — otherwise panels silently stay blank.
+    """
+    df = read_xvg(path, x_scale=1.0)
+    return df is not None and len(df) >= min_rows
 
 
 def read_xvg(path: Path, x_scale: float = 1.0) -> Optional[pd.DataFrame]:
@@ -1033,7 +1079,10 @@ def main():
         axes[5].plot(rg_com["x"], rg_com["y"],
                      label=("AChE Rg" if apo else "Complex Rg"),
                      color="tab:blue", linewidth=1.2)
-    if rg_com is None and rg_ach is None:
+    else:
+        # NEVER leave this panel silently blank: if the complex Rg data is
+        # missing (or an empty/header-only xvg), always show the notice —
+        # even when gyrate_ache.xvg happens to exist.
         axes[5].text(0.5, 0.5, "Rg missing — run 6_rg.sh",
                      ha="center", va="center", fontsize=10, color="tab:red")
     axes[5].set_title("Radius of Gyration", fontsize=11, weight="bold")

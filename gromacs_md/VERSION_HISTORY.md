@@ -387,3 +387,121 @@ Check afterwards:
 - `gromacs_md\md_ache\figures\fig0_summary_all.png` — suptitle "apo control",
   panel G = "Intra-AChE", RDF panel = "N/A — apo control (no peptide)".
 - `gromacs_md\md_ache\hbond_ache_pep.xvg` no longer exists (removed by step 1).
+
+---
+
+## 13. v2.7.3 — Rg auto-fill fixed; index built from topology; two data problems found
+
+**Why alllhrc's Rg panel stayed blank (root cause)**
+
+alllhrc was the only system whose `gyrate_*.xvg` had never been produced. The
+v2.7 auto-fill (`ensure_gyrate`) called `bash F:\0wsh\...\6_rg.sh`:
+
+1. `shutil.which("bash")` can pick up WSL's `C:\Windows\System32\bash.exe`,
+   which cannot open a `F:\...` Windows path -> the fill silently failed.
+2. Even in Git Bash, a failed `gmx gyrate` can leave an **empty/header-only**
+   `gyrate_complex.xvg` behind. The old code only checked file *existence*,
+   so every later run saw "gyrate present" and the panel stayed empty.
+3. `plot_all.py` showed the "Rg missing" notice only when BOTH gyrate files
+   were absent; with a stray `gyrate_ache.xvg` the panel rendered **blank**.
+4. `replot_common.ps1`'s `$HasRg` also only checked existence.
+
+v2.7.3 fixes (all four):
+
+- `ensure_gyrate`: a file with <2 numeric rows counts as missing and is
+  removed; GROMACS is called **directly** (`gmx.exe`/`gmx` on PATH) with
+  group fallbacks Protein -> System -> Backbone -> AChE, output validated;
+  bash `6_rg.sh` is only a last resort (path converted to `/mnt/<drive>/`
+  for WSL bash); failures print the real gmx/bash error tail.
+- `6_rg.sh`: same group fallbacks + content validation; stale empty files
+  removed before each attempt; works with or without index.ndx.
+- `plot_all.py`: Rg panel NEVER silently blank — "Rg missing — run 6_rg.sh"
+  notice is shown whenever complex Rg data is absent (even if
+  gyrate_ache.xvg exists). Added `xvg_has_data()`.
+- `replot_common.ps1`: `$HasRg` requires >=2 data rows; after running
+  6_rg.sh it re-verifies and prints a clear warning.
+
+**Index groups now come from the topology, not residue numbers**
+
+The four PDBs are numbered chain A = 4-542 (or 1-542 for ache) + peptide
+chain B = 1-7. The old `0_make_index.sh` selections `ri 1-530` /
+`ri 531-537` were **wrong for this numbering** (they selected AChE's own
+residues 531-537, and cut AChE 531-542 out of the AChE group). v2.7.3
+builds the groups from the pdb2gmx itp files instead:
+
+- chain A atoms = 1..NA, chain B atoms = NA+1..NA+NB
+  (NA/NB = [ atoms ] counts of topol_Protein_chain_A/B.itp;
+   verified against the real data: 8145 / 122-133 atoms).
+- No chain B itp (or <2 atoms) -> monomer mode (true apo control).
+- `is_apo()` in plot_all now checks the **topology first** (topol.top +
+  chain B itp), then index.ndx, then peptide-product files — so a stale
+  index can never mislabel a system again.
+
+**Two data problems found in the synced results (2026-08-26, results-sync)**
+
+1. **`md_ache` is NOT the standalone apo control.** Its topology
+   (`topol_Protein_chain_B.itp`, built from `complex_clean.pdb`) contains a
+   7-residue peptide: ALA-LEU-LEU-LEU-HIS-ARG-CYS — the same ALLLHRC peptide
+   as `md_alllhrc` (chain A renumbered 1-542). So all four systems are
+   complexes; there is currently **no apo control** in the data. The
+   pipeline now decides apo vs complex from the topology, so `ache` will be
+   treated as a complex (and appear in H-bond comparisons) until a real apo
+   run replaces it (a true apo has no chain B itp and is then excluded
+   automatically).
+2. **fig5/fig6 data (contacts / bridging waters) were computed on the wrong
+   "peptide".** `contacts.py` / `bridging_waters.py` used the residue-range
+   guess (531-537), which under the real numbering is AChE's own residues
+   531-537. The synced `inter_contacts.csv`, `intra_contacts.csv`,
+   `frequent_contacts.tsv`, `bridging_per_residue.csv` are therefore
+   AChE-internal, not peptide data. Both scripts now select the peptide by
+   chain (`segid B or chainID B`, AChE = protein minus peptide), numbering
+   independent. **Re-run contacts + bridging to replace those files**
+   (`replot_<system>.ps1 -Full` does it, or run_analysis.ps1).
+
+**What was synced into this branch**
+
+The small result files (xvg / csv / dat / tsv / ndx / log / mdp / top / itp
++ figures for fllhttr / ylsllqr / ache + mdp_templates/) from the user's
+results-sync push were merged into `arena/01a03bd4-asd`. `md_alllhrc/figures`
+kept the newer branch version. Figures are pre-v2.7.3 output and will be
+refreshed by the re-plot below.
+
+**How to fix your local copy**
+
+```powershell
+cd F:\0wsh\asd
+git fetch origin arena/01a03bd4-asd
+git checkout origin/arena/01a03bd4-asd -- `
+  gromacs_md/scripts/analysis/plot_all.py `
+  gromacs_md/scripts/analysis/plot_compare_systems.py `
+  gromacs_md/scripts/analysis/test_plot_all_smoke.py `
+  gromacs_md/scripts/analysis/0_make_index.sh `
+  gromacs_md/scripts/analysis/6_rg.sh `
+  gromacs_md/scripts/analysis/contacts.py `
+  gromacs_md/scripts/analysis/bridging_waters.py `
+  gromacs_md/scripts/analysis/compute_peptide_ss.py `
+  gromacs_md/scripts/unified_replot_and_compare.py `
+  gromacs_md/scripts/replot_common.ps1 `
+  gromacs_md/VERSION_HISTORY.md
+
+cd gromacs_md\scripts
+# 1) rebuild indexes from topology + recompute the analyses whose old
+#    outputs were wrong (contacts / bridging) + fill alllhrc Rg:
+.\replot_alllhrc.ps1 -Full
+.\replot_fllhttr.ps1 -Full
+.\replot_ylsllqr.ps1 -Full
+.\replot_ache.ps1 -Full
+# 2) unified axes + compare folders (auto-fills alllhrc Rg if still missing):
+.\run_unified_replot.ps1
+```
+
+Check afterwards:
+
+- `gromacs_md\md_alllhrc\gyrate_complex.xvg` exists with ~5000 data rows
+  and fig0 panel F shows the Complex Rg curve.
+- `md_alllhrc\inter_contacts.csv` now lists peptide residues 1-7
+  (chain B), not 531-537.
+- Compare figures: `ache` behaves according to its topology — with the
+  current data (ache = complex) panel F contains both systems' AChE-peptide
+  H-bond curves; once a real apo run replaces md_ache, ache disappears from
+  that panel automatically.
