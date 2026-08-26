@@ -28,6 +28,8 @@ def select_ache_and_pep(u, arg_a, arg_p):
         return u.select_atoms(f"resid {arg_a}"), u.select_atoms(f"resid {arg_p}")
     prot = u.select_atoms("protein")
     nres = prot.n_residues
+    if nres == 530:  # 单独 AChE 单体对照组 (apo, 无肽)
+        return u.select_atoms("protein"), u.select_atoms("protein and resid 531-537")
     if nres == 537:  # 7 肽对接复合物体系
         return u.select_atoms("resid 1-530"), u.select_atoms("resid 531-537")
     elif nres == 579:  # 论文 42 肽 Aβ(1-42) 体系

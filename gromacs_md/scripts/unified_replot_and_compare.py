@@ -12,6 +12,9 @@
           compare_ache_vs_alllhrc / compare_ache_vs_fllhttr / compare_ache_vs_ylsllqr
        （fig_compare.png/pdf/svg + compare_summary.csv）
 
+ache 是单独 AChE 单体对照 (apo, 无肽): 它的 fig0 不含任何肽相关曲线,
+AChE-肽氢键面板只画复合物系统 — ache 不参与氢键对比, 也不出现在其图例中。
+
 用法:
     python unified_replot_and_compare.py
 """
@@ -167,9 +170,11 @@ def main():
     print("\n" + "=" * 70)
     print(" DONE.  Check:")
     for s in SYSTEMS:
-        print(f"   gromacs_md/md_{s}/figures/fig0_summary_all.png   (复合物-only, 统一 y 轴)")
+        tag = "apo 对照 (无肽)" if s == "ache" else "复合物-only, 统一 y 轴"
+        print(f"   gromacs_md/md_{s}/figures/fig0_summary_all.png   ({tag})")
     for _ref, c in COMPARE_PAIRS:
         print(f"   gromacs_md/compare_ache_vs_{c}/fig_compare.png + compare_summary.csv")
+        print(f"      (氢键面板 F 只含 {c} 复合物的 AChE-Peptide 曲线; ache 不参与氢键对比)")
     print(f"   shared limits: {LIMITS_JSON}")
     print("=" * 70)
 

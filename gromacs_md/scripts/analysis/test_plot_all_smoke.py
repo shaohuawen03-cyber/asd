@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Reproduce the v2.6 fig4 legend crash and check the v2.6.1 plot pack.
+"""Reproduce the v2.6 fig4 legend crash and check the v2.6.1+ plot pack.
+
+Also locks the v2.7.2 apo-control behavior:
+  - ache is the standalone AChE protein control (no peptide).
+  - AChE-peptide H-bond comparison exists for complexes only:
+    apo systems never get an "AChE-Peptide" curve or legend entry.
 
 Run:
     python3 test_plot_all_smoke.py
@@ -20,6 +25,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import plot_all  # noqa: E402
+import plot_compare_systems  # noqa: E402
 
 
 def _write_xvg(path: Path, xs, ys, comment="# dummy"):
@@ -57,6 +63,7 @@ def test_ss_percent_stacks_sum_to_100():
 
 
 def _make_dummy_workdir(root: Path) -> Path:
+    root.mkdir(parents=True, exist_ok=True)
     t_ps = np.linspace(0.0, 100000.0, 80)  # 0-100 ns in ps
     rmsd = 0.15 + 0.02 * np.sin(np.linspace(0, 6, t_ps.size))
     rmsf_x = np.arange(1, 531)
@@ -102,6 +109,46 @@ def _make_dummy_workdir(root: Path) -> Path:
     )
     (root / "bridging_per_residue.csv").write_text(
         "residue,n_waters,n_bridges\nA1,4,7\nL2,2,3\n", encoding="utf-8"
+    )
+    # complex index: contains a [ Peptide ] group (apo detection is index-driven)
+    (root / "index.ndx").write_text(
+        "[ AChE ]\n[ Peptide ]\n[ AChE_Backbone ]\n[ Peptide_Backbone ]\n",
+        encoding="utf-8",
+    )
+    return root
+
+
+def _make_dummy_apo_workdir(root: Path) -> Path:
+    """Standalone AChE control (ache): protein-only products, NO peptide files.
+
+    hbond_ache_pep.xvg / rdf_pep_ache.xvg / rmsd_pep_bb.xvg etc. must be
+    absent, and index.ndx must have no [ Peptide ] group.
+    """
+    root.mkdir(parents=True, exist_ok=True)
+    t_ps = np.linspace(0.0, 100000.0, 80)  # 0-100 ns in ps
+    rmsd = 0.15 + 0.02 * np.sin(np.linspace(0, 6, t_ps.size))
+    rmsf_x = np.arange(1, 531)
+    rmsf_y = 0.08 + 0.02 * np.sin(rmsf_x / 20.0)
+    _write_xvg(root / "rmsd_complex_bb.xvg", t_ps, rmsd)   # whole protein = AChE
+    _write_xvg(root / "rmsf_complex_bb.xvg", rmsf_x, rmsf_y)
+    _write_xvg(root / "sasa_complex.xvg", t_ps, 214 + 3 * np.sin(np.linspace(0, 8, t_ps.size)))
+    _write_xvg(root / "gyrate_complex.xvg", t_ps, 2.30 + 0.02 * np.sin(np.linspace(0, 5, t_ps.size)))
+    _write_xvg(root / "hbond_ache_intra.xvg", t_ps, 380 + 6 * np.sin(np.linspace(0, 9, t_ps.size)))
+
+    t_ns = t_ps * 0.001
+    with (root / "ss_complex_frac.xvg").open("w", encoding="utf-8") as fh:
+        fh.write("# time_ns helix turn bend sheet coil ppii break\n")
+        for t in t_ns:
+            fh.write(f"{t:.4f} 0.3428 0.1231 0.1284 0.1698 0.2091 0.0249 0.0019\n")
+    with (root / "ss_complex_perres.dat").open("w", encoding="utf-8") as fh:
+        fh.write("# time_ns ss_string\n")
+        ss = ("H" * 18) + ("E" * 8) + ("T" * 6) + ("S" * 6) + ("~" * 12)
+        for t in t_ns:
+            fh.write(f"{t:.4f} {ss}\n")
+
+    # apo index: NO [ Peptide ] group
+    (root / "index.ndx").write_text(
+        "[ AChE ]\n[ AChE_Backbone ]\n", encoding="utf-8"
     )
     return root
 
@@ -196,12 +243,93 @@ def test_rmsf_profile_splits_at_chain_numbering_restart():
     plt.close(fig)
 
 
+def test_plot_all_apo_control_no_ache_peptide_hbond():
+    """ache = standalone AChE control: no AChE-Peptide H-bond curve anywhere,
+    labels say 'AChE BB' (not 'Complex BB'), suptitle says 'apo control',
+    summary tables use system label 'AChE' (not 'Complex')."""
+    with tempfile.TemporaryDirectory() as tmp:
+        work = Path(tmp)
+        out = work / "figures"
+        _make_dummy_apo_workdir(work)
+        argv = ["plot_all.py", "--dir", str(work), "--out", str(out)]
+        old = sys.argv
+        try:
+            sys.argv = argv
+            plot_all.main()
+        finally:
+            sys.argv = old
+
+        svg0 = (out / "fig0_summary_all.svg").read_text(encoding="utf-8", errors="ignore")
+        assert "apo control" in svg0
+        assert "AChE BB" in svg0
+        assert "Complex BB" not in svg0
+        assert "AChE SASA" in svg0
+        assert "AChE Rg" in svg0
+        assert "Intra-AChE" in svg0
+        assert "AChE-Peptide" not in svg0, "apo control must not show AChE-Peptide H-bonds"
+
+        svg_hb = (out / "fig_hbonds.svg").read_text(encoding="utf-8", errors="ignore")
+        assert "Intra-AChE" in svg_hb
+        assert "AChE - Peptide" not in svg_hb
+
+        svg1 = (out / "fig1_rmsd_rmsf.svg").read_text(encoding="utf-8", errors="ignore")
+        assert "AChE BB" in svg1
+        assert "Complex BB" not in svg1
+
+        sm = pd.read_csv(out / "summary_metrics.csv")
+        assert set(sm["system"].unique()) == {"AChE"}, \
+            f"apo tables must use system label 'AChE', got {set(sm['system'].unique())}"
+
+
+def test_compare_apo_vs_complex_hbond_panel_is_complex_only():
+    """ache (apo) vs complex: the AChE-Peptide H-bond panel F and its legend
+    contain ONLY the complex curve; apo columns of the hbond CSV row are empty."""
+    with tempfile.TemporaryDirectory() as tmp:
+        base = Path(tmp)
+        ref = base / "ref_apo"
+        cmp_ = base / "cmp_complex"
+        out = base / "compare_out"
+        _make_dummy_apo_workdir(ref)
+        _make_dummy_workdir(cmp_)
+
+        argv = ["plot_compare_systems.py", "--ref", str(ref), "--cmp", str(cmp_),
+                "--ref-name", "ache", "--cmp-name", "alllhrc", "--out", str(out)]
+        old = sys.argv
+        try:
+            sys.argv = argv
+            plot_compare_systems.main()
+        finally:
+            sys.argv = old
+
+        svg = (out / "fig_compare.svg").read_text(encoding="utf-8", errors="ignore")
+        assert "ache AChE-Peptide" not in svg, \
+            "apo ref must NOT appear in the AChE-Peptide H-bond comparison"
+        assert "alllhrc AChE-Peptide" in svg, "complex H-bond curve must be drawn"
+        assert "ache AChE BB (apo)" in svg, "apo legend label must be 'ache AChE BB (apo)'"
+        assert "ache Complex BB" not in svg
+        assert "AChE apo control" in svg
+
+        csv = pd.read_csv(out / "compare_summary.csv")
+        row = csv.loc[csv["Metric"] == "AChE-Peptide_Hbonds_last20ns_(count)"].iloc[0]
+        assert pd.isna(row["ache_mean"]), "apo hbond cells must be empty"
+        assert pd.isna(row["Delta_alllhrc_minus_ache"]), "no hbond delta against apo"
+        assert float(row["alllhrc_mean"]) > 0.0
+
+        rdf = csv.loc[csv["Metric"] == "RDF_peak_g(r)"].iloc[0]
+        assert pd.isna(rdf["ache_mean"]), "apo has no RDF"
+
+        pep = csv.loc[csv["Metric"] == "Peptide_self-fit_RMSD_last20ns_(nm)"].iloc[0]
+        assert pd.isna(pep["ache_mean"]), "apo has no peptide RMSD"
+
+
 def main() -> int:
     tests = [
         test_safe_legend_accepts_fontsize,
         test_ss_percent_stacks_sum_to_100,
         test_plot_all_does_not_crash_and_writes_fig0_rg_and_dssp_percent,
         test_rmsf_profile_splits_at_chain_numbering_restart,
+        test_plot_all_apo_control_no_ache_peptide_hbond,
+        test_compare_apo_vs_complex_hbond_panel_is_complex_only,
     ]
     failed = 0
     for fn in tests:

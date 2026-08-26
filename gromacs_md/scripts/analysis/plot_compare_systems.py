@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-两个 AChE-肽复合物系统（例如 ache vs alllhrc）的对照图。
+AChE 单体对照 (ache, apo) 与 AChE-肽复合物系统（例如 alllhrc）的对照图。
 输出：fig_compare.{png,svg,pdf} + compare_summary.csv（两系统 mean ± SD 及差值）。
+
+重要: ache 是单独蛋白对照 (无肽)。AChE-肽氢键只属于复合物体系，
+所以氢键面板 (F) 只画有肽的系统 — ache 绝不出现氢键对比曲线，
+图例同样不含 ache 的 "AChE-Peptide" 条目。
 
 用法:
     python3 plot_compare_systems.py --ref md_ache --cmp md_alllhrc \
@@ -25,6 +29,7 @@ from plot_all import (  # noqa: E402
     SS_STACK_COLORS,
     SS_STACK_LABELS,
     add_panel_label,
+    is_apo,
     plot_rmsf_profile,
     read_ss_frac,
     read_xvg,
@@ -45,6 +50,22 @@ mpl.rcParams["figure.dpi"] = 150
 
 COL_REF = "#c0392b"   # ache  (red)
 COL_CMP = "#2166ac"   # 对照系统 (blue)
+
+
+def _has_peptide(system_dir: Path) -> bool:
+    """True when the system is an AChE-peptide complex (has peptide products).
+
+    ache is the standalone AChE control (apo, no peptide): False for it, so
+    ache never contributes an AChE-peptide H-bond curve or legend entry.
+    """
+    return not is_apo(system_dir)
+
+
+def _sys_label(name: str, has_pep: bool, suffix: str) -> str:
+    """Legend label: complexes '<name> Complex BB' / apo '<name> AChE BB (apo)'."""
+    if has_pep:
+        return f"{name} Complex {suffix}" if suffix else name
+    return f"{name} AChE {suffix} (apo)" if suffix else f"{name} (apo)"
 
 
 def _load(path: Path, x_scale: float):
@@ -112,36 +133,45 @@ def main():
     ss_r = read_ss_frac(ref / "ss_complex_frac.xvg")
     ss_c = read_ss_frac(cmp_ / "ss_complex_frac.xvg")
 
+    ref_has_pep = _has_peptide(ref)
+    cmp_has_pep = _has_peptide(cmp_)
+
     fig, axes = plt.subplots(2, 3, figsize=(15.6, 8.8), constrained_layout=True)
     axa, axb, axc, axd, axe, axf = axes.flatten()
 
     # A: RMSD
     if rmsd_r is not None:
-        axa.plot(rmsd_r["x"], rmsd_r["y"], label=f"{args.ref_name} Complex BB", color=COL_REF, linewidth=1.3)
+        axa.plot(rmsd_r["x"], rmsd_r["y"], label=_sys_label(args.ref_name, ref_has_pep, "BB"),
+                 color=COL_REF, linewidth=1.3)
     if rmsd_c is not None:
-        axa.plot(rmsd_c["x"], rmsd_c["y"], label=f"{args.cmp_name} Complex BB", color=COL_CMP, linewidth=1.3)
-    axa.set_title("Backbone Cα RMSD (Complex)")
+        axa.plot(rmsd_c["x"], rmsd_c["y"], label=_sys_label(args.cmp_name, cmp_has_pep, "BB"),
+                 color=COL_CMP, linewidth=1.3)
+    axa.set_title("Backbone Cα RMSD")
     axa.set_xlabel("Time (ns)"); axa.set_ylabel("RMSD (nm)")
     axa.grid(alpha=0.3, linestyle="--")
     _apply_ylim(axa, limits, "rmsd"); safe_legend(axa); add_panel_label(axa, "A")
 
     # B: RMSF
     if rmsf_r is not None:
-        plot_rmsf_profile(axb, rmsf_r["x"], rmsf_r["y"], label=f"{args.ref_name} Complex BB",
+        plot_rmsf_profile(axb, rmsf_r["x"], rmsf_r["y"],
+                          label=_sys_label(args.ref_name, ref_has_pep, "BB"),
                           color=COL_REF, alpha=0.9, linewidth=1.0)
     if rmsf_c is not None:
-        plot_rmsf_profile(axb, rmsf_c["x"], rmsf_c["y"], label=f"{args.cmp_name} Complex BB",
+        plot_rmsf_profile(axb, rmsf_c["x"], rmsf_c["y"],
+                          label=_sys_label(args.cmp_name, cmp_has_pep, "BB"),
                           color=COL_CMP, alpha=0.9, linewidth=1.0)
-    axb.set_title("Backbone Cα RMSF (Complex, residues 1-537)")
+    axb.set_title("Backbone Cα RMSF (per residue)")
     axb.set_xlabel("Residue Number"); axb.set_ylabel("RMSF (nm)")
     axb.grid(alpha=0.3, linestyle="--")
     _apply_ylim(axb, limits, "rmsf"); safe_legend(axb); add_panel_label(axb, "B")
 
     # C: SASA
     if sasa_r is not None:
-        axc.plot(sasa_r["x"], sasa_r["y"], label=f"{args.ref_name} Complex SASA", color=COL_REF, linewidth=1.3)
+        axc.plot(sasa_r["x"], sasa_r["y"], label=_sys_label(args.ref_name, ref_has_pep, "SASA"),
+                 color=COL_REF, linewidth=1.3)
     if sasa_c is not None:
-        axc.plot(sasa_c["x"], sasa_c["y"], label=f"{args.cmp_name} Complex SASA", color=COL_CMP, linewidth=1.3)
+        axc.plot(sasa_c["x"], sasa_c["y"], label=_sys_label(args.cmp_name, cmp_has_pep, "SASA"),
+                 color=COL_CMP, linewidth=1.3)
     axc.set_title("Solvent Accessible Surface Area")
     axc.set_xlabel("Time (ns)"); axc.set_ylabel("SASA (nm²)")
     axc.grid(alpha=0.3, linestyle="--")
@@ -149,10 +179,12 @@ def main():
 
     # D: Rg
     if rg_r is not None:
-        axd.plot(rg_r["x"], rg_r["y"], label=f"{args.ref_name} Complex Rg", color=COL_REF, linewidth=1.3)
+        axd.plot(rg_r["x"], rg_r["y"], label=_sys_label(args.ref_name, ref_has_pep, "Rg"),
+                 color=COL_REF, linewidth=1.3)
     if rg_c is not None:
-        axd.plot(rg_c["x"], rg_c["y"], label=f"{args.cmp_name} Complex Rg", color=COL_CMP, linewidth=1.3)
-    axd.set_title("Radius of Gyration (Complex)")
+        axd.plot(rg_c["x"], rg_c["y"], label=_sys_label(args.cmp_name, cmp_has_pep, "Rg"),
+                 color=COL_CMP, linewidth=1.3)
+    axd.set_title("Radius of Gyration")
     axd.set_xlabel("Time (ns)"); axd.set_ylabel("Rg (nm)")
     axd.grid(alpha=0.3, linestyle="--")
     _apply_ylim(axd, limits, "rg"); safe_legend(axd); add_panel_label(axd, "D")
@@ -170,10 +202,12 @@ def main():
     w = 0.36
     if means_r is not None:
         axe.bar(xpos - w / 2, means_r, yerr=stds_r, width=w, color=COL_REF, alpha=0.85,
-                capsize=2.5, edgecolor="black", linewidth=0.5, label=args.ref_name)
+                capsize=2.5, edgecolor="black", linewidth=0.5,
+                label=_sys_label(args.ref_name, ref_has_pep, ""))
     if means_c is not None:
         axe.bar(xpos + w / 2, means_c, yerr=stds_c, width=w, color=COL_CMP, alpha=0.85,
-                capsize=2.5, edgecolor="black", linewidth=0.5, label=args.cmp_name)
+                capsize=2.5, edgecolor="black", linewidth=0.5,
+                label=_sys_label(args.cmp_name, cmp_has_pep, ""))
     axe.set_xticks(xpos)
     axe.set_xticklabels(labels, rotation=15)
     axe.set_ylabel("Content (%)")
@@ -182,18 +216,32 @@ def main():
     _apply_ylim(axe, limits, "ss")
     safe_legend(axe); add_panel_label(axe, "E")
 
-    # F: H-bonds + RDF twin panel? keep H-bonds (RDF is reported in CSV)
-    if hb_r is not None:
-        axf.plot(hb_r["x"], hb_r["y"], label=f"{args.ref_name} AChE-Peptide", color=COL_REF, linewidth=1.3)
-    if hb_c is not None:
-        axf.plot(hb_c["x"], hb_c["y"], label=f"{args.cmp_name} AChE-Peptide", color=COL_CMP, linewidth=1.3)
-    axf.set_title("Intermolecular H-Bonds (AChE-Peptide)")
+    # F: AChE-peptide H-bonds — COMPLEXES ONLY.
+    # ache is the standalone apo control (no peptide): it must never appear
+    # in this panel (no curve, no legend entry).
+    if ref_has_pep and hb_r is not None:
+        axf.plot(hb_r["x"], hb_r["y"], label=f"{args.ref_name} AChE-Peptide",
+                 color=COL_REF, linewidth=1.3)
+    if cmp_has_pep and hb_c is not None:
+        axf.plot(hb_c["x"], hb_c["y"], label=f"{args.cmp_name} AChE-Peptide",
+                 color=COL_CMP, linewidth=1.3)
+    if not ref_has_pep and not cmp_has_pep:
+        axf.text(0.5, 0.5, "N/A — no peptide in either system",
+                 ha="center", va="center", fontsize=10, color="gray")
+    axf.set_title("Intermolecular H-Bonds (AChE-Peptide, complexes only)")
     axf.set_xlabel("Time (ns)"); axf.set_ylabel("Count")
     axf.grid(alpha=0.3, linestyle="--")
     _apply_ylim(axf, limits, "hbond"); safe_legend(axf); add_panel_label(axf, "F")
 
-    fig.suptitle(f"{args.ref_name} vs {args.cmp_name} — AChE–peptide complex comparison (100 ns each)",
-                 fontsize=14, weight="bold")
+    if not ref_has_pep and cmp_has_pep:
+        suptitle = (f"{args.ref_name} (AChE apo control) vs "
+                    f"{args.cmp_name} (AChE–peptide complex) — 100 ns each")
+    elif ref_has_pep and not cmp_has_pep:
+        suptitle = (f"{args.ref_name} (AChE–peptide complex) vs "
+                    f"{args.cmp_name} (AChE apo control) — 100 ns each")
+    else:
+        suptitle = f"{args.ref_name} vs {args.cmp_name} — AChE–peptide complex comparison (100 ns each)"
+    fig.suptitle(suptitle, fontsize=14, weight="bold")
     save_all_formats(fig, out / "fig_compare")
     plt.close(fig)
 
@@ -201,27 +249,35 @@ def main():
     rows = []
 
     def add(metric, ra, rb, ca, cb, fmt="{:.4f}"):
+        def cell(v):
+            return fmt.format(v) if v is not None else ""
         rows.append({
             "Metric": metric,
-            f"{args.ref_name}_mean": None if ra is None else fmt.format(ra),
-            f"{args.ref_name}_std": None if rb is None else fmt.format(rb),
-            f"{args.cmp_name}_mean": None if ca is None else fmt.format(ca),
-            f"{args.cmp_name}_std": None if cb is None else fmt.format(cb),
-            f"Delta_{args.cmp_name}_minus_{args.ref_name}": None if (ra is None or ca is None) else fmt.format(ca - ra),
+            f"{args.ref_name}_mean": cell(ra),
+            f"{args.ref_name}_std": cell(rb),
+            f"{args.cmp_name}_mean": cell(ca),
+            f"{args.cmp_name}_std": cell(cb),
+            f"Delta_{args.cmp_name}_minus_{args.ref_name}":
+                fmt.format(ca - ra) if (ra is not None and ca is not None) else "",
         })
 
-    for metric, dr, dc in [
-        ("Complex_Backbone_RMSD_last20ns_(nm)", rmsd_r, rmsd_c),
-        ("Peptide_self-fit_RMSD_last20ns_(nm)", pep_r, pep_c),
-        ("Complex_SASA_last20ns_(nm2)", sasa_r, sasa_c),
-        ("Complex_Rg_last20ns_(nm)", rg_r, rg_c),
-        ("AChE-Peptide_Hbonds_last20ns_(count)", hb_r, hb_c),
+    # peptide-only rows: filled only for systems that actually have a peptide
+    for metric, dr, dc, pep_only in [
+        ("Backbone_RMSD_last20ns_(nm)", rmsd_r, rmsd_c, False),
+        ("Peptide_self-fit_RMSD_last20ns_(nm)", pep_r, pep_c, True),
+        ("SASA_last20ns_(nm2)", sasa_r, sasa_c, False),
+        ("Rg_last20ns_(nm)", rg_r, rg_c, False),
+        ("AChE-Peptide_Hbonds_last20ns_(count)", hb_r, hb_c, True),
     ]:
-        m1, s1 = _last_ns(dr)
-        m2, s2 = _last_ns(dc)
+        m1 = s1 = None
+        if dr is not None and (not pep_only or ref_has_pep):
+            m1, s1 = _last_ns(dr)
+        m2 = s2 = None
+        if dc is not None and (not pep_only or cmp_has_pep):
+            m2, s2 = _last_ns(dc)
         add(metric, m1, s1, m2, s2)
 
-    for metric, dr, dc in [("Complex_RMSF_per-residue_mean_(nm)", rmsf_r, rmsf_c)]:
+    for metric, dr, dc in [("Backbone_RMSF_per-residue_mean_(nm)", rmsf_r, rmsf_c)]:
         if dr is not None and dc is not None:
             add(metric, float(dr["y"].mean()), float(dr["y"].std(ddof=1)),
                 float(dc["y"].mean()), float(dc["y"].std(ddof=1)))
@@ -229,8 +285,10 @@ def main():
             add(metric, None, None, None, None)
 
     for metric, dr, dc in [("RDF_peak_g(r)", rdf_r, rdf_c)]:
-        add(metric, float(dr["y"].max()) if dr is not None else None, None,
-            float(dc["y"].max()) if dc is not None else None, None, fmt="{:.1f}")
+        add(metric,
+            float(dr["y"].max()) if (dr is not None and ref_has_pep) else None, None,
+            float(dc["y"].max()) if (dc is not None and cmp_has_pep) else None, None,
+            fmt="{:.1f}")
 
     if means_r is not None and means_c is not None:
         for i, lab in enumerate(labels):

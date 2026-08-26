@@ -246,7 +246,11 @@ Why the four synced `fig0_summary_all.png` looked different:
 
 About "why does the complex fig contain a separate ache result": the "AChE BB" /
 "AChE Rg" curves were NOT the separate `ache` system — they were the AChE part of
-the same complex trajectory. `md_ache` itself is also a complex (6-residue peptide).
+the same complex trajectory. **`md_ache` itself is NOT a complex**: `ache` is the
+standalone AChE protein control (apo, no peptide, `input/ache.pdb`, resid 1-530),
+while `alllhrc/fllhttr/ylsllqr` are the three AChE+peptide complexes
+(AChE 1-530 + peptide 531-537). The earlier "6-residue peptide" claim here was
+wrong and is corrected in v2.7.2.
 Per request, v2.7 removes all AChE-only curves from the complex figures (fig0/fig1/
 fig3/fig_hbonds); AChE-part metrics stay in the tables. Cross-system comparisons now
 live in dedicated folders `compare_ache_vs_alllhrc|fllhttr|ylsllqr`.
@@ -294,3 +298,92 @@ lock the behavior (4/4 smoke tests pass).
 
 No other figure logic changed. Re-run `.\run_unified_replot.ps1` to refresh
 fig0/fig1/compare RMSF panels.
+
+---
+
+## 12. v2.7.2 — ache = standalone apo control: H-bond comparison is complexes-only
+
+**Your four systems (this is how the MD was set up):**
+
+| system | composition | peptide? |
+|---|---|---|
+| `ache` | standalone AChE monomer (`input/ache.pdb`, resid 1-530) | **no (apo control)** |
+| `alllhrc` / `fllhttr` / `ylsllqr` | AChE (1-530) + peptide (531-537) | yes |
+
+So AChE–peptide H-bonds, peptide–AChE RDF, peptide RMSD/RMSF/DSSP **only exist
+for the three complexes**. `ache` must never appear in any AChE–peptide H-bond
+comparison (no curve, no legend entry, no CSV value).
+
+**What was wrong before v2.7.2**
+
+1. `0_make_index.sh` only knew 537/579-residue systems. For the 530-residue apo
+   `ache` it hit the "last 7 residues = peptide" fallback, so residues 524-530 of
+   AChE itself were labeled `Peptide` -> bogus `hbond_ache_pep.xvg`, `rdf_pep_ache.xvg`
+   etc. were computed and `ache` showed a fake "AChE-Peptide" curve in the
+   compare figures.
+2. `plot_compare_systems.py` drew panel F (H-bonds) for both systems and its
+   legend said "ache AChE-Peptide". Also panels A-D labeled the apo control
+   "ache Complex BB/SASA/Rg" — wrong, it is not a complex.
+3. `contacts.py` / `bridging_waters.py` / `compute_peptide_ss.py` had the same
+   "last 7 residues" fallback and could fabricate peptide data for apo.
+4. VERSION_HISTORY section 10 wrongly claimed `md_ache` is "also a complex".
+
+**v2.7.2 changes**
+
+- `plot_all.py`: `is_apo()` (index.ndx `[ Peptide ]` group is authoritative,
+  peptide-product files as fallback). Apo figures now say "AChE BB / AChE SASA /
+  AChE Rg", fig0 suptitle "AChE MD summary (apo control, no peptide, ACHE, 100 ns)",
+  RDF panel shows "N/A — apo control (no peptide)", tables use system label
+  "AChE" instead of "Complex". The shared `hbond` y-limit (built from
+  AChE-peptide counts, 0-10) is NOT applied to intra-AChE counts (~400):
+  `fig_hbonds` of the apo control plots "Intra-AChE" on its own scale.
+- `plot_compare_systems.py`: panel F only draws systems that have a peptide;
+  legend labels are apo-aware ("ache AChE BB (apo)" vs "alllhrc Complex BB");
+  suptitle "ache (AChE apo control) vs alllhrc (AChE-peptide complex)";
+  `compare_summary.csv` hbond/RDF/peptide-RMSD cells are empty for apo and
+  no delta is computed (metric names are now peptide-agnostic:
+  Backbone_RMSD/SASA/Rg_last20ns...).
+- `0_make_index.sh`: 530 residues -> monomer mode (`AChE`, `AChE_Backbone`
+  only, NO Peptide group) and removes stale peptide-dependent products
+  (hbond_ache_pep, rdf_pep_ache*, rmsd_pep_bb, ss_pep_*, inter/intra contacts,
+  bridging waters) so old bogus files can never leak into new figures.
+- `contacts.py` / `bridging_waters.py` / `compute_peptide_ss.py`: 530-residue
+  apo -> empty peptide selection -> skip instead of using the C-terminal
+  7 residues as a fake peptide.
+- Smoke test: 6 tests, two new ones lock the apo behavior (apo fig0 contains
+  no "AChE-Peptide"/"Complex BB"; apo vs complex compare figure draws the
+  H-bond curve only for the complex and leaves the apo CSV cells empty).
+
+**How to fix your local copy (analysis + figures only, no MD re-run):**
+
+```powershell
+cd F:\0wsh\asd
+git fetch origin arena/01a03bd4-asd
+git checkout origin/arena/01a03bd4-asd -- `
+  gromacs_md/scripts/analysis/plot_all.py `
+  gromacs_md/scripts/analysis/plot_compare_systems.py `
+  gromacs_md/scripts/analysis/test_plot_all_smoke.py `
+  gromacs_md/scripts/analysis/0_make_index.sh `
+  gromacs_md/scripts/analysis/contacts.py `
+  gromacs_md/scripts/analysis/bridging_waters.py `
+  gromacs_md/scripts/analysis/compute_peptide_ss.py `
+  gromacs_md/scripts/unified_replot_and_compare.py `
+  gromacs_md/VERSION_HISTORY.md
+
+cd gromacs_md\scripts
+# 1) rebuild md_ache index in MONOMER mode + remove its stale fake-peptide files:
+.\replot_ache.ps1 -Full
+# 2) unified axes for the 4 systems + the 3 compare folders:
+.\run_unified_replot.ps1
+```
+
+Check afterwards:
+
+- `gromacs_md\compare_ache_vs_alllhrc\fig_compare.png` — panel F contains only
+  the `alllhrc` AChE-Peptide curve; legend has no `ache` H-bond entry;
+  panels A-D legend reads "ache AChE ... (apo)".
+- `gromacs_md\compare_ache_vs_*\compare_summary.csv` — hbond/RDF/peptide-RMSD
+  cells of `ache` are empty, no delta.
+- `gromacs_md\md_ache\figures\fig0_summary_all.png` — suptitle "apo control",
+  panel G = "Intra-AChE", RDF panel = "N/A — apo control (no peptide)".
+- `gromacs_md\md_ache\hbond_ache_pep.xvg` no longer exists (removed by step 1).
