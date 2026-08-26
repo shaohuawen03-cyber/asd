@@ -532,3 +532,11 @@ After it finishes: `md_ache\figures\fig0_summary_all.png` shows
 `compare_ache_vs_*\fig_compare.png` panel F contains only the complex's
 AChE-Peptide curve. The old complex results stay in
 `md_ache_complex_backup\` (analysis scripts ignore it).
+
+**IMPORTANT (encoding rule for .ps1 files):** Windows PowerShell 5.1 reads
+BOM-less .ps1 files with the system ANSI codepage (GBK on Chinese Windows),
+which garbles UTF-8 Chinese text inside STRINGS and breaks parsing
+(the first `run_apo_ache_100ns.ps1` had Chinese strings and failed with
+parser errors). All .ps1 scripts must stay **ASCII-only (English)**;
+Chinese text belongs in the .sh/.py/.md files only (bash/python read UTF-8
+fine).

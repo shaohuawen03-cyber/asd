@@ -1,23 +1,31 @@
 # ============================================================
 # TRUE APO CONTROL: re-run md_ache as STANDALONE AChE (no peptide)
 #
-# 背景 (v2.7.3 数据核查): 现有 md_ache 的拓扑里含有链 B = ALLLHRC 七肽,
-# 即 md_ache 其实是复合物, 不是单体对照。本脚本用纯 AChE 单体
-# (input/ache.pdb, 单链) 按与其余三个体系完全相同的 v1.0 协议
-# (mdp/100ns, 100 ns) 重跑, 替换 md_ache。
+# Background (v2.7.3 data check): the current md_ache topology contains
+# chain B = the ALLLHRC 7-mer peptide, i.e. md_ache is actually a complex,
+# not a protein-only control. This script re-runs md_ache as a pure AChE
+# monomer (input/ache.pdb, single chain) with the SAME v1.0 protocol as the
+# other three systems (mdp/100ns, 100 ns) and replaces md_ache.
 #
-# 安全设计:
-#   * 现有 md_ache 会先整体改名备份为 md_ache_complex_backup
-#     (只改名不复制, 瞬时完成, 不丢任何旧结果);
-#   * 重跑前校验 input/ache.pdb 确实是单链 apo (无链 B), 否则中止;
-#   * MD 结束后校验拓扑没有 topol_Protein_chain_B.itp, 否则报警;
-#   * 分析用 v2.7.3 拓扑驱动的 index (单体模式, 无 Peptide 组),
-#     contacts/bridging/氢键对比自动按 apo 处理。
+# Safety design:
+#   * the existing md_ache is first RENAMED to md_ache_complex_backup
+#     (rename only, instant, nothing is deleted);
+#   * input/ache.pdb is verified to be a single-chain apo PDB (no chain B)
+#     BEFORE anything runs; otherwise the script aborts;
+#   * after MD the topology is checked for topol_Protein_chain_B.itp
+#     (must NOT exist);
+#   * analysis uses the v2.7.3 topology-driven monomer index (no Peptide
+#     group), so contacts/bridging/H-bond comparisons treat ache as apo
+#     automatically.
 #
-# 用法 (在 gromacs_md\scripts 下):
-#   .\run_apo_ache_100ns.ps1            # 正式 100 ns (mdp/100ns, 与其它三体系同协议)
-#   .\run_apo_ache_100ns.ps1 -Testing   # 5000 步快速贯通验证 (mdp/test)
-#   .\run_apo_ache_100ns.ps1 -OnlyAnalyze  # 只对已存在的 apo md_ache 做分析+出图
+# NOTE: this file is intentionally ASCII-only (English). Windows PowerShell
+# 5.1 reads BOM-less .ps1 files with the system ANSI codepage (GBK on
+# Chinese Windows), which garbles UTF-8 Chinese text and breaks parsing.
+#
+# Usage (from gromacs_md\scripts):
+#   .\run_apo_ache_100ns.ps1            # formal 100 ns (mdp/100ns)
+#   .\run_apo_ache_100ns.ps1 -Testing   # 5000-step quick validation (mdp/test)
+#   .\run_apo_ache_100ns.ps1 -OnlyAnalyze  # analyze+plot existing apo md_ache
 # ============================================================
 param(
     [switch]$Testing,
@@ -46,29 +54,29 @@ if (-not $py) { $py = Get-Command python3 -ErrorAction SilentlyContinue }
 
 if (-not $OnlyAnalyze) {
 
-    # ---------- 1. 准备并校验 apo 输入 PDB ----------
+    # ---------- 1. prepare and validate the apo input PDB ----------
     if (Test-Path (Join-Path $Root "input\ache_complex.pdb")) {
-        Write-Host "!! 警告: 存在 input\ache_complex.pdb —— run_all.sh 会优先使用它而不是 ache.pdb!" -ForegroundColor Red
-        Write-Host "   若它不是纯 apo 单体, 请先移走/改名再运行本脚本。" -ForegroundColor Red
+        Write-Host "!! WARNING: input\ache_complex.pdb exists - run_all.sh would use it instead of ache.pdb!" -ForegroundColor Red
+        Write-Host "   If it is not a pure apo monomer, move/rename it before running this script." -ForegroundColor Red
         exit 1
     }
     if (-not (Test-Path $InputPdb)) {
         if (-not (Test-Path $SrcPdb)) {
-            Write-Host "ERROR: input\ache.pdb 与 input\alllhrc_complex.pdb 都不存在" -ForegroundColor Red
+            Write-Host "ERROR: neither input\ache.pdb nor input\alllhrc_complex.pdb exists" -ForegroundColor Red
             exit 1
         }
-        Write-Host ">> 从 $SrcPdb 提取纯 AChE 单体 (链 A) -> input\ache.pdb ..." -ForegroundColor Yellow
+        Write-Host ">> extracting pure AChE monomer (chain A) from $SrcPdb -> input\ache.pdb ..." -ForegroundColor Yellow
         Push-Location $Here
         try {
             & $py.Source ".\extract_ache_monomer.py" $SrcPdb $InputPdb
         } finally { Pop-Location }
         if ($LASTEXITCODE -ne 0 -or -not (Test-Path $InputPdb)) {
-            Write-Host "ERROR: 提取 AChE 单体失败" -ForegroundColor Red
+            Write-Host "ERROR: failed to extract the AChE monomer" -ForegroundColor Red
             exit 1
         }
     }
 
-    Write-Host ">> 校验 input\ache.pdb 是否为单链 apo (无肽链) ..." -ForegroundColor Yellow
+    Write-Host ">> validating input\ache.pdb is a single-chain apo PDB (no peptide chain) ..." -ForegroundColor Yellow
     $chains = @{}
     $resids = @{}
     foreach ($line in Get-Content $InputPdb -ErrorAction SilentlyContinue) {
@@ -85,16 +93,16 @@ if (-not $OnlyAnalyze) {
     $nRes = $resids.Count
     Write-Host "   chains=$nChains  residues=$nRes" -ForegroundColor White
     if ($nChains -gt 1) {
-        Write-Host "ERROR: input\ache.pdb 包含 $nChains 条链 ($($chains.Keys -join ', ')) —— 这不是单体对照!" -ForegroundColor Red
-        Write-Host "       请先修正 input\ache.pdb (应只有链 A, 无链 B), 再运行本脚本。" -ForegroundColor Red
+        Write-Host "ERROR: input\ache.pdb has $nChains chains ($($chains.Keys -join ', ')) - this is NOT a protein-only control!" -ForegroundColor Red
+        Write-Host "       Fix input\ache.pdb first (single chain A, no chain B), then re-run." -ForegroundColor Red
         exit 1
     }
     if ($nRes -lt 400 -or $nRes -gt 650) {
-        Write-Host "ERROR: 残基数 $nRes 异常 (预期 AChE 单体约 530) —— 请检查 input\ache.pdb" -ForegroundColor Red
+        Write-Host "ERROR: residue count $nRes is abnormal (expect ~530 for the AChE monomer) - check input\ache.pdb" -ForegroundColor Red
         exit 1
     }
 
-    # ---------- 2. 备份现有 md_ache (若存在旧结果) ----------
+    # ---------- 2. back up the existing md_ache (complex results) ----------
     if (Test-Path $Work) {
         $hasOld = (Test-Path (Join-Path $Work "md.xtc")) -or (Test-Path (Join-Path $Work "md.tpr")) -or (Test-Path (Join-Path $Work "md_0_1.xtc"))
         if ($hasOld) {
@@ -102,20 +110,24 @@ if (-not $OnlyAnalyze) {
             if (Test-Path $dst) {
                 $dst = "$Backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
             }
-            Write-Host ">> 备份现有 md_ache (复合物结果) -> $dst" -ForegroundColor Yellow
+            Write-Host ">> backing up current md_ache (complex results) -> $dst" -ForegroundColor Yellow
             Move-Item -Path $Work -Destination $dst
             if (-not (Test-Path $dst)) {
-                Write-Host "ERROR: 备份失败, 中止 (不会动原数据)" -ForegroundColor Red
+                Write-Host "ERROR: backup failed - aborting (original data untouched)" -ForegroundColor Red
                 exit 1
             }
-            Write-Host "   [OK] 旧复合物轨迹/结果已保留在 $dst (分析脚本不会读取它)" -ForegroundColor Green
+            Write-Host "   [OK] old complex trajectory/results kept in $dst (analysis scripts ignore it)" -ForegroundColor Green
         }
     }
 
-    # ---------- 3. 跑 MD (与其它三体系相同的 v1.0 100ns 协议) ----------
+    # ---------- 3. run MD (same v1.0 100 ns protocol as the other systems) ----------
     Write-Host ""
-    Write-Host ">> 启动 MD: run_all.ps1 -System ache ($(if ($Testing) {'TESTING 5000步'} else {'正式 100 ns'})) ..." -ForegroundColor Cyan
-    Write-Host "   (mdrun 期间请勿关闭窗口; 完成后自动进入分析)" -ForegroundColor Yellow
+    if ($Testing) {
+        Write-Host ">> starting MD: run_all.ps1 -System ache -Testing (5000-step validation) ..." -ForegroundColor Cyan
+    } else {
+        Write-Host ">> starting MD: run_all.ps1 -System ache (formal 100 ns) ..." -ForegroundColor Cyan
+    }
+    Write-Host "   (keep this window open while mdrun runs; analysis starts automatically afterwards)" -ForegroundColor Yellow
     Push-Location $Here
     try {
         if ($Testing) {
@@ -125,34 +137,34 @@ if (-not $OnlyAnalyze) {
         }
     } finally { Pop-Location }
     if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) {
-        Write-Host "ERROR: run_all.ps1 退出码 $LASTEXITCODE" -ForegroundColor Red
+        Write-Host "ERROR: run_all.ps1 exited with code $LASTEXITCODE" -ForegroundColor Red
         exit $LASTEXITCODE
     }
 
-    # ---------- 4. MD 后校验: 拓扑必须无链 B ----------
+    # ---------- 4. post-MD check: topology must have NO chain B ----------
     if (Test-Path (Join-Path $Work "topol_Protein_chain_B.itp")) {
-        Write-Host "!! 警告: md_ache 拓扑里仍存在 topol_Protein_chain_B.itp —— 输入的 PDB 可能仍有第二条链!" -ForegroundColor Red
-        Write-Host "   请检查 input\ache.pdb, 删除链 B 后重跑。" -ForegroundColor Red
+        Write-Host "!! WARNING: md_ache topology still has topol_Protein_chain_B.itp - the input PDB probably still has a second chain!" -ForegroundColor Red
+        Write-Host "   Fix input\ache.pdb (remove chain B), then re-run." -ForegroundColor Red
         exit 1
     }
-    Write-Host ">> [OK] 拓扑无链 B -> md_ache 是真正的 apo 单体对照" -ForegroundColor Green
+    Write-Host ">> [OK] no chain B in topology -> md_ache is a true apo monomer control" -ForegroundColor Green
 }
 
-# ---------- 5. 分析 + 出图 (v2.7.3 拓扑驱动 index) ----------
+# ---------- 5. analysis + figures (v2.7.3 topology-driven index) ----------
 Write-Host ""
-Write-Host ">> 分析 + 出图: run_analysis.ps1 -System ache (monomer 模式) ..." -ForegroundColor Cyan
+Write-Host ">> analysis + plotting: run_analysis.ps1 -System ache (monomer mode) ..." -ForegroundColor Cyan
 Push-Location $Here
 try {
     & .\run_analysis.ps1 -System ache 2>&1 | ForEach-Object { "$_" }
 } finally { Pop-Location }
 if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) {
-    Write-Host "ERROR: run_analysis.ps1 退出码 $LASTEXITCODE" -ForegroundColor Red
+    Write-Host "ERROR: run_analysis.ps1 exited with code $LASTEXITCODE" -ForegroundColor Red
     exit $LASTEXITCODE
 }
 
-# ---------- 6. 刷新统一图 + 对照图 (ache 自动按 apo 处理) ----------
+# ---------- 6. refresh unified figures + compare folders (ache auto-handled as apo) ----------
 Write-Host ""
-Write-Host ">> 刷新四体系统一图与对照图 (run_unified_replot.ps1) ..." -ForegroundColor Cyan
+Write-Host ">> refreshing unified figures + compare folders (run_unified_replot.ps1) ..." -ForegroundColor Cyan
 Push-Location $Here
 try {
     & .\run_unified_replot.ps1 2>&1 | ForEach-Object { "$_" }
@@ -161,9 +173,9 @@ try {
 Write-Host ""
 Write-Host "====================================================================" -ForegroundColor Green
 Write-Host " DONE." -ForegroundColor Green
-Write-Host "   md_ache                      = 新 apo 单体对照 (100 ns)" -ForegroundColor Green
-Write-Host "   md_ache_complex_backup*      = 旧复合物结果 (未删除)" -ForegroundColor Yellow
-Write-Host " 检查:" -ForegroundColor Green
+Write-Host "   md_ache                   = new apo monomer control (100 ns)" -ForegroundColor Green
+Write-Host "   md_ache_complex_backup*   = old complex results (kept, not deleted)" -ForegroundColor Yellow
+Write-Host " Check:" -ForegroundColor Green
 Write-Host "   md_ache\figures\fig0_summary_all.png  -> 'AChE MD summary (apo control...)'" -ForegroundColor Green
-Write-Host "   compare_ache_vs_*\fig_compare.png     -> F 面板只有复合物的 AChE-Peptide 曲线, ache 不出现" -ForegroundColor Green
+Write-Host "   compare_ache_vs_*\fig_compare.png     -> panel F has only the complex's AChE-Peptide curve (no ache)" -ForegroundColor Green
 Write-Host "====================================================================" -ForegroundColor Green

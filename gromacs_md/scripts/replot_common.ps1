@@ -51,7 +51,8 @@ if (-not $HasGro) {
 
 $HasRmsd = Test-Path (Join-Path $Work "rmsd_complex_bb.xvg")
 $HasDssp = Test-Path (Join-Path $Work "ss_complex_frac.xvg")
-# v2.7.3: Rg 文件必须真的包含 >=2 行数据 (GROMACS 失败时可能留下空壳文件)
+# v2.7.3: the Rg file must really contain >=2 data rows (GROMACS can leave an
+# empty/header-only file behind on failure) - existence is NOT enough
 $RgFile = Join-Path $Work "gyrate_complex.xvg"
 $HasRg = $false
 if (Test-Path $RgFile) {
