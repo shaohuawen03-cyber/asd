@@ -17,6 +17,12 @@ foreach ($s in $systems) {
         Write-Host "Backing up $work -> $dest" -ForegroundColor Yellow
         Move-Item -LiteralPath $work -Destination $dest
     }
+    $compare = Join-Path $Root ("compare_ache_vs_" + $s)
+    if (Test-Path $compare) {
+        $destCompare = Join-Path $Archive ("compare_ache_vs_" + $s)
+        Write-Host "Backing up $compare -> $destCompare" -ForegroundColor Yellow
+        Move-Item -LiteralPath $compare -Destination $destCompare
+    }
 }
 
 Push-Location $Here
