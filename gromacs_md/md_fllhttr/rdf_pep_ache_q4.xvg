@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 15:21:50 2026
+# This file was created Wed Aug 26 16:55:12 2026
 # Created by:
 #                       :-) GROMACS - gmx rdf, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx rdf -s md.tpr -f md_fit.xtc -n index.ndx -o rdf_pep_ache_q4.xvg -ref AChE -sel Peptide -selrpos mol_com -seltype mol_com -b 3750.75 -e 5001 -bin 0.02
 # gmx rdf is part of G R O M A C S:
 #
-# GROup of MAchos and Cynical Suckers
+# Green Red Orange Magenta Azure Cyan Skyblue
 #
 @    title "Radial distribution"
 @    xaxis  label "r (nm)"

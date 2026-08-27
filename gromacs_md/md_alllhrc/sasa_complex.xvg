@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 09:29:09 2026
+# This file was created Wed Aug 26 15:48:48 2026
 # Created by:
 #                       :-) GROMACS - gmx sasa, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx sasa -s md.tpr -f md_fit.xtc -n index.ndx -o sasa_complex.xvg -surface Protein -output Protein
 # gmx sasa is part of G R O M A C S:
 #
-# Glycine aRginine prOline Methionine Alanine Cystine Serine
+# Gromacs Runs One Microsecond At Cannonball Speeds
 #
 @    title "Solvent Accessible Surface"
 @    xaxis  label "Time (ps)"

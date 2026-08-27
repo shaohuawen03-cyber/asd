@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 09:37:01 2026
+# This file was created Wed Aug 26 15:56:04 2026
 # Created by:
 #                       :-) GROMACS - gmx sasa, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx sasa -s md.tpr -f md_fit.xtc -n index.ndx -o sasa_ache.xvg -surface AChE -output AChE
 # gmx sasa is part of G R O M A C S:
 #
-# Grunge ROck MAChoS
+# Great Red Oystrich Makes All Chemists Sane
 #
 @    title "Solvent Accessible Surface"
 @    xaxis  label "Time (ps)"

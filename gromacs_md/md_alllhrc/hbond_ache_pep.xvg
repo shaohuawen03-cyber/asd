@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 09:45:46 2026
+# This file was created Wed Aug 26 16:07:24 2026
 # Created by:
 #                      :-) GROMACS - gmx hbond, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx hbond -s md.tpr -f md_fit.xtc -n index.ndx -num hbond_ache_pep.xvg
 # gmx hbond is part of G R O M A C S:
 #
-# Glycine aRginine prOline Methionine Alanine Cystine Serine
+# Great Red Oystrich Makes All Chemists Sane
 #
 @    title "Number of hydrogen bonds"
 @    xaxis  label "Time (ps)"

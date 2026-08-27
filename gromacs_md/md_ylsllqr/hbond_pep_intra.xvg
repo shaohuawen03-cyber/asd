@@ -1,4 +1,4 @@
-# This file was created Fri Aug 14 01:36:24 2026
+# This file was created Wed Aug 26 18:22:59 2026
 # Created by:
 #                      :-) GROMACS - gmx hbond, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx hbond -s md.tpr -f md_fit.xtc -n index.ndx -num hbond_pep_intra.xvg
 # gmx hbond is part of G R O M A C S:
 #
-# Gravel Rubs Often Many Awfully Cauterized Sores
+# Great Red Owns Many ACres of Sand 
 #
 @    title "Number of hydrogen bonds"
 @    xaxis  label "Time (ps)"

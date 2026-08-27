@@ -1,4 +1,4 @@
-# This file was created Fri Aug 14 01:34:09 2026
+# This file was created Wed Aug 26 18:20:23 2026
 # Created by:
 #                       :-) GROMACS - gmx dssp, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx dssp -s md.tpr -f md_fit.xtc -n index.ndx -sel 'group "Peptide"' -o ss_pep.dat -num ss_pep_num.xvg -hmode dssp -clear
 # gmx dssp is part of G R O M A C S:
 #
-# Good gRace! Old Maple Actually Chews Slate
+# Giant Rising Ordinary Mutants for A Clerical Setup
 #
 @    title "Number of Secondary Structures"
 @    xaxis  label "Time (ps)"

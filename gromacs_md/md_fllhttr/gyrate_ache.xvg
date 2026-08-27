@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 15:40:35 2026
+# This file was created Wed Aug 26 17:12:46 2026
 # Created by:
 #                      :-) GROMACS - gmx gyrate, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx gyrate -s md.tpr -f md_fit.xtc -n index.ndx -o gyrate_ache.xvg
 # gmx gyrate is part of G R O M A C S:
 #
-# GROwing Monsters And Cloning Shrimps
+# God Rules Over Mankind, Animals, Cosmos and Such
 #
 @    title "Radius of gyration (total and around axes)"
 @    xaxis  label "Time (ps)"

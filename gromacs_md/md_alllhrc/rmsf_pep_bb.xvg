@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 09:27:58 2026
+# This file was created Wed Aug 26 15:47:33 2026
 # Created by:
 #                       :-) GROMACS - gmx rmsf, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx rmsf -s md.tpr -f md_fit.xtc -n index.ndx -o rmsf_pep_bb.xvg -res
 # gmx rmsf is part of G R O M A C S:
 #
-# Great Red Owns Many ACres of Sand 
+# Good gRace! Old Maple Actually Chews Slate
 #
 @    title "RMS fluctuation"
 @    xaxis  label "Residue"

@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 09:25:57 2026
+# This file was created Wed Aug 26 15:45:34 2026
 # Created by:
 #                       :-) GROMACS - gmx rmsf, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx rmsf -s md.tpr -f md_fit.xtc -n index.ndx -o rmsf_complex_bb.xvg -res
 # gmx rmsf is part of G R O M A C S:
 #
-# Great Red Oystrich Makes All Chemists Sane
+# Gallium Rubidium Oxygen Manganese Argon Carbon Silicon
 #
 @    title "RMS fluctuation"
 @    xaxis  label "Residue"

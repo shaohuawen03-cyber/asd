@@ -1,4 +1,4 @@
-# This file was created Fri Aug 14 01:20:03 2026
+# This file was created Wed Aug 26 18:03:20 2026
 # Created by:
 #                       :-) GROMACS - gmx rdf, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx rdf -s md.tpr -f md_fit.xtc -n index.ndx -o rdf_pep_ache_q4.xvg -ref AChE -sel Peptide -selrpos mol_com -seltype mol_com -b 3750.75 -e 5001 -bin 0.02
 # gmx rdf is part of G R O M A C S:
 #
-# GROningen Mixture of Alchemy and Childrens' Stories
+# GROwing Monsters And Cloning Shrimps
 #
 @    title "Radial distribution"
 @    xaxis  label "r (nm)"
