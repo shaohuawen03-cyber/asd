@@ -464,6 +464,12 @@ def _select_peptide(u, nres_hint: int = 7):
         return pep
     if 531 in rids and 537 in rids:
         return u.select_atoms("resid 531-537")
+    if 538 in rids and 579 in rids:
+        return u.select_atoms("resid 538-579")
+    # 单独 AChE 单体对照组 (apo, ~530 残基, 无肽): 返回空选择,
+    # 绝不要把 AChE 自己的 C 端残基 (如 524-530) 误当成"肽"。
+    if len(rids) <= 537:
+        return u.select_atoms("segid B or chainID B")
     last = rids[-nres_hint:]
     return u.select_atoms(f"resid {last[0]}-{last[-1]}")
 

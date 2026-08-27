@@ -15,6 +15,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import re
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -34,6 +36,90 @@ mpl.rcParams["font.size"] = 10
 mpl.rcParams["axes.spines.top"] = False
 mpl.rcParams["axes.spines.right"] = False
 mpl.rcParams["figure.dpi"] = 150
+
+
+PEPTIDE_MARKER_FILES = (
+    "rmsd_pep_bb.xvg",
+    "rmsf_pep_bb.xvg",
+    "rmsd_pep_on_ache.xvg",
+    "rdf_pep_ache.xvg",
+    "hbond_ache_pep.xvg",
+    "hbond_pep_intra.xvg",
+    "sasa_pep.xvg",
+    "ss_pep_frac.xvg",
+    "ss_pep_bins.dat",
+    "ss_pep_perres.dat",
+)
+
+
+def _count_itp_atoms(path: Path) -> int:
+    """Number of atoms in a pdb2gmx chain itp ([ atoms ] section)."""
+    if not path.exists():
+        return 0
+    n = 0
+    in_atoms = False
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as fh:
+            for line in fh:
+                s = line.strip()
+                if not s or s.startswith((";", "#")):
+                    continue
+                if s.startswith("[") and s.endswith("]"):
+                    in_atoms = s.lower() == "[ atoms ]"
+                    continue
+                if in_atoms:
+                    parts = s.split()
+                    if parts and parts[0].isdigit():
+                        n += 1
+    except OSError:
+        return 0
+    return n
+
+
+def is_apo(work_dir: Path) -> bool:
+    """True when the system is the standalone AChE protein control (no peptide).
+
+    The AChE monomer control has no peptide chain; the three complexes have a
+    7-residue peptide as chain B. Peptide-dependent analyses (AChE-peptide
+    H-bonds, RDF, peptide RMSD/DSSP) only exist for the complexes, so an apo
+    system must never appear in those comparisons.
+
+    Detection order (most -> least authoritative):
+      1. pdb2gmx topology: `topol.top` exists and `topol_Protein_chain_B.itp`
+         is absent/empty -> apo. Chain B present with atoms -> complex.
+         This reflects the system that was actually simulated.
+      2. index.ndx: no [ Peptide ] group -> apo.
+         (NOTE: old 0_make_index.sh versions could fake a [ Peptide ] group
+         out of AChE's own residues, so the topology check comes first.)
+      3. No peptide-dependent analysis products -> apo.
+    """
+    top = work_dir / "topol.top"
+    chain_b = work_dir / "topol_Protein_chain_B.itp"
+    if top.exists():
+        if not chain_b.exists():
+            return True
+        return _count_itp_atoms(chain_b) < 2
+    idx = work_dir / "index.ndx"
+    if idx.exists():
+        try:
+            text = idx.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            text = ""
+        if re.search(r"\[\s*Peptide\s*\]", text):
+            return False
+        return True
+    return not any((work_dir / f).exists() for f in PEPTIDE_MARKER_FILES)
+
+
+def xvg_has_data(path: Path, min_rows: int = 2) -> bool:
+    """True when an xvg contains at least min_rows numeric data rows.
+
+    GROMACS tools can leave an empty/header-only .xvg behind when they fail
+    mid-run; such files must be treated as MISSING (and regenerated), not as
+    valid data — otherwise panels silently stay blank.
+    """
+    df = read_xvg(path, x_scale=1.0)
+    return df is not None and len(df) >= min_rows
 
 
 def read_xvg(path: Path, x_scale: float = 1.0) -> Optional[pd.DataFrame]:
@@ -104,6 +190,54 @@ def safe_legend(ax: plt.Axes, **kwargs) -> None:
     ax.legend(**kwargs)
 
 
+def rmsf_segments(x, y):
+    """Split a per-residue RMSF profile into contiguous residue segments.
+
+    GROMACS restarts residue numbering for every chain, so a complex profile
+    can contain a back-jump (chain A ends at residue 542, chain B restarts at
+    residue 1). Plotting such data as one polyline connects the two points
+    with a long straight diagonal line across the whole panel. Splitting the
+    profile at numbering jumps (or gaps > 1 residue) removes that artifact.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    if len(x) == 0:
+        return []
+    dx = np.diff(x)
+    cut = np.where((dx <= 0) | (dx > 1.5))[0] + 1  # start index of each new segment
+    segs = []
+    start = 0
+    for c in list(cut) + [len(x)]:
+        if c > start:
+            segs.append((x[start:c], y[start:c]))
+        start = c
+    return segs
+
+
+def plot_rmsf_profile(ax, x, y, label=None, color=None, alpha=1.0, linewidth=1.0):
+    """Plot a per-residue RMSF profile with NO artificial connector lines.
+
+    Chains whose numbering restarts (e.g. peptide chain B numbered 1-7 after
+    AChE chain A 4-542) are renumbered to continue after the previous chain
+    and drawn as separate segments, leaving a small gap instead of a diagonal
+    line between the chains.
+    """
+    segs = rmsf_segments(x, y)
+    if not segs:
+        return
+    xmax = float(segs[0][0][-1])
+    for i, (xs, ys) in enumerate(segs):
+        if i > 0 and xs[0] <= xmax:
+            # numbering restart (new chain): continue after the previous chain
+            off = xmax + 1.0 - xs[0]
+            xs = xs + off
+        ax.plot(xs, ys, label=(label if i == 0 else None), color=color,
+                alpha=alpha, linewidth=linewidth)
+        # track the largest residue number seen so far (update even for
+        # non-offset gap segments, e.g. missing residues 259-264)
+        xmax = max(xmax, float(xs[-1]))
+
+
 SS_STACK_LABELS = ["α-helix", "β-sheet", "Turn", "Bend", "Coil/loop"]
 SS_STACK_COLORS = ["#c0392b", "#f1c40f", "#e67e22", "#27ae60", "#bdc3c7"]
 
@@ -134,24 +268,30 @@ def ss_last_window(t, arrays, last_ns=20.0):
     return mask, means, stds
 
 
-def draw_ss_lines(ax, t, stacks, fontsize=8):
+def draw_ss_lines(ax, t, stacks, fontsize=8, ylim=None):
     """Literature-style % vs time (lines). Better than a flat stack for a stable protein."""
     for y, lab, col in zip(stacks, SS_STACK_LABELS, SS_STACK_COLORS):
         ax.plot(t, y, label=lab, color=col, linewidth=1.15)
-    ax.set_ylim(0, 100)
+    if ylim is not None:
+        ax.set_ylim(ylim[0], ylim[1])
+    else:
+        ax.set_ylim(0, 100)
     ax.set_ylabel("Content (%)")
     ax.set_xlabel("Time (ns)")
     ax.grid(alpha=0.25, linestyle="--")
     safe_legend(ax, loc="upper right", ncol=2, fontsize=fontsize)
 
 
-def draw_ss_bars(ax, means, stds):
+def draw_ss_bars(ax, means, stds, ylim=None):
     """Occupancy bars (mean ± SD). This is the usual DSSP percentage panel in papers."""
     ax.bar(SS_STACK_LABELS, means, yerr=stds, color=SS_STACK_COLORS,
            edgecolor="black", linewidth=0.6, capsize=3, width=0.65)
     ax.set_ylabel("Content (%)")
-    ymax = max(100.0, max(means) + max(stds) + 8)
-    ax.set_ylim(0, ymax)
+    if ylim is not None:
+        ax.set_ylim(ylim[0], ylim[1])
+    else:
+        ymax = max(100.0, max(means) + max(stds) + 8)
+        ax.set_ylim(0, ymax)
     ax.tick_params(axis="x", rotation=20)
     ax.grid(axis="y", alpha=0.25, linestyle="--")
     for i, (m, s) in enumerate(zip(means, stds)):
@@ -317,6 +457,19 @@ def ss_string_heatmap(times, seqs):
     return mat
 
 
+def apply_ylim(ax, limits: dict, key: str) -> None:
+    """Apply a shared y-range (from --limits-json) to a panel, if provided."""
+    pair = limits.get(key)
+    if not pair:
+        return
+    try:
+        lo, hi = float(pair[0]), float(pair[1])
+    except (TypeError, ValueError, IndexError):
+        return
+    if hi > lo:
+        ax.set_ylim(lo, hi)
+
+
 def summarize_rmsf(df: Optional[pd.DataFrame], metric: str, system_label: str):
     """RMSF x-axis is residue number — never treat it as a time series."""
     if df is None or df.empty:
@@ -397,14 +550,31 @@ def main():
     parser = argparse.ArgumentParser(description="自动批量绘制 AChE-Aβ 复合物分子动力学分析图表")
     parser.add_argument("--dir", "-d", type=str, default=".", help="分析数据文件所在工作目录")
     parser.add_argument("--out", "-o", type=str, default="./figures", help="图表保存目标目录")
+    parser.add_argument("--limits-json", type=str, default=None,
+                        help="可选的共享 y 轴范围 JSON（统一四系统图面，由 unified_replot_and_compare.py 生成）")
     args = parser.parse_args()
+
+    limits: dict = {}
+    if args.limits_json:
+        lp = Path(args.limits_json)
+        if lp.exists():
+            with open(lp, "r", encoding="utf-8") as fh:
+                try:
+                    limits = json.load(fh)
+                    print(f"[LIMITS] shared y-limits loaded from {lp} ({len(limits)} panels)")
+                except Exception as e:
+                    print(f"[WARN] could not parse --limits-json: {e}")
 
     work_dir = Path(args.dir)
     fig_dir = Path(args.out)
     fig_dir.mkdir(parents=True, exist_ok=True)
 
+    apo = is_apo(work_dir)
+    prot_label = "AChE" if apo else "Complex"
+
     print("=" * 60)
     print(f"Starting publication figure generation in: {fig_dir}")
+    print(f"System type: {'AChE apo control (no peptide)' if apo else 'AChE-peptide complex'}")
     print("=" * 60)
 
     summary_rows: List[dict] = []
@@ -424,15 +594,19 @@ def main():
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.8), constrained_layout=True)
     ax1, ax2 = axes
 
-    # RMSD
+    # RMSD — complex only (AChE-only curves belong to the compare_* figures, not here)
     if rmsd_com is not None:
-        ax1.plot(rmsd_com["x"], rmsd_com["y"], label="Complex BB", linewidth=1.2, color="tab:blue")
-        s = summarize_last_ns(rmsd_com, "1_Backbone_RMSD_(nm)", "Complex")
+        ax1.plot(rmsd_com["x"], rmsd_com["y"],
+                 label=("AChE BB" if apo else "Complex BB"),
+                 linewidth=1.2, color="tab:blue")
+        s = summarize_last_ns(rmsd_com, "1_Backbone_RMSD_(nm)", prot_label)
         if s: summary_rows.append(s)
-    if rmsd_ach is not None:
-        ax1.plot(rmsd_ach["x"], rmsd_ach["y"], label="AChE BB", linewidth=1.2, linestyle="--", color="tab:orange")
+    if rmsd_ach is not None and not apo:
+        # table only — no AChE-only curve on complex figures
         s = summarize_last_ns(rmsd_ach, "1_Backbone_RMSD_(nm)", "AChE")
-        if s: summary_rows.append(s)
+        if s:
+            s["status"] = "TABLE_ONLY (AChE part of complex; drawn in compare_* figures)"
+            summary_rows.append(s)
     pep_phases = []
     ss_src = None
     # Overview / Fig1: complex analysis only (no peptide RMSD on the main figure)
@@ -446,30 +620,41 @@ def main():
         if s:
             s["status"] = "LIGAND_POSE (table only; not drawn on overview)"
             summary_rows.append(s)
-    ax1.set_title("Backbone Cα RMSD (Complex / AChE)", fontsize=11, weight="bold")
+    ax1.set_title(f"Backbone Cα RMSD ({'AChE' if apo else 'Complex'})", fontsize=11, weight="bold")
     ax1.set_xlabel("Time (ns)", fontsize=10)
     ax1.set_ylabel("RMSD (nm)", fontsize=10)
     ax1.grid(alpha=0.3, linestyle="--")
+    apply_ylim(ax1, limits, "rmsd")
     safe_legend(ax1)
     add_panel_label(ax1, "A")
 
-    # RMSF (重点绘制 AChE 1-530 与多肽 531-537 的逐残基柔性，彻底消除 GROMACS 复合体分组导致的连接直线)
-    if rmsf_ach is not None:
-        ax2.plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", linewidth=1.0, color="tab:orange", alpha=0.9)
+    # RMSF — complex backbone only; peptide RMSF lives in fig_peptide_rmsd_rmsf
+    if rmsf_com is not None:
+        plot_rmsf_profile(ax2, rmsf_com["x"], rmsf_com["y"],
+                          label=("AChE BB" if apo else "Complex BB"),
+                          color="tab:blue", alpha=0.9, linewidth=1.0)
+        s = summarize_rmsf(rmsf_com, "2_Backbone_RMSF_Avg_(nm)", prot_label)
+        if s: summary_rows.append(s)
+    elif rmsf_ach is not None:
+        plot_rmsf_profile(ax2, rmsf_ach["x"], rmsf_ach["y"], label="AChE BB",
+                          color="tab:orange", alpha=0.9, linewidth=1.0)
         s = summarize_rmsf(rmsf_ach, "2_Backbone_RMSF_Avg_(nm)", "AChE")
         if s: summary_rows.append(s)
-    elif rmsf_com is not None:
-        ax2.plot(rmsf_com["x"], rmsf_com["y"], label="Complex BB", linewidth=1.0, color="tab:blue", alpha=0.6)
-        s = summarize_rmsf(rmsf_com, "2_Backbone_RMSF_Avg_(nm)", "Complex")
-        if s: summary_rows.append(s)
+    if rmsf_com is not None and rmsf_ach is not None and not apo:
+        # table only
+        s = summarize_rmsf(rmsf_ach, "2_Backbone_RMSF_Avg_(nm)", "AChE")
+        if s:
+            s["status"] = "TABLE_ONLY (AChE part of complex; drawn in compare_* figures)"
+            summary_rows.append(s)
     if rmsf_pep is not None:
         s = summarize_rmsf(rmsf_pep, "2_Backbone_RMSF_Avg_(nm)", "Peptide")
         if s:
             summary_rows.append(s)
-    ax2.set_title("Backbone Cα RMSF (AChE)", fontsize=11, weight="bold")
+    ax2.set_title(f"Backbone Cα RMSF ({'AChE' if apo else 'Complex'})", fontsize=11, weight="bold")
     ax2.set_xlabel("Residue Number", fontsize=10)
     ax2.set_ylabel("RMSF (nm)", fontsize=10)
     ax2.grid(alpha=0.3, linestyle="--")
+    apply_ylim(ax2, limits, "rmsf")
     safe_legend(ax2)
     add_panel_label(ax2, "B")
 
@@ -520,8 +705,11 @@ def main():
     fig, ax = plt.subplots(figsize=(7.5, 4.8), constrained_layout=True)
     if rdf_main is not None:
         ax.plot(rdf_main["x"], rdf_main["y"], label="Total Trajectory", linewidth=2.0, color="tab:purple")
-        s = summarize_rdf(rdf_main, "5_RDF_First_Peak_g(r)", "Complex")
+        s = summarize_rdf(rdf_main, "5_RDF_First_Peak_g(r)", prot_label)
         if s: summary_rows.append(s)
+    elif apo:
+        ax.text(0.5, 0.5, "RDF N/A — apo control (no peptide)", ha="center", va="center",
+                fontsize=10, color="gray")
     for q, color in enumerate(["tab:blue", "tab:orange", "tab:green", "tab:red"], start=1):
         rdf_q = read_xvg(work_dir / f"rdf_pep_ache_q{q}.xvg", x_scale=1.0)
         if rdf_q is not None:
@@ -531,6 +719,7 @@ def main():
     ax.set_xlabel("Distance (nm)", fontsize=10)
     ax.set_ylabel("g(r)", fontsize=10)
     ax.grid(alpha=0.3, linestyle="--")
+    apply_ylim(ax, limits, "rdf")
     safe_legend(ax)
     save_all_formats(fig, fig_dir / "fig2_rdf")
     plt.close(fig)
@@ -545,21 +734,28 @@ def main():
 
     fig, ax = plt.subplots(figsize=(8, 4.5), constrained_layout=True)
     if sasa_com is not None:
-        ax.plot(sasa_com["x"], sasa_com["y"], label="Complex Total", linewidth=1.5, color="tab:blue")
-        s = summarize_last_ns(sasa_com, "3_Solvent_Accessible_Surface_Area_SASA_(nm2)", "Complex")
+        ax.plot(sasa_com["x"], sasa_com["y"],
+                label=("AChE SASA" if apo else "Complex SASA"),
+                linewidth=1.5, color="tab:blue")
+        s = summarize_last_ns(sasa_com, "3_Solvent_Accessible_Surface_Area_SASA_(nm2)", prot_label)
         if s: summary_rows.append(s)
-    if sasa_ach is not None:
-        ax.plot(sasa_ach["x"], sasa_ach["y"], label="AChE", linewidth=1.2, linestyle="--", color="tab:orange")
+    if sasa_ach is not None and not apo:
+        # table only — no AChE-only curve on complex figures
         s = summarize_last_ns(sasa_ach, "3_Solvent_Accessible_Surface_Area_SASA_(nm2)", "AChE")
-        if s: summary_rows.append(s)
+        if s:
+            s["status"] = "TABLE_ONLY (AChE part of complex; drawn in compare_* figures)"
+            summary_rows.append(s)
     if sasa_pep is not None:
-        ax.plot(sasa_pep["x"], sasa_pep["y"], label="Peptide", linewidth=1.5, color="tab:green")
         s = summarize_last_ns(sasa_pep, "3_Solvent_Accessible_Surface_Area_SASA_(nm2)", "Peptide")
-        if s: summary_rows.append(s)
-    ax.set_title("Solvent Accessible Surface Area (SASA, Paper Fig 3)", fontsize=11, weight="bold")
+        if s:
+            s["status"] = "TABLE_ONLY (peptide SASA; complex-only curves on figure)"
+            summary_rows.append(s)
+    ax.set_title(f"Solvent Accessible Surface Area ({'AChE' if apo else 'Complex'} SASA, Paper Fig 3)",
+                 fontsize=11, weight="bold")
     ax.set_xlabel("Time (ns)", fontsize=10)
     ax.set_ylabel("SASA (nm²)", fontsize=10)
     ax.grid(alpha=0.3, linestyle="--")
+    apply_ylim(ax, limits, "sasa")
     safe_legend(ax)
     save_all_formats(fig, fig_dir / "fig3_sasa")
     plt.close(fig)
@@ -569,8 +765,8 @@ def main():
     # --------------------------------------------------------
     print("\n>> [4/8] Generating Figure 4: Complex + Peptide DSSP ...")
     ss_frac = read_ss_frac(work_dir / "ss_complex_frac.xvg")
-    ss_label = "Complex (AChE+Peptide)"
-    ss_system = "Complex"
+    ss_label = "AChE (apo)" if apo else "Complex (AChE+Peptide)"
+    ss_system = prot_label
     if ss_frac is None or len(ss_frac) < 5:
         ss_frac = read_ss_frac(work_dir / "ss_pep_frac.xvg")
         ss_label = "Peptide only"
@@ -617,7 +813,8 @@ def main():
         add_panel_label(axb, "B")
 
         draw_ss_heatmap(axh, ss_times, ss_seqs)
-        axh.set_title("Complex DSSP map (residue × time)", fontsize=11, weight="bold")
+        axh.set_title(f"{'AChE' if apo else 'Complex'} DSSP map (residue × time)",
+                      fontsize=11, weight="bold")
         add_panel_label(axh, "C")
 
         n_ss = int(len(ss_src))
@@ -763,13 +960,28 @@ def main():
         s = summarize_last_ns(hb_intra, "4_Hydrogen_Bonds_(Count)", "Peptide")
         if s: summary_rows.append(s)
     if hb_ach_intra is not None:
-        ax.plot(hb_ach_intra["x"], hb_ach_intra["y"], label="Intra-AChE", linewidth=1.0, linestyle=":", color="tab:orange", alpha=0.6)
-        s = summarize_last_ns(hb_ach_intra, "4_Hydrogen_Bonds_(Count)", "AChE")
-        if s: summary_rows.append(s)
+        if not apo:
+            # table only — no protein-only curve on complex figures
+            s = summarize_last_ns(hb_ach_intra, "4_Hydrogen_Bonds_(Count)", "AChE")
+            if s:
+                s["status"] = "TABLE_ONLY (intra-AChE; complex-focused figures only)"
+                summary_rows.append(s)
+        else:
+            # apo control: intra-AChE H-bonds are the only H-bond metric -> draw
+            ax.plot(hb_ach_intra["x"], hb_ach_intra["y"], label="Intra-AChE",
+                    linewidth=1.5, color="tab:orange")
+            s = summarize_last_ns(hb_ach_intra, "4_Hydrogen_Bonds_(Count)", "AChE")
+            if s:
+                s["status"] = "APO_CONTROL (intra-AChE only; no AChE-peptide H-bonds)"
+                summary_rows.append(s)
     ax.set_title("Hydrogen Bonds over Time (Paper Section 3.3)", fontsize=11, weight="bold")
     ax.set_xlabel("Time (ns)", fontsize=10)
     ax.set_ylabel("Number of H-Bonds", fontsize=10)
     ax.grid(alpha=0.3, linestyle="--")
+    if hb_pep_ach is not None:
+        # shared hbond y-limit describes AChE-peptide counts (complexes only);
+        # intra-AChE counts are ~100x larger and must keep their own scale
+        apply_ylim(ax, limits, "hbond")
     safe_legend(ax)
     save_all_formats(fig, fig_dir / "fig_hbonds")
     plt.close(fig)
@@ -781,10 +993,10 @@ def main():
     rg_com = read_xvg(work_dir / "gyrate_complex.xvg", x_scale=0.001)
     rg_ach = read_xvg(work_dir / "gyrate_ache.xvg", x_scale=0.001)
     if rg_com is not None:
-        s = summarize_last_ns(rg_com, "8_Radius_of_Gyration_Rg_(nm)", "Complex")
+        s = summarize_last_ns(rg_com, "8_Radius_of_Gyration_Rg_(nm)", prot_label)
         if s:
             summary_rows.append(s)
-    if rg_ach is not None:
+    if rg_ach is not None and not apo:
         s = summarize_last_ns(rg_ach, "8_Radius_of_Gyration_Rg_(nm)", "AChE")
         if s:
             summary_rows.append(s)
@@ -792,29 +1004,35 @@ def main():
     fig, axes = plt.subplots(2, 4, figsize=(18.4, 8.4), constrained_layout=True)
     axes = axes.flatten()
 
-    # A: RMSD — complex / AChE only
+    # A: RMSD — complex only (unified scale via --limits-json)
     if rmsd_com is not None:
-        axes[0].plot(rmsd_com["x"], rmsd_com["y"], label="Complex BB", color="tab:blue", linewidth=1.2)
-    if rmsd_ach is not None:
-        axes[0].plot(rmsd_ach["x"], rmsd_ach["y"], label="AChE BB", color="tab:orange", linewidth=1.2, linestyle="--")
+        axes[0].plot(rmsd_com["x"], rmsd_com["y"],
+                     label=("AChE BB" if apo else "Complex BB"),
+                     color="tab:blue", linewidth=1.2)
     axes[0].set_title("Backbone Cα RMSD", fontsize=11, weight="bold")
     axes[0].set_xlabel("Time (ns)", fontsize=10)
     axes[0].set_ylabel("RMSD (nm)", fontsize=10)
     axes[0].grid(alpha=0.3, linestyle="--")
+    apply_ylim(axes[0], limits, "rmsd")
     safe_legend(axes[0])
 
-    # B: AChE RMSF only
-    if rmsf_ach is not None:
-        axes[1].plot(rmsf_ach["x"], rmsf_ach["y"], label="AChE BB", color="tab:orange", linewidth=1.2)
-        axes[1].set_title("AChE Backbone Cα RMSF", fontsize=11, weight="bold")
-    elif rmsf_com is not None:
-        axes[1].plot(rmsf_com["x"], rmsf_com["y"], label="Complex BB", color="tab:blue", linewidth=1.2)
-        axes[1].set_title("Complex Backbone Cα RMSF", fontsize=11, weight="bold")
+    # B: Complex RMSF only (no AChE-only curve on complex figures)
+    if rmsf_com is not None:
+        plot_rmsf_profile(axes[1], rmsf_com["x"], rmsf_com["y"],
+                          label=("AChE BB" if apo else "Complex BB"),
+                          color="tab:blue", linewidth=1.2)
+        axes[1].set_title(f"{'AChE' if apo else 'Complex'} Backbone Cα RMSF",
+                          fontsize=11, weight="bold")
+    elif rmsf_ach is not None:
+        plot_rmsf_profile(axes[1], rmsf_ach["x"], rmsf_ach["y"], label="AChE BB",
+                          color="tab:orange", linewidth=1.2)
+        axes[1].set_title("Backbone Cα RMSF", fontsize=11, weight="bold")
     else:
         axes[1].set_title("Backbone RMSF", fontsize=11, weight="bold")
     axes[1].set_xlabel("Residue Number", fontsize=10)
     axes[1].set_ylabel("RMSF (nm)", fontsize=10)
     axes[1].grid(alpha=0.3, linestyle="--")
+    apply_ylim(axes[1], limits, "rmsf")
     safe_legend(axes[1])
 
     # C: RDF
@@ -822,48 +1040,56 @@ def main():
         axes[2].plot(rdf_main["x"], rdf_main["y"], label="Total RDF", color="tab:purple", linewidth=1.5)
         axes[2].set_title("Peptide-AChE COM RDF", fontsize=11, weight="bold")
     else:
-        axes[2].text(0.5, 0.5, "RDF (N/A for Monomer)", ha="center", va="center", fontsize=10, color="gray")
+        axes[2].text(0.5, 0.5, "RDF N/A — apo control (no peptide)",
+                     ha="center", va="center", fontsize=10, color="gray")
         axes[2].set_title("Peptide-AChE COM RDF", fontsize=11, weight="bold")
     axes[2].set_xlabel("Distance (nm)", fontsize=10)
     axes[2].set_ylabel("g(r)", fontsize=10)
     axes[2].grid(alpha=0.3, linestyle="--")
+    apply_ylim(axes[2], limits, "rdf")
     safe_legend(axes[2])
 
-    # D: SASA
+    # D: SASA — complex only
     if sasa_com is not None:
-        axes[3].plot(sasa_com["x"], sasa_com["y"], label="Complex SASA", color="tab:blue", linewidth=1.2)
+        axes[3].plot(sasa_com["x"], sasa_com["y"],
+                     label=("AChE SASA" if apo else "Complex SASA"),
+                     color="tab:blue", linewidth=1.2)
     elif sasa_ach is not None:
         axes[3].plot(sasa_ach["x"], sasa_ach["y"], label="AChE SASA", color="tab:orange", linewidth=1.2)
     axes[3].set_title("Solvent Accessible Surface Area", fontsize=11, weight="bold")
     axes[3].set_xlabel("Time (ns)", fontsize=10)
     axes[3].set_ylabel("SASA (nm²)", fontsize=10)
     axes[3].grid(alpha=0.3, linestyle="--")
+    apply_ylim(axes[3], limits, "sasa")
     safe_legend(axes[3])
 
     # E: DSSP occupancy bars (literature % panel; stack of a 530-res protein looks flat)
     if ss_src is not None:
         t0, h0, e0, u0, b0, c0 = ss_to_percent_stacks(ss_src)
         _mask, means0, stds0 = ss_last_window(t0, [h0, e0, u0, b0, c0], last_ns=20.0)
-        draw_ss_bars(axes[4], means0, stds0)
+        draw_ss_bars(axes[4], means0, stds0, ylim=limits.get("ss"))
         axes[4].set_title("DSSP occupancy (last 20 ns)", fontsize=11, weight="bold")
     else:
         axes[4].text(0.5, 0.5, "DSSP missing — run replot_<system>.ps1",
                      ha="center", va="center", fontsize=9, color="tab:red")
         axes[4].set_title("DSSP occupancy (last 20 ns)", fontsize=11, weight="bold")
 
-    # F: Complex Rg (before H-bonds)
+    # F: Complex Rg (before H-bonds; no AChE-only curve on complex figures)
     if rg_com is not None:
-        axes[5].plot(rg_com["x"], rg_com["y"], label="Complex Rg", color="tab:blue", linewidth=1.2)
-    if rg_ach is not None:
-        axes[5].plot(rg_ach["x"], rg_ach["y"], label="AChE Rg", color="tab:orange",
-                     linewidth=1.2, linestyle="--")
-    if rg_com is None and rg_ach is None:
+        axes[5].plot(rg_com["x"], rg_com["y"],
+                     label=("AChE Rg" if apo else "Complex Rg"),
+                     color="tab:blue", linewidth=1.2)
+    else:
+        # NEVER leave this panel silently blank: if the complex Rg data is
+        # missing (or an empty/header-only xvg), always show the notice —
+        # even when gyrate_ache.xvg happens to exist.
         axes[5].text(0.5, 0.5, "Rg missing — run 6_rg.sh",
                      ha="center", va="center", fontsize=10, color="tab:red")
     axes[5].set_title("Radius of Gyration", fontsize=11, weight="bold")
     axes[5].set_xlabel("Time (ns)", fontsize=10)
     axes[5].set_ylabel("Rg (nm)", fontsize=10)
     axes[5].grid(alpha=0.3, linestyle="--")
+    apply_ylim(axes[5], limits, "rg")
     safe_legend(axes[5])
 
     # G: H-bonds (kept on overview; detailed curve also in fig_hbonds)
@@ -885,21 +1111,35 @@ def main():
     axes[6].set_xlabel("Time (ns)", fontsize=10)
     axes[6].set_ylabel("Count", fontsize=10)
     axes[6].grid(alpha=0.3, linestyle="--")
+    if hb_pep_ach is not None:
+        # shared hbond y-limit only for AChE-peptide counts (complexes);
+        # intra-AChE counts of the apo control keep their own scale
+        apply_ylim(axes[6], limits, "hbond")
     safe_legend(axes[6])
 
     # H: Complex DSSP % vs time (lines, so ±1% is visible)
     if ss_src is not None:
         t0, h0, e0, u0, b0, c0 = ss_to_percent_stacks(ss_src)
-        draw_ss_lines(axes[7], t0, [h0, e0, u0, b0, c0], fontsize=7)
-        axes[7].set_title("Complex DSSP content (%)", fontsize=11, weight="bold")
+        draw_ss_lines(axes[7], t0, [h0, e0, u0, b0, c0], fontsize=7, ylim=limits.get("ss"))
+        axes[7].set_title(f"{'AChE' if apo else 'Complex'} DSSP content (%)",
+                          fontsize=11, weight="bold")
     else:
         axes[7].text(0.5, 0.5, "DSSP missing", ha="center", va="center", color="tab:red")
-        axes[7].set_title("Complex DSSP content (%)", fontsize=11, weight="bold")
+        axes[7].set_title(f"{'AChE' if apo else 'Complex'} DSSP content (%)",
+                          fontsize=11, weight="bold")
 
     for idx, (ax, label) in enumerate(zip(axes, ["A", "B", "C", "D", "E", "F", "G", "H"])):
         add_panel_label(ax, label)
 
-    fig.suptitle("AChE-Aβ Complex Molecular Dynamics Summary", fontsize=14, weight="bold")
+    sys_label = work_dir.name
+    if sys_label.lower().startswith("md_"):
+        sys_label = sys_label[3:]
+    if apo:
+        fig.suptitle(f"AChE MD summary (apo control, no peptide, {sys_label.upper()}, 100 ns)",
+                     fontsize=14, weight="bold")
+    else:
+        fig.suptitle(f"AChE–peptide complex MD summary ({sys_label.upper()}, 100 ns)",
+                     fontsize=14, weight="bold")
     save_all_formats(fig, fig_dir / "fig0_summary_all")
     plt.close(fig)
 

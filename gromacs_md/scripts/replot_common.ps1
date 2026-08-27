@@ -51,7 +51,18 @@ if (-not $HasGro) {
 
 $HasRmsd = Test-Path (Join-Path $Work "rmsd_complex_bb.xvg")
 $HasDssp = Test-Path (Join-Path $Work "ss_complex_frac.xvg")
-$HasRg   = Test-Path (Join-Path $Work "gyrate_complex.xvg")
+# v2.7.3: the Rg file must really contain >=2 data rows (GROMACS can leave an
+# empty/header-only file behind on failure) - existence is NOT enough
+$RgFile = Join-Path $Work "gyrate_complex.xvg"
+$HasRg = $false
+if (Test-Path $RgFile) {
+    $dataLines = @(Get-Content -Path $RgFile -ErrorAction SilentlyContinue |
+        Where-Object { $_ -match '^\s*[-+]?[0-9]' })
+    $HasRg = ($dataLines.Count -ge 2)
+    if (-not $HasRg) {
+        Write-Host "NOTE: gyrate_complex.xvg exists but has no data rows -> will regenerate" -ForegroundColor Yellow
+    }
+}
 
 $Mode = "full"
 if ($OnlyPlot -and $Full) {
@@ -77,12 +88,21 @@ $code = 0
 Push-Location $Here
 try {
     if ($Mode -eq "rg+plot") {
-        Write-Host "[Rg] gyrate_complex.xvg missing; running 6_rg.sh only ..." -ForegroundColor Cyan
+        Write-Host "[Rg] gyrate_complex.xvg missing/empty; running 6_rg.sh only ..." -ForegroundColor Cyan
         Push-Location $Work
         try {
             & bash "../scripts/analysis/6_rg.sh" 2>&1 | ForEach-Object { "$_" }
         } finally {
             Pop-Location
+        }
+        # verify the file really has data now (6_rg.sh validates its own output too)
+        $dataLines2 = @(Get-Content -Path $RgFile -ErrorAction SilentlyContinue |
+            Where-Object { $_ -match '^\s*[-+]?[0-9]' })
+        if ($dataLines2.Count -lt 2) {
+            Write-Host "[WARN] 6_rg.sh finished but gyrate_complex.xvg still has no data." -ForegroundColor Red
+            Write-Host "       fig0 panel F will show 'Rg missing'. Check gmx output above." -ForegroundColor Yellow
+        } else {
+            Write-Host "[OK] gyrate_complex.xvg filled ($($dataLines2.Count) data rows)." -ForegroundColor Green
         }
         $Mode = "plot"
     }
@@ -109,5 +129,8 @@ Write-Host "Check:"
 Write-Host "  ss_complex_summary.txt     (~530 residues, 0-100 ns, helix ~30%+)"
 Write-Host "  figures\fig4_secondary_structure.png   DSSP % lines + occupancy bars + heatmap + peptide"
 Write-Host "  figures\fig_peptide_rmsd_rmsf.png      peptide RMSD + RMSF (not on overview)"
-Write-Host "  figures\fig0_summary_all.png           A RMSD B AChE-RMSF C RDF D SASA E DSSP-bars F Rg G H-bonds H DSSP-lines"
+Write-Host "  figures\fig0_summary_all.png           A RMSD B Complex-RMSF C RDF D SASA E DSSP-bars F Rg G H-bonds H DSSP-lines (complex-only)"
+Write-Host ""
+Write-Host "UNIFIED (4 systems + compare folders, shared y-axis):"
+Write-Host "  .\run_unified_replot.ps1"
 exit 0

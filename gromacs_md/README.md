@@ -153,6 +153,13 @@ TESTING=1 ./run_all.sh ylsllqr
 .\replot_ylsllqr.ps1
 .\replot_ache.ps1
 .\replot_all_four.ps1
+
+# ★★ v2.7 一键统一重绘 + 三组对照图 (不重新模拟 MD)
+#    统一四张 fig0_summary_all 的面板/刻度(共享 y 轴、只画复合物曲线)，
+#    并生成 compare_ache_vs_alllhrc|fllhttr|ylsllqr 三个对照文件夹：
+#      fig_compare.png/pdf/svg + compare_summary.csv
+#    若 alllhrc 缺 gyrate_*.xvg 会自动补算 Rg (需要 md_fit.xtc + gmx)
+.\run_unified_replot.ps1
 ```
 
 **方法二：WSL / Git Bash 运行（`.sh` 脚本已自动支持 WSL 调用 Windows python.exe 时的路径自动转换）**
