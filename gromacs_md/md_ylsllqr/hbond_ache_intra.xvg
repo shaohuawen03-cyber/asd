@@ -1,4 +1,4 @@
-# This file was created Fri Aug 14 01:36:56 2026
+# This file was created Wed Aug 26 18:23:35 2026
 # Created by:
 #                      :-) GROMACS - gmx hbond, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx hbond -s md.tpr -f md_fit.xtc -n index.ndx -num hbond_ache_intra.xvg
 # gmx hbond is part of G R O M A C S:
 #
-# Great Red Owns Many ACres of Sand 
+# Good gRace! Old Maple Actually Chews Slate
 #
 @    title "Number of hydrogen bonds"
 @    xaxis  label "Time (ps)"

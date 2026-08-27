@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 09:29:03 2026
+# This file was created Wed Aug 26 15:48:41 2026
 # Created by:
 #                       :-) GROMACS - gmx rdf, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx rdf -s md.tpr -f md_fit.xtc -n index.ndx -o rdf_pep_ache_q2.xvg -ref AChE -sel Peptide -selrpos mol_com -seltype mol_com -b 1250.25 -e 2500.5 -bin 0.02
 # gmx rdf is part of G R O M A C S:
 #
-# GROwing Monsters And Cloning Shrimps
+# Great Red Owns Many ACres of Sand 
 #
 @    title "Radial distribution"
 @    xaxis  label "r (nm)"

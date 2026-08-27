@@ -1,13 +1,14 @@
 ﻿Metric_Name,Target_System,Last_20ns_Equil_Mean_Std,Full_100ns_Mean_Std,Min_Value,Max_Value,Scientific_Assessment
 1_Backbone_RMSD_(nm),Complex,0.2064 ± 0.0136,0.1624 ± 0.0314,0.0000,0.2398,STABLE
-1_Backbone_RMSD_(nm),AChE,0.2049 ± 0.0138,0.1601 ± 0.0316,0.0000,0.2388,STABLE
+1_Backbone_RMSD_(nm),AChE,0.2049 ± 0.0138,0.1601 ± 0.0316,0.0000,0.2388,TABLE_ONLY (AChE part of complex; drawn in compare_* figures)
 1_Backbone_RMSD_(nm),Peptide,0.1979 ± 0.0143,0.1569 ± 0.0440,0.0000,0.2365,TABLE_ONLY (see peptide_rmsd_jump_diagnosis.txt; not on fig0)
-2_Backbone_RMSF_Avg_(nm),AChE,0.0804 ± 0.0562,0.0804 ± 0.0562,0.0336,0.6937,"PER_RESIDUE_FLEXIBILITY (逐残基柔性, 非时间序列)"
+2_Backbone_RMSF_Avg_(nm),Complex,0.0813 ± 0.0574,0.0813 ± 0.0574,0.0335,0.6935,"PER_RESIDUE_FLEXIBILITY (逐残基柔性, 非时间序列)"
+2_Backbone_RMSF_Avg_(nm),AChE,0.0804 ± 0.0562,0.0804 ± 0.0562,0.0336,0.6937,TABLE_ONLY (AChE part of complex; drawn in compare_* figures)
 2_Backbone_RMSF_Avg_(nm),Peptide,0.1026 ± 0.0387,0.1026 ± 0.0387,0.0762,0.1712,"PER_RESIDUE_FLEXIBILITY (逐残基柔性, 非时间序列)"
 5_RDF_First_Peak_g(r),Complex,171.5808 ± 1.6600,171.5808 ± 0.0000,0.0000,171.5808,Peak at r=1.66 nm
 3_Solvent_Accessible_Surface_Area_SASA_(nm2),Complex,210.3697 ± 2.9083,210.0336 ± 3.2602,200.6990,220.0970,STABLE
-3_Solvent_Accessible_Surface_Area_SASA_(nm2),AChE,214.0027 ± 2.9624,213.5207 ± 3.1620,204.8890,224.2010,STABLE
-3_Solvent_Accessible_Surface_Area_SASA_(nm2),Peptide,12.5691 ± 0.3172,12.7488 ± 0.4325,11.4390,14.3410,STABLE
+3_Solvent_Accessible_Surface_Area_SASA_(nm2),AChE,214.0027 ± 2.9624,213.5207 ± 3.1620,204.8890,224.2010,TABLE_ONLY (AChE part of complex; drawn in compare_* figures)
+3_Solvent_Accessible_Surface_Area_SASA_(nm2),Peptide,12.5691 ± 0.3172,12.7488 ± 0.4325,11.4390,14.3410,TABLE_ONLY (peptide SASA; complex-only curves on figure)
 6_DSSP_Helix_Content_(%),Complex,32.9192 ± 1.0558,33.3096 ± 1.2178,28.9200,37.3100,DSSP_PERCENT (n=5001 frames)
 6_DSSP_Sheet_Content_(%),Complex,17.0840 ± 0.6120,17.1567 ± 0.6900,14.1800,19.2200,DSSP_PERCENT (n=5001 frames)
 6_DSSP_Turn_Content_(%),Complex,12.9460 ± 1.0870,13.1289 ± 1.2045,8.7700,17.5400,DSSP_PERCENT (n=5001 frames)
@@ -19,6 +20,6 @@
 7_Intermolecular_Contact_Pairs_(count),Complex,7.0000 ± 0.0000,7.0000 ± 0.0000,7.0000,7.0000,7 contact pairs identified
 4_Hydrogen_Bonds_(Count),Complex,4.2308 ± 1.2449,3.8026 ± 1.4141,0.0000,9.0000,STABLE
 4_Hydrogen_Bonds_(Count),Peptide,2.2617 ± 0.7137,1.7151 ± 0.8187,0.0000,4.0000,STABLE
-4_Hydrogen_Bonds_(Count),AChE,393.3916 ± 9.0812,392.7794 ± 9.8847,360.0000,425.0000,STABLE
+4_Hydrogen_Bonds_(Count),AChE,393.3916 ± 9.0812,392.7794 ± 9.8847,360.0000,425.0000,TABLE_ONLY (intra-AChE; complex-focused figures only)
 8_Radius_of_Gyration_Rg_(nm),Complex,2.3004 ± 0.0051,2.3034 ± 0.0067,2.2823,2.3262,STABLE
 8_Radius_of_Gyration_Rg_(nm),AChE,2.3071 ± 0.0051,2.3104 ± 0.0067,2.2893,2.3330,STABLE

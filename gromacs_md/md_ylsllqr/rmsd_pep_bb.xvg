@@ -1,4 +1,4 @@
-# This file was created Fri Aug 14 01:18:29 2026
+# This file was created Wed Aug 26 18:01:26 2026
 # Created by:
 #                       :-) GROMACS - gmx rms, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx rms -s md.tpr -f md_fit.xtc -n index.ndx -o rmsd_pep_bb.xvg -fit rot+trans
 # gmx rms is part of G R O M A C S:
 #
-# Giant Rising Ordinary Mutants for A Clerical Setup
+# Green Red Orange Magenta Azure Cyan Skyblue
 #
 @    title "RMSD"
 @    xaxis  label "Time (ps)"

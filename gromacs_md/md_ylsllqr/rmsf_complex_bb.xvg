@@ -1,4 +1,4 @@
-# This file was created Fri Aug 14 01:17:22 2026
+# This file was created Wed Aug 26 18:00:09 2026
 # Created by:
 #                       :-) GROMACS - gmx rmsf, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx rmsf -s md.tpr -f md_fit.xtc -n index.ndx -o rmsf_complex_bb.xvg -res
 # gmx rmsf is part of G R O M A C S:
 #
-# Georgetown Riga Oslo Madrid Amsterdam Chisinau Stockholm
+# Gromacs Runs On Most of All Computer Systems
 #
 @    title "RMS fluctuation"
 @    xaxis  label "Residue"

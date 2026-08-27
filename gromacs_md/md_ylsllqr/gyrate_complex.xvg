@@ -1,4 +1,4 @@
-# This file was created Fri Aug 14 01:34:44 2026
+# This file was created Wed Aug 26 18:21:01 2026
 # Created by:
 #                      :-) GROMACS - gmx gyrate, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx gyrate -s md.tpr -f md_fit.xtc -n index.ndx -o gyrate_complex.xvg
 # gmx gyrate is part of G R O M A C S:
 #
-# Glycine aRginine prOline Methionine Alanine Cystine Serine
+# GROwing Monsters And Cloning Shrimps
 #
 @    title "Radius of gyration (total and around axes)"
 @    xaxis  label "Time (ps)"

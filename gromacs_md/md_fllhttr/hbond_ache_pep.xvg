@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 15:41:14 2026
+# This file was created Wed Aug 26 17:13:26 2026
 # Created by:
 #                      :-) GROMACS - gmx hbond, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx hbond -s md.tpr -f md_fit.xtc -n index.ndx -num hbond_ache_pep.xvg
 # gmx hbond is part of G R O M A C S:
 #
-# Gallium Rubidium Oxygen Manganese Argon Carbon Silicon
+# God Rules Over Mankind, Animals, Cosmos and Such
 #
 @    title "Number of hydrogen bonds"
 @    xaxis  label "Time (ps)"

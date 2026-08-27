@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 09:25:18 2026
+# This file was created Wed Aug 26 15:44:55 2026
 # Created by:
 #                       :-) GROMACS - gmx rms, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx rms -s md.tpr -f md_fit.xtc -n index.ndx -o rmsd_ache_bb.xvg -fit rot+trans
 # gmx rms is part of G R O M A C S:
 #
-# Good gRace! Old Maple Actually Chews Slate
+# God Rules Over Mankind, Animals, Cosmos and Such
 #
 @    title "RMSD"
 @    xaxis  label "Time (ps)"

@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 15:41:58 2026
+# This file was created Wed Aug 26 17:14:05 2026
 # Created by:
 #                      :-) GROMACS - gmx hbond, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx hbond -s md.tpr -f md_fit.xtc -n index.ndx -num hbond_pep_intra.xvg
 # gmx hbond is part of G R O M A C S:
 #
-# S  C  A  M  O  R  G
+# Green Red Orange Magenta Azure Cyan Skyblue
 #
 @    title "Number of hydrogen bonds"
 @    xaxis  label "Time (ps)"

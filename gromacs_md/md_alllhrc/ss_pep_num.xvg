@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 14:42:54 2026
+# This file was created Wed Aug 26 16:05:25 2026
 # Created by:
 #                       :-) GROMACS - gmx dssp, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx dssp -s md.tpr -f md_fit.xtc -n index.ndx -sel 'group "Peptide"' -o ss_pep.dat -num ss_pep_num.xvg -hmode dssp -clear
 # gmx dssp is part of G R O M A C S:
 #
-# Great Red Owns Many ACres of Sand 
+# GROningen Mixture of Alchemy and Childrens' Stories
 #
 @    title "Number of Secondary Structures"
 @    xaxis  label "Time (ps)"

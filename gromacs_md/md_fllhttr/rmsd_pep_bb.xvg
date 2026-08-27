@@ -1,4 +1,4 @@
-# This file was created Thu Aug 13 15:19:55 2026
+# This file was created Wed Aug 26 16:53:16 2026
 # Created by:
 #                       :-) GROMACS - gmx rms, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx rms -s md.tpr -f md_fit.xtc -n index.ndx -o rmsd_pep_bb.xvg -fit rot+trans
 # gmx rms is part of G R O M A C S:
 #
-# Good ROcking Metal Altar for Chronical Sinners
+# GROwing Monsters And Cloning Shrimps
 #
 @    title "RMSD"
 @    xaxis  label "Time (ps)"

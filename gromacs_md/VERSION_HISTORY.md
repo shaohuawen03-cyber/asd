@@ -511,11 +511,8 @@ Check afterwards:
 New launcher `run_apo_ache_100ns.ps1` does it end-to-end with safety checks:
 
 1. extracts/validates `input/ache.pdb` (single chain, no chain B, ~530
-   residues; refuses to run if `input/ache_complex.pdb` exists);
-   if the file exists but has a second chain (e.g. the old buggy
-   extraction kept the peptide), it is renamed to
-   `input\ache.pdb.bak-<timestamp>` and rebuilt automatically from
-   `input\alllhrc_complex.pdb` chain A (extractor is now chain-A-only);
+   residues; refuses to run if `input/ache_complex.pdb` exists or the PDB
+   has a second chain);
 2. renames the current `md_ache` to `md_ache_complex_backup` (instant,
    nothing deleted);
 3. runs the same v1.0 100 ns protocol (mdp/100ns) via run_all.ps1;
@@ -535,30 +532,3 @@ After it finishes: `md_ache\figures\fig0_summary_all.png` shows
 `compare_ache_vs_*\fig_compare.png` panel F contains only the complex's
 AChE-Peptide curve. The old complex results stay in
 `md_ache_complex_backup\` (analysis scripts ignore it).
-
-**IMPORTANT (encoding rule for .ps1 files):** Windows PowerShell 5.1 reads
-BOM-less .ps1 files with the system ANSI codepage (GBK on Chinese Windows),
-which garbles UTF-8 Chinese text inside STRINGS and breaks parsing
-(the first `run_apo_ache_100ns.ps1` had Chinese strings and failed with
-parser errors). All .ps1 scripts must stay **ASCII-only (English)**;
-Chinese text belongs in the .sh/.py/.md files only (bash/python read UTF-8
-fine).
-
-**PowerShell string gotcha:** inside a double-quoted string, `$Var:`
-is parsed as a drive-qualified variable reference and is a syntax error
-(`InvalidVariableReferenceWithDrive`). Always write `${Var}` before a
-colon, e.g. `"Check ${SrcPdb}: chain A ..."`. (`$env:NAME` is the one
-valid built-in form.) Likewise `"$Var.suffix"` is parsed as MEMBER ACCESS
-(and yields nothing for strings) — write `"${Var}.suffix"` or
-`"$($Var).suffix"` for literal dots after a variable.
-
-**input/ache.pdb chain-B bug (v2.7.3 follow-up):** the old
-`extract_ache_monomer.py` fallback kept atoms with
-`chain_id == "A" or resseq <= 530` — the `resseq <= 530` clause pulled the
-peptide chain B (numbered 1-7) into the "monomer" file, so
-`input\ache.pdb` had 2 chains and the apo launcher's validation aborted
-(it printed "chains=2 residues=533"). The extractor is now chain-A-only
-(single-chain verification + TER/END on output), and the launcher detects
-a 2-chain ache.pdb and rebuilds it automatically (old file backed up to
-`input\ache.pdb.bak-<timestamp>`). Requires `input\alllhrc_complex.pdb`
-to be present locally.

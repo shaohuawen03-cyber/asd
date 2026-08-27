@@ -1,4 +1,4 @@
-# This file was created Fri Aug 14 01:19:36 2026
+# This file was created Wed Aug 26 18:02:45 2026
 # Created by:
 #                       :-) GROMACS - gmx rdf, 2025.1 (-:
 # 
@@ -9,7 +9,7 @@
 #   gmx rdf -s md.tpr -f md_fit.xtc -n index.ndx -o rdf_pep_ache.xvg -ref AChE -sel Peptide -selrpos mol_com -seltype mol_com -bin 0.02
 # gmx rdf is part of G R O M A C S:
 #
-# Gyas ROwers Mature At Cryogenic Speed
+# Getting the Right Output Means no Artefacts in Calculating Stuff
 #
 @    title "Radial distribution"
 @    xaxis  label "r (nm)"
