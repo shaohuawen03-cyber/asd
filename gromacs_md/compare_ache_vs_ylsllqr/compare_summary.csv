@@ -1,0 +1,13 @@
+﻿Metric,ache_mean,ache_std,ylsllqr_mean,ylsllqr_std,Delta_ylsllqr_minus_ache
+Backbone_RMSD_last20ns_(nm),0.1562,0.0093,0.2064,0.0136,0.0502
+Peptide_self-fit_RMSD_last20ns_(nm),,,0.1979,0.0143,
+SASA_last20ns_(nm2),212.4053,2.3564,210.3697,2.9083,-2.0356
+Rg_last20ns_(nm),2.2967,0.0043,2.3004,0.0051,0.0037
+AChE-Peptide_Hbonds_last20ns_(count),,,4.2308,1.2449,
+Backbone_RMSF_per-residue_mean_(nm),0.0783,0.0524,0.0813,0.0574,0.0031
+RDF_peak_g(r),,,171.6,,
+DSSP_α-helix_last20ns_(%),33.59,1.07,32.92,1.06,-0.67
+DSSP_β-sheet_last20ns_(%),17.18,0.88,17.08,0.61,-0.09
+DSSP_Turn_last20ns_(%),12.56,1.13,12.95,1.09,0.39
+DSSP_Bend_last20ns_(%),13.70,0.82,13.06,0.80,-0.64
+DSSP_Coil/loop_last20ns_(%),22.97,0.81,23.99,0.75,1.02
