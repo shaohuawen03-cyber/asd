@@ -1,0 +1,8 @@
+﻿Metric,ache_mean,ache_std,alllhrc_mean,alllhrc_std,Delta_alllhrc_minus_ache
+Backbone_RMSD_last20ns_(nm),,,,,
+Peptide_self-fit_RMSD_last20ns_(nm),,,,,
+SASA_last20ns_(nm2),,,,,
+Rg_last20ns_(nm),,,2.3124,0.0052,
+AChE-Peptide_Hbonds_last20ns_(count),,,,,
+Backbone_RMSF_per-residue_mean_(nm),,,,,
+RDF_peak_g(r),,,,,

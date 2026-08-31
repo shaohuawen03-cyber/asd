@@ -1,0 +1,2188 @@
+                      :-) GROMACS - gmx mdrun, 2025.1 (-:
+
+Copyright 1991-2025 The GROMACS Authors.
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+                         Current GROMACS contributors:
+       Mark Abraham           Andrey Alekseenko           Brian Andrews       
+      Vladimir Basov              Paul Bauer                Hugh Bird         
+      Eliane Briand               Ania Brown              Mahesh Doijade      
+      Giacomo Fiorin          Stefan Fleischmann          Sergey Gorelov      
+   Gilles Gouaillardet            Alan Gray              M. Eric Irrgang      
+   Farzaneh Jalalypour         Petter Johansson          Carsten Kutzner      
+    Grzegorz Łazarski         Justin A. Lemkul          Magnus Lundborg      
+       Pascal Merz             Vedran Miletić            Dmitry Morozov      
+     Lukas Müllender            Julien Nabet             Szilárd Páll      
+ Andrea Pasquadibisceglie     Michele Pellegrino         Nicola Piasentin     
+     Daniele Rapetti         Muhammad Umair Sadiq         Hubert Santuz       
+      Roland Schulz             Michael Shirts           Tatiana Shugaeva     
+     Alexey Shvetsov            Philip Turner            Alessandra Villa     
+ Sebastian Wingbermühle  
+
+                         Previous GROMACS contributors:
+        Emile Apol             Rossen Apostolov           James Barnett       
+  Herman J.C. Berendsen         Cathrine Bergh             Par Bjelkmar       
+      Christian Blau          Viacheslav Bolnykh            Kevin Boyd        
+    Aldert van Buuren          Carlo Camilloni           Rudi van Drunen      
+      Anton Feenstra           Oliver Fleetwood            Vytas Gapsys       
+       Gaurav Garg             Gerrit Groenhof            Bert de Groot       
+      Anca Hamuraru           Vincent Hindriksen          Victor Holanda      
+     Aleksei Iupinov              Joe Jordan            Christoph Junghans    
+    Prashanth Kanduri        Dimitrios Karkoulis           Peter Kasson       
+      Sebastian Kehl           Sebastian Keller             Jiri Kraus        
+       Per Larsson              Viveca Lindahl            Erik Marklund       
+    Pieter Meulenhoff           Teemu Murtola              Sander Pronk       
+      Alfons Sijbers            Balint Soproni         David van der Spoel    
+      Peter Tieleman            Carsten Uphoff             Jon Vincent        
+     Teemu Virolainen         Christian Wennberg           Maarten Wolf       
+      Artem Zhmurov       
+
+                  Coordinated by the GROMACS project leaders:
+                           Berk Hess and Erik Lindahl
+
+GROMACS:      gmx mdrun, version 2025.1
+Executable:   F:\gromacs-2025.1-SM86\gromacs-2025.1-SM86\bin\gmx.exe
+Data prefix:  F:\gromacs-2025.1-SM86\gromacs-2025.1-SM86
+Working dir:  F:\0wsh\asd\gromacs_md\rerun_complexes-20260827-090911\md_ylsllqr
+Process ID:   12292
+Command line:
+  gmx mdrun -deffnm heat -v -nb gpu
+
+GROMACS version:     2025.1
+Precision:           mixed
+Memory model:        64 bit
+MPI library:         thread_mpi
+OpenMP support:      enabled (GMX_OPENMP_MAX_THREADS = 128)
+GPU support:         CUDA
+NBNxM GPU setup:     super-cluster 2x2x2 / cluster 8 (cluster-pair splitting on)
+SIMD instructions:   AVX2_256
+CPU FFT library:     fftw3
+GPU FFT library:     cuFFT
+Multi-GPU FFT:       none
+RDTSCP usage:        enabled
+TNG support:         enabled
+Hwloc support:       disabled
+Tracing support:     disabled
+C compiler:          C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.43.34808/bin/Hostx64/x64/cl.exe MSVC 19.43.34810.0
+C compiler flags:    /arch:AVX2 /wd4800 /wd4355 /wd4996 /wd4305 /wd4244 /wd4101 /wd4267 /wd4090 /wd4068 /O2 /Ob2 /DNDEBUG
+C++ compiler:        C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.43.34808/bin/Hostx64/x64/cl.exe MSVC 19.43.34810.0
+C++ compiler flags:  /arch:AVX2 /wd4800 /wd4355 /wd4996 /wd4305 /wd4244 /wd4267 /wd4068 /permissive- /utf-8 /analyze /analyze:stacksize 70000 /wd6001 /wd6011 /wd6053 /wd6054 /wd6385 /wd6386 /wd6387 /wd28199 /wd6239 /wd6240 /wd6294 /wd6326 /wd28020 /wd6330 /wd6993 /wd6031 /wd6244 /wd6246 SHELL:-openmp /O2 /Ob2 /DNDEBUG
+BLAS library:        Internal
+LAPACK library:      Internal
+CUDA compiler:       D:/applications/CUDA/bin/nvcc.exe nvcc: NVIDIA (R) Cuda compiler driver;Copyright (c) 2005-2025 NVIDIA Corporation;Built on Fri_Feb_21_20:42:46_Pacific_Standard_Time_2025;Cuda compilation tools, release 12.8, V12.8.93;Build cuda_12.8.r12.8/compiler.35583870_0
+CUDA compiler flags: /O2 /Ob2 /DNDEBUG
+CUDA driver:         13.20
+CUDA runtime:        12.80
+
+
+Running on 1 node with total 24 cores, 48 processing units, 1 compatible GPU
+Hardware detected on host DESKTOP-IEUDGS5:
+  CPU info:
+    Vendor: Intel
+    Brand:  Intel(R) Xeon(R) Silver 4214R CPU @ 2.40GHz
+    Family: 6   Model: 85   Stepping: 7
+    Features: aes apic avx avx2 avx512f avx512cd avx512bw avx512vl clfsh cmov cx8 cx16 f16c fma htt intel lahf mmx msr nonstop_tsc pcid pclmuldq pdcm pdpe1gb popcnt pse rdrnd rdtscp sse2 sse3 sse4.1 sse4.2 ssse3 x2apic
+    Number of AVX-512 FMA units: Cannot run AVX-512 detection - assuming 2
+  Hardware topology: Basic
+    Packages, cores, and logical processors:
+    [indices refer to OS logical processors]
+      Package  0: [   0   1] [   2   3] [   4   5] [   6   7] [   8   9] [  10  11] [  12  13] [  14  15] [  16  17] [  18  19] [  20  21] [  22  23]
+      Package  1: [  24  25] [  26  27] [  28  29] [  30  31] [  32  33] [  34  35] [  36  37] [  38  39] [  40  41] [  42  43] [  44  45] [  46  47]
+    CPU limit set by OS: -1   Recommended max number of threads: 48
+  GPU info:
+    Number of GPUs detected: 1
+    #0: NVIDIA NVIDIA RTX A4000, compute cap.: 8.6, ECC:  no, stat: compatible
+
+Likely fastest SIMD instructions supported by all nodes: AVX_512
+SIMD instructions selected at compile time:              AVX2_256
+Merely a note: it is unfortunately hard to know for sure which SIMD
+instructons will perform best on this hardware. For non-GPU runs
+on Intel CPUs with dual AVX-512 units, using AVX-512 can be good,
+while AVX2 is often better for runs also using a GPU. Typically
+this is just a few percent, so don't worry unless you are tuning.
+
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+M. J. Abraham, T. Murtola, R. Schulz, S. Páll, J. C. Smith, B. Hess, E.
+Lindahl
+GROMACS: High performance molecular simulations through multi-level
+parallelism from laptops to supercomputers
+SoftwareX (2015)
+DOI: 10.1016/j.softx.2015.06.001
+-------- -------- --- Thank You --- -------- --------
+
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+S. Páll, M. J. Abraham, C. Kutzner, B. Hess, E. Lindahl
+Tackling Exascale Software Challenges in Molecular Dynamics Simulations with
+GROMACS
+In S. Markidis & E. Laure (Eds.), Solving Software Challenges for Exascale (2015)
+DOI: 10.1007/978-3-319-15976-8_1
+-------- -------- --- Thank You --- -------- --------
+
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+S. Pronk, S. Páll, R. Schulz, P. Larsson, P. Bjelkmar, R. Apostolov, M. R.
+Shirts, J. C. Smith, P. M. Kasson, D. van der Spoel, B. Hess, E. Lindahl
+GROMACS 4.5: a high-throughput and highly parallel open source molecular
+simulation toolkit
+Bioinformatics (2013)
+DOI: 10.1093/bioinformatics/btt055
+-------- -------- --- Thank You --- -------- --------
+
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+B. Hess, C. Kutzner, D. van der Spoel, E. Lindahl
+GROMACS 4: Algorithms for highly efficient, load-balanced, and scalable
+molecular simulation
+J. Chem. Theory Comput. (2008)
+DOI: 10.1021/ct700301q
+-------- -------- --- Thank You --- -------- --------
+
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+D. van der Spoel, E. Lindahl, B. Hess, G. Groenhof, A. E. Mark, H. J. C.
+Berendsen
+GROMACS: Fast, Flexible and Free
+J. Comp. Chem. (2005)
+DOI: 10.1002/jcc.20291
+-------- -------- --- Thank You --- -------- --------
+
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+E. Lindahl, B. Hess, D. van der Spoel
+GROMACS 3.0: A package for molecular simulation and trajectory analysis
+J. Mol. Mod. (2001)
+DOI: 10.1007/s008940100045
+-------- -------- --- Thank You --- -------- --------
+
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+H. J. C. Berendsen, D. van der Spoel and R. van Drunen
+GROMACS: A message-passing parallel molecular dynamics implementation
+Comp. Phys. Comm. (1995)
+DOI: 10.1016/0010-4655(95)00042-E
+-------- -------- --- Thank You --- -------- --------
+
+
+++++ PLEASE CITE THE DOI FOR THIS VERSION OF GROMACS ++++
+https://doi.org/10.5281/zenodo.15006630
+-------- -------- --- Thank You --- -------- --------
+
+Input Parameters:
+   integrator                     = md
+   tinit                          = 0
+   dt                             = 0.002
+   nsteps                         = 500000
+   init-step                      = 0
+   simulation-part                = 1
+   mts                            = false
+   mass-repartition-factor        = 1
+   comm-mode                      = Linear
+   nstcomm                        = 100
+   bd-fric                        = 0
+   ld-seed                        = -1778384975
+   emtol                          = 10
+   emstep                         = 0.01
+   niter                          = 20
+   fcstep                         = 0
+   nstcgsteep                     = 1000
+   nbfgscorr                      = 10
+   rtpi                           = 0.05
+   nstxout                        = 0
+   nstvout                        = 0
+   nstfout                        = 0
+   nstlog                         = 5000
+   nstcalcenergy                  = 1000
+   nstenergy                      = 1000
+   nstxout-compressed             = 5000
+   compressed-x-precision         = 1000
+   cutoff-scheme                  = Verlet
+   nstlist                        = 10
+   pbc                            = xyz
+   periodic-molecules             = false
+   verlet-buffer-tolerance        = 0.005
+   verlet-buffer-pressure-tolerance = 0.5
+   rlist                          = 1.2
+   coulombtype                    = PME
+   coulomb-modifier               = Potential-shift
+   rcoulomb-switch                = 0
+   rcoulomb                       = 1.2
+   epsilon-r                      = 1
+   epsilon-rf                     = inf
+   vdw-type                       = Cut-off
+   vdw-modifier                   = Force-switch
+   rvdw-switch                    = 1
+   rvdw                           = 1.2
+   DispCorr                       = No
+   table-extension                = 1
+   fourierspacing                 = 0.12
+   fourier-nx                     = 72
+   fourier-ny                     = 72
+   fourier-nz                     = 80
+   pme-order                      = 4
+   ewald-rtol                     = 1e-05
+   ewald-rtol-lj                  = 0.001
+   lj-pme-comb-rule               = Geometric
+   ewald-geometry                 = 3d
+   epsilon-surface                = 0
+   ensemble-temperature-setting   = not available
+   tcoupl                         = V-rescale
+   nsttcouple                     = 100
+   nh-chain-length                = 0
+   print-nose-hoover-chain-variables = false
+   pcoupl                         = No
+   refcoord-scaling               = No
+   posres-com: not available
+   posres-comB: not available
+   QMMM                           = false
+qm-opts:
+   ngQM                           = 0
+   constraint-algorithm           = Lincs
+   continuation                   = false
+   Shake-SOR                      = false
+   shake-tol                      = 0.0001
+   lincs-order                    = 4
+   lincs-iter                     = 1
+   lincs-warnangle                = 30
+   nwall                          = 0
+   wall-type                      = 9-3
+   wall-r-linpot                  = -1
+   wall-atomtype[0]               = -1
+   wall-atomtype[1]               = -1
+   wall-density[0]                = 0
+   wall-density[1]                = 0
+   wall-ewald-zfac                = 3
+   pull                           = false
+   awh                            = false
+   rotation                       = false
+   interactiveMD                  = false
+   disre                          = No
+   disre-weighting                = Conservative
+   disre-mixed                    = false
+   dr-fc                          = 1000
+   dr-tau                         = 0
+   nstdisreout                    = 100
+   orire-fc                       = 0
+   orire-tau                      = 0
+   nstorireout                    = 100
+   free-energy                    = no
+   cos-acceleration               = 0
+   deform (3x3):
+      deform[    0]={ 0.00000e+00,  0.00000e+00,  0.00000e+00}
+      deform[    1]={ 0.00000e+00,  0.00000e+00,  0.00000e+00}
+      deform[    2]={ 0.00000e+00,  0.00000e+00,  0.00000e+00}
+   simulated-tempering            = false
+   swapcoords                     = no
+   userint1                       = 0
+   userint2                       = 0
+   userint3                       = 0
+   userint4                       = 0
+   userreal1                      = 0
+   userreal2                      = 0
+   userreal3                      = 0
+   userreal4                      = 0
+   applied-forces:
+     electric-field:
+       x:
+         E0                       = 0
+         omega                    = 0
+         t0                       = 0
+         sigma                    = 0
+       y:
+         E0                       = 0
+         omega                    = 0
+         t0                       = 0
+         sigma                    = 0
+       z:
+         E0                       = 0
+         omega                    = 0
+         t0                       = 0
+         sigma                    = 0
+     density-guided-simulation:
+       active                     = false
+       group                      = protein
+       similarity-measure         = inner-product
+       atom-spreading-weight      = unity
+       force-constant             = 1e+09
+       gaussian-transform-spreading-width = 0.2
+       gaussian-transform-spreading-range-in-multiples-of-width = 4
+       reference-density-filename = reference.mrc
+       nst                        = 1
+       normalize-densities        = true
+       adaptive-force-scaling     = false
+       adaptive-force-scaling-time-constant = 4
+       shift-vector               = 
+       transformation-matrix      = 
+     qmmm-cp2k:
+       active                     = false
+       qmgroup                    = System
+       qmmethod                   = PBE
+       qmfilenames                = 
+       qmcharge                   = 0
+       qmmultiplicity             = 1
+     colvars:
+       active                     = false
+       configfile                 = 
+       seed                       = -1
+     nnpot:
+       active                     = false
+       modelfile                  = model.pt
+       input-group                = System
+       model-input1               = 
+       model-input2               = 
+       model-input3               = 
+       model-input4               = 
+grpopts:
+   nrdf:     20749.5     99681.5
+   ref-t:         300         300
+   tau-t:           1           1
+annealing:      Single      Single
+annealing-npoints:           2           2
+annealing-time [0]:	         0.0      1000.0
+annealing-temp [0]:	        10.0       300.0
+annealing-time [1]:	         0.0      1000.0
+annealing-temp [1]:	        10.0       300.0
+   acc:	           0           0           0
+   nfreeze:           N           N           N
+   energygrp-flags[  0]: 0
+
+Changing nstlist from 10 to 100, rlist from 1.2 to 1.355
+
+When checking whether update groups are usable:
+  Domain decomposition is not active, so there is no need for update groups
+
+Local state does not use filler particles
+
+1 GPU selected for this run.
+Mapping of GPU IDs to the 2 GPU tasks in the 1 rank on this node:
+  PP:0,PME:0
+PP tasks will do (non-perturbed) short-ranged interactions on the GPU
+PP task will update and constrain coordinates on the GPU
+PME tasks will do all aspects on the GPU
+Using 1 MPI thread
+Using 24 OpenMP threads 
+
+System total charge: 0.000
+Will do PME sum in reciprocal space for electrostatic interactions.
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+U. Essmann, L. Perera, M. L. Berkowitz, T. Darden, H. Lee, L. G. Pedersen 
+A smooth particle mesh Ewald method
+J. Chem. Phys. (1995)
+DOI: 10.1063/1.470117
+-------- -------- --- Thank You --- -------- --------
+
+Using a Gaussian width (1/beta) of 0.384195 nm for Ewald
+Potential shift: LJ r^-12: -2.648e-01 r^-6: -5.349e-01, Ewald -8.333e-06
+Initialized non-bonded Coulomb Ewald tables, spacing: 1.02e-03 size: 1176
+
+Generated table with 1177 data points for 1-4 COUL.
+Tabscale = 500 points/nm
+Generated table with 1177 data points for 1-4 LJ6.
+Tabscale = 500 points/nm
+Generated table with 1177 data points for 1-4 LJ12.
+Tabscale = 500 points/nm
+
+
+Using GPU 8x4 nonbonded short-range kernels
+
+NBNxM GPU setup: super-cluster 2x2x2
+
+Using a dual 8x4 pair-list setup updated with dynamic, rolling pruning:
+  outer list: updated every 100 steps, buffer 0.155 nm, rlist 1.355 nm
+  inner list: updated every  12 steps, buffer 0.001 nm, rlist 1.201 nm
+At tolerance 0.005 kJ/mol/ps per atom, equivalent classical 1x1 list would be:
+  outer list: updated every 100 steps, buffer 0.291 nm, rlist 1.491 nm
+  inner list: updated every  12 steps, buffer 0.050 nm, rlist 1.250 nm
+
+The average pressure is off by at most 0.25 bar due to missing LJ interactions
+Removing pbc first time
+
+Pinning threads with an auto-selected logical cpu stride of 2
+
+Initializing LINear Constraint Solver
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+B. Hess, H. Bekker, H. J. C. Berendsen, J. G. E. M. Fraaije
+LINCS: A Linear Constraint Solver for molecular simulations
+J. Comp. Chem. (1997)
+DOI: 10.1002/(sici)1096-987x(199709)18:12<1463::aid-jcc4>3.0.co;2-h
+-------- -------- --- Thank You --- -------- --------
+
+The number of constraints is 4084
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+S. Miyamoto, P. A. Kollman
+SETTLE: An Analytical Version of the SHAKE and RATTLE Algorithms for Rigid
+Water Models
+J. Comp. Chem. (1992)
+DOI: 10.1002/jcc.540130805
+-------- -------- --- Thank You --- -------- --------
+
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+G. Bussi, D. Donadio, M. Parrinello
+Canonical sampling through velocity rescaling
+J. Chem. Phys. (2007)
+DOI: 10.1063/1.2408420
+-------- -------- --- Thank You --- -------- --------
+
+There are: 58063 Atoms
+
+Updating coordinates and applying constraints on the GPU.
+
+Constraining the starting coordinates (step 0)
+
+Constraining the coordinates at t0-dt (step 0)
+Center of mass motion removal mode is Linear
+We have the following groups for center of mass motion removal:
+  0:  rest
+RMS relative constraint deviation after constraining: 1.57e-06
+Initial temperature: 10.0574 K
+
+Started mdrun on rank 0 Fri Aug 28 17:02:49 2026
+
+           Step           Time
+              0        0.00000
+
+Current ref_t for group Protein:     10.0
+Current ref_t for group Water_and_ions:     10.0
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    1.58125e+03    6.01708e+03    2.04359e+04    3.21435e+02    7.61503e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50235e+04    9.88863e+04   -1.11571e+06    4.28810e+03    6.60022e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.94941e+05    5.07466e+03   -8.89867e+05   -8.89867e+05    1.01359e+01
+ Pressure (bar)   Constr. rmsd
+   -5.18652e+03    1.57149e-06
+
+step 4200: timed with pme grid 72 72 80, coulomb cutoff 1.200: 283.9 M-cycles
+step 4400: timed with pme grid 64 64 80, coulomb cutoff 1.257: 311.2 M-cycles
+step 4600: timed with pme grid 60 60 72, coulomb cutoff 1.341: 316.4 M-cycles
+step 4800: timed with pme grid 56 56 64, coulomb cutoff 1.456: 350.6 M-cycles
+step 5000: timed with pme grid 56 56 72, coulomb cutoff 1.437: 347.0 M-cycles
+           Step           Time
+           5000       10.00000
+
+Current ref_t for group Protein:     12.9
+Current ref_t for group Water_and_ions:     12.9
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    1.44299e+03    5.49088e+03    2.02190e+04    2.97538e+02    7.52048e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49463e+04    1.37412e+05   -1.20496e+06    1.38463e+03    7.17835e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.49072e+05    6.72127e+03   -9.42351e+05   -8.89772e+05    1.34248e+01
+ Pressure (bar)   Constr. rmsd
+   -3.15482e+03    1.57149e-06
+
+step 5200: timed with pme grid 56 60 72, coulomb cutoff 1.403: 336.2 M-cycles
+step 5400: timed with pme grid 60 60 72, coulomb cutoff 1.341: 321.3 M-cycles
+step 5600: timed with pme grid 60 64 72, coulomb cutoff 1.309: 306.3 M-cycles
+step 5800: timed with pme grid 64 64 72, coulomb cutoff 1.295: 302.2 M-cycles
+step 6000: timed with pme grid 64 64 80, coulomb cutoff 1.257: 294.0 M-cycles
+step 6200: timed with pme grid 64 72 80, coulomb cutoff 1.227: 285.8 M-cycles
+step 6400: timed with pme grid 72 72 80, coulomb cutoff 1.200: 281.2 M-cycles
+step 6600: timed with pme grid 60 64 72, coulomb cutoff 1.309: 308.8 M-cycles
+step 6800: timed with pme grid 64 64 72, coulomb cutoff 1.295: 309.4 M-cycles
+step 7000: timed with pme grid 64 64 80, coulomb cutoff 1.257: 297.4 M-cycles
+step 7200: timed with pme grid 64 72 80, coulomb cutoff 1.227: 293.3 M-cycles
+step 7400: timed with pme grid 72 72 80, coulomb cutoff 1.200: 283.2 M-cycles
+              optimal pme grid 72 72 80, coulomb cutoff 1.200
+           Step           Time
+          10000       20.00000
+
+Current ref_t for group Protein:     15.8
+Current ref_t for group Water_and_ions:     15.8
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    1.46908e+03    5.63248e+03    2.02379e+04    3.25055e+02    7.57130e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50892e+04    1.37182e+05   -1.20540e+06    2.16895e+03    7.15383e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.48568e+05    7.63270e+03   -9.40935e+05   -8.89768e+05    1.52453e+01
+ Pressure (bar)   Constr. rmsd
+   -3.16353e+03    1.57149e-06
+
+           Step           Time
+          15000       30.00000
+
+Current ref_t for group Protein:     18.7
+Current ref_t for group Water_and_ions:     18.7
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    1.58705e+03    5.75884e+03    2.02449e+04    3.11693e+02    7.54637e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50811e+04    1.37598e+05   -1.20494e+06    2.16486e+03    7.15991e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.47482e+05    9.09719e+03   -9.38385e+05   -8.89768e+05    1.81704e+01
+ Pressure (bar)   Constr. rmsd
+   -3.11410e+03    1.57149e-06
+
+           Step           Time
+          20000       40.00000
+
+Current ref_t for group Protein:     21.6
+Current ref_t for group Water_and_ions:     21.6
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    1.65893e+03    5.90963e+03    2.02902e+04    3.26048e+02    7.59411e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50937e+04    1.37294e+05   -1.20369e+06    2.13534e+03    7.15345e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.46239e+05    1.05220e+04   -9.35717e+05   -8.89766e+05    2.10163e+01
+ Pressure (bar)   Constr. rmsd
+   -3.10528e+03    1.57149e-06
+
+           Step           Time
+          25000       50.00000
+
+Current ref_t for group Protein:     24.5
+Current ref_t for group Water_and_ions:     24.5
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    1.69892e+03    6.04513e+03    2.02944e+04    3.52225e+02    7.55340e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51031e+04    1.37216e+05   -1.20259e+06    2.14412e+03    7.14468e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.45037e+05    1.19037e+04   -9.33133e+05   -8.89767e+05    2.37761e+01
+ Pressure (bar)   Constr. rmsd
+   -3.11452e+03    1.57149e-06
+
+           Step           Time
+          30000       60.00000
+
+Current ref_t for group Protein:     27.4
+Current ref_t for group Water_and_ions:     27.4
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    1.71552e+03    6.21475e+03    2.03112e+04    3.46704e+02    7.57939e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50635e+04    1.37332e+05   -1.20165e+06    2.16675e+03    7.14458e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.43778e+05    1.34004e+04   -9.30378e+05   -8.89767e+05    2.67655e+01
+ Pressure (bar)   Constr. rmsd
+   -2.94809e+03    1.57149e-06
+
+           Step           Time
+          35000       70.00000
+
+Current ref_t for group Protein:     30.3
+Current ref_t for group Water_and_ions:     30.3
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    1.86626e+03    6.33510e+03    2.02961e+04    3.52261e+02    7.63251e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50492e+04    1.37672e+05   -1.20102e+06    2.16885e+03    7.15108e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.42496e+05    1.49292e+04   -9.27566e+05   -8.89769e+05    2.98191e+01
+ Pressure (bar)   Constr. rmsd
+   -2.88780e+03    1.57149e-06
+
+           Step           Time
+          40000       80.00000
+
+Current ref_t for group Protein:     33.2
+Current ref_t for group Water_and_ions:     33.2
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    1.87232e+03    6.49361e+03    2.03397e+04    3.67100e+02    7.59517e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49369e+04    1.37304e+05   -1.19967e+06    2.13476e+03    7.22773e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.41400e+05    1.62474e+04   -9.25152e+05   -8.89773e+05    3.24520e+01
+ Pressure (bar)   Constr. rmsd
+   -2.97762e+03    1.57149e-06
+
+           Step           Time
+          45000       90.00000
+
+Current ref_t for group Protein:     36.1
+Current ref_t for group Water_and_ions:     36.1
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    1.95073e+03    6.54828e+03    2.03995e+04    3.78386e+02    7.58613e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50138e+04    1.37523e+05   -1.19901e+06    2.15829e+03    7.15363e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.40296e+05    1.77736e+04   -9.22522e+05   -8.89781e+05    3.55005e+01
+ Pressure (bar)   Constr. rmsd
+   -2.73812e+03    1.57149e-06
+
+           Step           Time
+          50000      100.00000
+
+Current ref_t for group Protein:     39.0
+Current ref_t for group Water_and_ions:     39.0
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    1.95653e+03    6.64744e+03    2.03639e+04    3.66575e+02    7.65268e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50886e+04    1.37552e+05   -1.19789e+06    2.13692e+03    7.12587e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.38996e+05    1.92432e+04   -9.19753e+05   -8.89786e+05    3.84358e+01
+ Pressure (bar)   Constr. rmsd
+   -2.63014e+03    1.57149e-06
+
+           Step           Time
+          55000      110.00000
+
+Current ref_t for group Protein:     41.9
+Current ref_t for group Water_and_ions:     41.9
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    1.99610e+03    6.79604e+03    2.03608e+04    3.77074e+02    7.68606e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50164e+04    1.37161e+05   -1.19662e+06    2.12480e+03    7.21721e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.37879e+05    2.06304e+04   -9.17249e+05   -8.89785e+05    4.12065e+01
+ Pressure (bar)   Constr. rmsd
+   -2.59815e+03    1.57149e-06
+
+           Step           Time
+          60000      120.00000
+
+Current ref_t for group Protein:     44.8
+Current ref_t for group Water_and_ions:     44.8
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.08690e+03    6.93035e+03    2.04755e+04    4.01508e+02    7.60627e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50079e+04    1.38028e+05   -1.19678e+06    2.09896e+03    7.20416e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.36938e+05    2.21110e+04   -9.14827e+05   -8.89796e+05    4.41637e+01
+ Pressure (bar)   Constr. rmsd
+   -2.63074e+03    1.57149e-06
+
+           Step           Time
+          65000      130.00000
+
+Current ref_t for group Protein:     47.7
+Current ref_t for group Water_and_ions:     47.7
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.18662e+03    7.09850e+03    2.04333e+04    4.05552e+02    7.65682e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49634e+04    1.37237e+05   -1.19535e+06    2.10431e+03    7.19778e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.36070e+05    2.36800e+04   -9.12390e+05   -8.89799e+05    4.72977e+01
+ Pressure (bar)   Constr. rmsd
+   -2.62348e+03    1.57149e-06
+
+           Step           Time
+          70000      140.00000
+
+Current ref_t for group Protein:     50.6
+Current ref_t for group Water_and_ions:     50.6
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.11864e+03    7.15519e+03    2.04873e+04    3.92983e+02    7.68900e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50050e+04    1.38249e+05   -1.19593e+06    2.11700e+03    7.22851e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.35483e+05    2.49266e+04   -9.10556e+05   -8.89814e+05    4.97876e+01
+ Pressure (bar)   Constr. rmsd
+   -2.37899e+03    1.57149e-06
+
+           Step           Time
+          75000      150.00000
+
+Current ref_t for group Protein:     53.5
+Current ref_t for group Water_and_ions:     53.5
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.24671e+03    7.27908e+03    2.04940e+04    4.41009e+02    7.67169e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50020e+04    1.37721e+05   -1.19449e+06    2.11294e+03    7.24412e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.34275e+05    2.66471e+04   -9.07628e+05   -8.89811e+05    5.32239e+01
+ Pressure (bar)   Constr. rmsd
+   -2.61990e+03    1.57149e-06
+
+           Step           Time
+          80000      160.00000
+
+Current ref_t for group Protein:     56.4
+Current ref_t for group Water_and_ions:     56.4
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.31002e+03    7.49486e+03    2.04957e+04    4.18000e+02    7.68967e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50582e+04    1.37833e+05   -1.19417e+06    2.07329e+03    7.19823e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.33601e+05    2.81157e+04   -9.05485e+05   -8.89814e+05    5.61572e+01
+ Pressure (bar)   Constr. rmsd
+   -2.41083e+03    1.57149e-06
+
+           Step           Time
+          85000      170.00000
+
+Current ref_t for group Protein:     59.3
+Current ref_t for group Water_and_ions:     59.3
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.38604e+03    7.48285e+03    2.05646e+04    4.45204e+02    7.68511e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49566e+04    1.38348e+05   -1.19382e+06    2.07189e+03    7.27359e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.32602e+05    2.94507e+04   -9.03152e+05   -8.89827e+05    5.88238e+01
+ Pressure (bar)   Constr. rmsd
+   -2.44218e+03    1.57149e-06
+
+           Step           Time
+          90000      180.00000
+
+Current ref_t for group Protein:     62.2
+Current ref_t for group Water_and_ions:     62.2
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.37797e+03    7.69681e+03    2.05159e+04    4.24937e+02    7.66200e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50988e+04    1.37884e+05   -1.19277e+06    2.12495e+03    7.23683e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.31745e+05    3.08834e+04   -9.00862e+05   -8.89845e+05    6.16855e+01
+ Pressure (bar)   Constr. rmsd
+   -2.30732e+03    1.57149e-06
+
+           Step           Time
+          95000      190.00000
+
+Current ref_t for group Protein:     65.1
+Current ref_t for group Water_and_ions:     65.1
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.36188e+03    7.76810e+03    2.06378e+04    4.48865e+02    7.68886e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51543e+04    1.39074e+05   -1.19346e+06    2.09236e+03    7.24245e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.30988e+05    3.24681e+04   -8.98520e+05   -8.89850e+05    6.48507e+01
+ Pressure (bar)   Constr. rmsd
+   -2.24973e+03    1.57149e-06
+
+           Step           Time
+         100000      200.00000
+
+Current ref_t for group Protein:     68.0
+Current ref_t for group Water_and_ions:     68.0
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.54149e+03    7.93138e+03    2.05813e+04    4.51402e+02    7.67554e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50384e+04    1.38371e+05   -1.19196e+06    2.05046e+03    7.25131e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.30072e+05    3.35110e+04   -8.96560e+05   -8.89849e+05    6.69337e+01
+ Pressure (bar)   Constr. rmsd
+   -2.27272e+03    1.57149e-06
+
+           Step           Time
+         105000      210.00000
+
+Current ref_t for group Protein:     70.9
+Current ref_t for group Water_and_ions:     70.9
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.63117e+03    8.02126e+03    2.06152e+04    4.48775e+02    7.72215e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51111e+04    1.38384e+05   -1.19131e+06    2.02377e+03    7.23722e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.29119e+05    3.53875e+04   -8.93732e+05   -8.89870e+05    7.06819e+01
+ Pressure (bar)   Constr. rmsd
+   -2.26285e+03    1.57149e-06
+
+           Step           Time
+         110000      220.00000
+
+Current ref_t for group Protein:     73.8
+Current ref_t for group Water_and_ions:     73.8
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.64589e+03    8.05632e+03    2.06941e+04    4.42245e+02    7.69596e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50979e+04    1.37903e+05   -1.18991e+06    2.01582e+03    7.26764e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.28092e+05    3.67160e+04   -8.91375e+05   -8.89875e+05    7.33354e+01
+ Pressure (bar)   Constr. rmsd
+   -2.10728e+03    1.57149e-06
+
+           Step           Time
+         115000      230.00000
+
+Current ref_t for group Protein:     76.7
+Current ref_t for group Water_and_ions:     76.7
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.74556e+03    8.22845e+03    2.06143e+04    4.70695e+02    7.78406e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48663e+04    1.38101e+05   -1.18873e+06    1.99823e+03    7.25262e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.26664e+05    3.81651e+04   -8.88499e+05   -8.89880e+05    7.62297e+01
+ Pressure (bar)   Constr. rmsd
+   -2.05664e+03    1.57149e-06
+
+           Step           Time
+         120000      240.00000
+
+Current ref_t for group Protein:     79.6
+Current ref_t for group Water_and_ions:     79.6
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.72721e+03    8.33712e+03    2.06125e+04    4.78467e+02    7.78051e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50436e+04    1.38582e+05   -1.18924e+06    2.02414e+03    7.31520e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.26334e+05    3.94704e+04   -8.86864e+05   -8.89894e+05    7.88369e+01
+ Pressure (bar)   Constr. rmsd
+   -2.14080e+03    1.57149e-06
+
+           Step           Time
+         125000      250.00000
+
+Current ref_t for group Protein:     82.5
+Current ref_t for group Water_and_ions:     82.5
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.78517e+03    8.50477e+03    2.07357e+04    5.00377e+02    7.72168e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51119e+04    1.38103e+05   -1.18800e+06    2.05707e+03    7.25724e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.25223e+05    4.09886e+04   -8.84235e+05   -8.89906e+05    8.18693e+01
+ Pressure (bar)   Constr. rmsd
+   -2.10851e+03    1.57149e-06
+
+           Step           Time
+         130000      260.00000
+
+Current ref_t for group Protein:     85.4
+Current ref_t for group Water_and_ions:     85.4
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.82919e+03    8.52794e+03    2.07373e+04    4.90348e+02    7.74964e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50740e+04    1.38278e+05   -1.18731e+06    1.99340e+03    7.28246e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.24344e+05    4.27462e+04   -8.81598e+05   -8.89925e+05    8.53798e+01
+ Pressure (bar)   Constr. rmsd
+   -1.98711e+03    1.57149e-06
+
+           Step           Time
+         135000      270.00000
+
+Current ref_t for group Protein:     88.3
+Current ref_t for group Water_and_ions:     88.3
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.76434e+03    8.90529e+03    2.07433e+04    5.03564e+02    7.77698e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51112e+04    1.38926e+05   -1.18732e+06    2.00213e+03    7.19188e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.23393e+05    4.40300e+04   -8.79363e+05   -8.89939e+05    8.79441e+01
+ Pressure (bar)   Constr. rmsd
+   -1.79929e+03    1.57149e-06
+
+           Step           Time
+         140000      280.00000
+
+Current ref_t for group Protein:     91.2
+Current ref_t for group Water_and_ions:     91.2
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.93812e+03    8.79458e+03    2.07295e+04    5.12099e+02    7.80098e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49826e+04    1.38660e+05   -1.18596e+06    1.98881e+03    7.26104e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.22289e+05    4.52660e+04   -8.77023e+05   -8.89952e+05    9.04128e+01
+ Pressure (bar)   Constr. rmsd
+   -1.64803e+03    1.57149e-06
+
+           Step           Time
+         145000      290.00000
+
+Current ref_t for group Protein:     94.1
+Current ref_t for group Water_and_ions:     94.1
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.91028e+03    8.91725e+03    2.08127e+04    5.03551e+02    7.83873e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.52435e+04    1.38015e+05   -1.18520e+06    1.97213e+03    7.25841e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.21727e+05    4.67576e+04   -8.74970e+05   -8.89962e+05    9.33920e+01
+ Pressure (bar)   Constr. rmsd
+   -1.88018e+03    1.57149e-06
+
+           Step           Time
+         150000      300.00000
+
+Current ref_t for group Protein:     97.0
+Current ref_t for group Water_and_ions:     97.0
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    2.95521e+03    8.93849e+03    2.08762e+04    5.29421e+02    7.77748e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50332e+04    1.38563e+05   -1.18445e+06    1.99165e+03    7.31228e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.20470e+05    4.79849e+04   -8.72485e+05   -8.89984e+05    9.58433e+01
+ Pressure (bar)   Constr. rmsd
+   -1.98231e+03    1.57149e-06
+
+           Step           Time
+         155000      310.00000
+
+Current ref_t for group Protein:     99.9
+Current ref_t for group Water_and_ions:     99.9
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.08021e+03    9.07913e+03    2.08993e+04    5.56875e+02    7.85900e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49478e+04    1.37835e+05   -1.18302e+06    1.97855e+03    7.20310e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.19579e+05    4.93733e+04   -8.70206e+05   -8.90011e+05    9.86166e+01
+ Pressure (bar)   Constr. rmsd
+   -1.79586e+03    1.57149e-06
+
+           Step           Time
+         160000      320.00000
+
+Current ref_t for group Protein:    102.8
+Current ref_t for group Water_and_ions:    102.8
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.05123e+03    9.46898e+03    2.08640e+04    5.18388e+02    7.78527e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48993e+04    1.37897e+05   -1.18193e+06    1.95768e+03    7.23919e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.18250e+05    5.08100e+04   -8.67440e+05   -8.90012e+05    1.01486e+02
+ Pressure (bar)   Constr. rmsd
+   -1.87743e+03    1.57149e-06
+
+           Step           Time
+         165000      330.00000
+
+Current ref_t for group Protein:    105.7
+Current ref_t for group Water_and_ions:    105.7
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.01488e+03    9.61972e+03    2.09709e+04    5.75188e+02    7.85323e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50011e+04    1.38144e+05   -1.18118e+06    1.94382e+03    7.29899e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.16755e+05    5.27728e+04   -8.63982e+05   -8.90046e+05    1.05407e+02
+ Pressure (bar)   Constr. rmsd
+   -1.63761e+03    1.57149e-06
+
+           Step           Time
+         170000      340.00000
+
+Current ref_t for group Protein:    108.6
+Current ref_t for group Water_and_ions:    108.6
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.17692e+03    9.47611e+03    2.10677e+04    5.68841e+02    7.82385e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51708e+04    1.38294e+05   -1.18063e+06    1.97692e+03    7.26260e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.15816e+05    5.39966e+04   -8.61819e+05   -8.90046e+05    1.07851e+02
+ Pressure (bar)   Constr. rmsd
+   -1.62273e+03    1.57149e-06
+
+           Step           Time
+         175000      350.00000
+
+Current ref_t for group Protein:    111.5
+Current ref_t for group Water_and_ions:    111.5
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.20233e+03    9.68678e+03    2.10772e+04    5.82650e+02    7.84268e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50038e+04    1.38324e+05   -1.18027e+06    1.99308e+03    7.27094e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.15289e+05    5.56398e+04   -8.59649e+05   -8.90070e+05    1.11133e+02
+ Pressure (bar)   Constr. rmsd
+   -1.51410e+03    1.57149e-06
+
+           Step           Time
+         180000      360.00000
+
+Current ref_t for group Protein:    114.4
+Current ref_t for group Water_and_ions:    114.4
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.30845e+03    9.81141e+03    2.10047e+04    5.98110e+02    7.88355e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49585e+04    1.38193e+05   -1.17904e+06    1.99261e+03    7.29954e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.13991e+05    5.69700e+04   -8.57021e+05   -8.90094e+05    1.13790e+02
+ Pressure (bar)   Constr. rmsd
+   -1.38899e+03    1.57149e-06
+
+           Step           Time
+         185000      370.00000
+
+Current ref_t for group Protein:    117.3
+Current ref_t for group Water_and_ions:    117.3
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.26287e+03    9.85014e+03    2.10497e+04    6.08014e+02    7.91213e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51713e+04    1.37646e+05   -1.17816e+06    1.95812e+03    7.32789e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.13370e+05    5.83044e+04   -8.55066e+05   -8.90112e+05    1.16455e+02
+ Pressure (bar)   Constr. rmsd
+   -1.55215e+03    1.57149e-06
+
+           Step           Time
+         190000      380.00000
+
+Current ref_t for group Protein:    120.2
+Current ref_t for group Water_and_ions:    120.2
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.35947e+03    1.00922e+04    2.10426e+04    6.07398e+02    7.89547e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50777e+04    1.38280e+05   -1.17734e+06    1.96678e+03    7.32101e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.11697e+05    5.94746e+04   -8.52222e+05   -8.90125e+05    1.18793e+02
+ Pressure (bar)   Constr. rmsd
+   -1.35917e+03    1.57149e-06
+
+           Step           Time
+         195000      390.00000
+
+Current ref_t for group Protein:    123.1
+Current ref_t for group Water_and_ions:    123.1
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.53982e+03    1.01689e+04    2.10310e+04    5.71454e+02    7.93805e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50209e+04    1.37226e+05   -1.17544e+06    1.94091e+03    7.34139e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.10658e+05    6.08939e+04   -8.49764e+05   -8.90138e+05    1.21627e+02
+ Pressure (bar)   Constr. rmsd
+   -1.42905e+03    1.57149e-06
+
+           Step           Time
+         200000      400.00000
+
+Current ref_t for group Protein:    126.0
+Current ref_t for group Water_and_ions:    126.0
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.44098e+03    1.03017e+04    2.11072e+04    5.84215e+02    7.88519e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51583e+04    1.37267e+05   -1.17434e+06    1.97611e+03    7.26115e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.09358e+05    6.29506e+04   -8.46407e+05   -8.90188e+05    1.25735e+02
+ Pressure (bar)   Constr. rmsd
+   -1.27936e+03    1.57149e-06
+
+           Step           Time
+         205000      410.00000
+
+Current ref_t for group Protein:    128.9
+Current ref_t for group Water_and_ions:    128.9
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.61752e+03    1.03605e+04    2.11036e+04    6.08192e+02    7.88844e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50973e+04    1.36575e+05   -1.17198e+06    1.98931e+03    7.43322e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.07311e+05    6.45446e+04   -8.42767e+05   -8.90184e+05    1.28919e+02
+ Pressure (bar)   Constr. rmsd
+   -1.51733e+03    1.57149e-06
+
+           Step           Time
+         210000      420.00000
+
+Current ref_t for group Protein:    131.8
+Current ref_t for group Water_and_ions:    131.8
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.54004e+03    1.03129e+04    2.11024e+04    6.20714e+02    7.96395e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.53173e+04    1.35699e+05   -1.17075e+06    1.98386e+03    7.32101e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.06890e+05    6.55243e+04   -8.41366e+05   -8.90205e+05    1.30876e+02
+ Pressure (bar)   Constr. rmsd
+   -1.41370e+03    1.57149e-06
+
+           Step           Time
+         215000      430.00000
+
+Current ref_t for group Protein:    134.7
+Current ref_t for group Water_and_ions:    134.7
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.50383e+03    1.05654e+04    2.12088e+04    6.35036e+02    7.98690e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51935e+04    1.36665e+05   -1.17127e+06    1.94822e+03    7.47716e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.06085e+05    6.73743e+04   -8.38710e+05   -8.90241e+05    1.34571e+02
+ Pressure (bar)   Constr. rmsd
+   -1.35390e+03    1.57149e-06
+
+           Step           Time
+         220000      440.00000
+
+Current ref_t for group Protein:    137.6
+Current ref_t for group Water_and_ions:    137.6
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.70962e+03    1.09248e+04    2.12278e+04    6.57984e+02    7.94595e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49615e+04    1.35600e+05   -1.16851e+06    1.98171e+03    7.41893e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.04085e+05    6.90449e+04   -8.35040e+05   -8.90236e+05    1.37908e+02
+ Pressure (bar)   Constr. rmsd
+   -1.14805e+03    1.57149e-06
+
+           Step           Time
+         225000      450.00000
+
+Current ref_t for group Protein:    140.5
+Current ref_t for group Water_and_ions:    140.5
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.73702e+03    1.08402e+04    2.11455e+04    6.66357e+02    7.95490e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51693e+04    1.35726e+05   -1.16804e+06    1.95610e+03    7.46162e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.03384e+05    7.04246e+04   -8.32959e+05   -8.90294e+05    1.40664e+02
+ Pressure (bar)   Constr. rmsd
+   -1.36698e+03    1.57149e-06
+
+           Step           Time
+         230000      460.00000
+
+Current ref_t for group Protein:    143.4
+Current ref_t for group Water_and_ions:    143.4
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.77143e+03    1.09347e+04    2.12613e+04    6.28397e+02    7.99337e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49983e+04    1.35292e+05   -1.16653e+06    2.04357e+03    7.37495e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -9.02234e+05    7.13585e+04   -8.30875e+05   -8.90320e+05    1.42529e+02
+ Pressure (bar)   Constr. rmsd
+   -1.45722e+03    1.57149e-06
+
+           Step           Time
+         235000      470.00000
+
+Current ref_t for group Protein:    146.3
+Current ref_t for group Water_and_ions:    146.3
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.86597e+03    1.11828e+04    2.13973e+04    6.67584e+02    8.00817e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51243e+04    1.35045e+05   -1.16412e+06    1.99733e+03    7.45362e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.99374e+05    7.30346e+04   -8.26339e+05   -8.90328e+05    1.45877e+02
+ Pressure (bar)   Constr. rmsd
+   -1.14927e+03    1.57149e-06
+
+           Step           Time
+         240000      480.00000
+
+Current ref_t for group Protein:    149.2
+Current ref_t for group Water_and_ions:    149.2
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    3.96614e+03    1.09951e+04    2.13236e+04    6.52899e+02    7.93127e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.52810e+04    1.34394e+05   -1.16308e+06    2.02898e+03    7.40219e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.99108e+05    7.45819e+04   -8.24526e+05   -8.90371e+05    1.48967e+02
+ Pressure (bar)   Constr. rmsd
+   -1.48008e+03    1.57149e-06
+
+           Step           Time
+         245000      490.00000
+
+Current ref_t for group Protein:    152.1
+Current ref_t for group Water_and_ions:    152.1
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.02557e+03    1.14020e+04    2.12877e+04    6.39961e+02    7.94306e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50513e+04    1.34190e+05   -1.16165e+06    1.96453e+03    7.41106e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.97736e+05    7.58080e+04   -8.21928e+05   -8.90372e+05    1.51416e+02
+ Pressure (bar)   Constr. rmsd
+   -1.23560e+03    1.57149e-06
+
+           Step           Time
+         250000      500.00000
+
+Current ref_t for group Protein:    155.0
+Current ref_t for group Water_and_ions:    155.0
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.00943e+03    1.15382e+04    2.12976e+04    6.93023e+02    7.99042e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49227e+04    1.33674e+05   -1.15921e+06    2.06880e+03    7.47823e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.95536e+05    7.77261e+04   -8.17810e+05   -8.90423e+05    1.55247e+02
+ Pressure (bar)   Constr. rmsd
+   -1.40880e+03    1.57149e-06
+
+           Step           Time
+         255000      510.00000
+
+Current ref_t for group Protein:    157.9
+Current ref_t for group Water_and_ions:    157.9
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.02875e+03    1.16463e+04    2.13250e+04    6.55301e+02    7.92777e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49205e+04    1.33672e+05   -1.15802e+06    2.03862e+03    7.46553e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.94344e+05    7.92974e+04   -8.15047e+05   -8.90442e+05    1.58386e+02
+ Pressure (bar)   Constr. rmsd
+   -1.34652e+03    1.57149e-06
+
+           Step           Time
+         260000      520.00000
+
+Current ref_t for group Protein:    160.8
+Current ref_t for group Water_and_ions:    160.8
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.20767e+03    1.16987e+04    2.13136e+04    6.80063e+02    7.83860e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.47305e+04    1.33132e+05   -1.15692e+06    2.07451e+03    7.42195e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.93819e+05    7.92206e+04   -8.14598e+05   -8.90446e+05    1.58232e+02
+ Pressure (bar)   Constr. rmsd
+   -1.22084e+03    1.57149e-06
+
+           Step           Time
+         265000      530.00000
+
+Current ref_t for group Protein:    163.7
+Current ref_t for group Water_and_ions:    163.7
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.19747e+03    1.19427e+04    2.13296e+04    7.25254e+02    7.95760e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50323e+04    1.30527e+05   -1.15255e+06    2.03146e+03    7.46614e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.91342e+05    8.10340e+04   -8.10308e+05   -8.90469e+05    1.61855e+02
+ Pressure (bar)   Constr. rmsd
+   -1.47537e+03    1.57149e-06
+
+           Step           Time
+         270000      540.00000
+
+Current ref_t for group Protein:    166.6
+Current ref_t for group Water_and_ions:    166.6
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.13830e+03    1.20223e+04    2.13871e+04    7.34170e+02    7.97931e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50828e+04    1.30953e+05   -1.15180e+06    2.08725e+03    7.35413e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.90057e+05    8.27188e+04   -8.07338e+05   -8.90519e+05    1.65220e+02
+ Pressure (bar)   Constr. rmsd
+   -1.10524e+03    1.57149e-06
+
+           Step           Time
+         275000      550.00000
+
+Current ref_t for group Protein:    169.5
+Current ref_t for group Water_and_ions:    169.5
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.08705e+03    1.19388e+04    2.13827e+04    7.16033e+02    7.99201e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50653e+04    1.30702e+05   -1.15069e+06    2.11217e+03    7.45636e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.89235e+05    8.39463e+04   -8.05289e+05   -8.90556e+05    1.67671e+02
+ Pressure (bar)   Constr. rmsd
+   -1.29562e+03    1.57149e-06
+
+           Step           Time
+         280000      560.00000
+
+Current ref_t for group Protein:    172.4
+Current ref_t for group Water_and_ions:    172.4
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.38863e+03    1.22892e+04    2.13587e+04    7.12182e+02    7.93364e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.46229e+04    1.28583e+05   -1.14601e+06    2.07472e+03    7.55463e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.86494e+05    8.55435e+04   -8.00950e+05   -8.90600e+05    1.70862e+02
+ Pressure (bar)   Constr. rmsd
+   -1.49563e+03    1.57149e-06
+
+           Step           Time
+         285000      570.00000
+
+Current ref_t for group Protein:    175.3
+Current ref_t for group Water_and_ions:    175.3
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.39222e+03    1.23582e+04    2.14601e+04    7.50896e+02    8.04189e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51500e+04    1.27958e+05   -1.14403e+06    2.10051e+03    7.50643e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.84315e+05    8.77725e+04   -7.96542e+05   -8.90604e+05    1.75314e+02
+ Pressure (bar)   Constr. rmsd
+   -1.16732e+03    1.57149e-06
+
+           Step           Time
+         290000      580.00000
+
+Current ref_t for group Protein:    178.2
+Current ref_t for group Water_and_ions:    178.2
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.49684e+03    1.21485e+04    2.13934e+04    7.05630e+02    8.08301e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48485e+04    1.29158e+05   -1.14429e+06    2.14988e+03    7.46396e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.83841e+05    8.85650e+04   -7.95276e+05   -8.90650e+05    1.76897e+02
+ Pressure (bar)   Constr. rmsd
+   -1.20991e+03    1.57149e-06
+
+           Step           Time
+         295000      590.00000
+
+Current ref_t for group Protein:    181.1
+Current ref_t for group Water_and_ions:    181.1
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.44286e+03    1.27275e+04    2.15071e+04    7.18997e+02    8.07591e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49867e+04    1.28902e+05   -1.14193e+06    2.09942e+03    7.52089e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.80946e+05    8.98004e+04   -7.91146e+05   -8.90654e+05    1.79364e+02
+ Pressure (bar)   Constr. rmsd
+   -1.15396e+03    1.57149e-06
+
+           Step           Time
+         300000      600.00000
+
+Current ref_t for group Protein:    184.0
+Current ref_t for group Water_and_ions:    184.0
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.57809e+03    1.27151e+04    2.14695e+04    7.42199e+02    8.02486e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51228e+04    1.27579e+05   -1.13820e+06    2.11450e+03    7.46125e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.78391e+05    9.20161e+04   -7.86375e+05   -8.90694e+05    1.83790e+02
+ Pressure (bar)   Constr. rmsd
+   -1.26599e+03    1.57149e-06
+
+           Step           Time
+         305000      610.00000
+
+Current ref_t for group Protein:    186.9
+Current ref_t for group Water_and_ions:    186.9
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.61439e+03    1.30125e+04    2.14033e+04    7.64248e+02    8.05320e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.46864e+04    1.26310e+05   -1.13498e+06    2.21243e+03    7.61180e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.76308e+05    9.33147e+04   -7.82993e+05   -8.90723e+05    1.86383e+02
+ Pressure (bar)   Constr. rmsd
+   -1.14842e+03    1.57149e-06
+
+           Step           Time
+         310000      620.00000
+
+Current ref_t for group Protein:    189.8
+Current ref_t for group Water_and_ions:    189.8
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.62094e+03    1.29926e+04    2.16585e+04    7.24876e+02    8.04501e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49694e+04    1.25550e+05   -1.13159e+06    2.22034e+03    7.46310e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.73348e+05    9.49979e+04   -7.78350e+05   -8.90762e+05    1.89745e+02
+ Pressure (bar)   Constr. rmsd
+   -1.18990e+03    1.57149e-06
+
+           Step           Time
+         315000      630.00000
+
+Current ref_t for group Protein:    192.7
+Current ref_t for group Water_and_ions:    192.7
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.60293e+03    1.31493e+04    2.16837e+04    7.55993e+02    8.22417e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48521e+04    1.24321e+05   -1.12874e+06    2.18154e+03    7.45846e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.71513e+05    9.56890e+04   -7.75824e+05   -8.90813e+05    1.91126e+02
+ Pressure (bar)   Constr. rmsd
+   -8.64884e+02    1.57149e-06
+
+           Step           Time
+         320000      640.00000
+
+Current ref_t for group Protein:    195.6
+Current ref_t for group Water_and_ions:    195.6
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.87134e+03    1.30634e+04    2.15938e+04    7.76215e+02    8.07747e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50828e+04    1.22116e+05   -1.12372e+06    2.25151e+03    7.57879e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.68311e+05    9.66974e+04   -7.71614e+05   -8.90856e+05    1.93140e+02
+ Pressure (bar)   Constr. rmsd
+   -1.14672e+03    1.57149e-06
+
+           Step           Time
+         325000      650.00000
+
+Current ref_t for group Protein:    198.5
+Current ref_t for group Water_and_ions:    198.5
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.51603e+03    1.33139e+04    2.17043e+04    7.92368e+02    8.09011e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.47556e+04    1.23029e+05   -1.12278e+06    2.20357e+03    7.57150e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.66805e+05    9.86526e+04   -7.68153e+05   -8.90895e+05    1.97045e+02
+ Pressure (bar)   Constr. rmsd
+   -5.79878e+02    1.57149e-06
+
+           Step           Time
+         330000      660.00000
+
+Current ref_t for group Protein:    201.4
+Current ref_t for group Water_and_ions:    201.4
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.72700e+03    1.34492e+04    2.16742e+04    8.29957e+02    8.06895e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50251e+04    1.20565e+05   -1.11694e+06    2.27923e+03    7.49217e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.62833e+05    1.00186e+05   -7.62647e+05   -8.90923e+05    2.00108e+02
+ Pressure (bar)   Constr. rmsd
+   -9.54623e+02    1.57149e-06
+
+           Step           Time
+         335000      670.00000
+
+Current ref_t for group Protein:    204.3
+Current ref_t for group Water_and_ions:    204.3
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.91611e+03    1.35703e+04    2.17417e+04    7.94363e+02    8.12284e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51402e+04    1.18621e+05   -1.11203e+06    2.26256e+03    7.47961e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.59383e+05    1.01922e+05   -7.57460e+05   -8.90962e+05    2.03576e+02
+ Pressure (bar)   Constr. rmsd
+   -1.21032e+03    1.57149e-06
+
+           Step           Time
+         340000      680.00000
+
+Current ref_t for group Protein:    207.2
+Current ref_t for group Water_and_ions:    207.2
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.73040e+03    1.37753e+04    2.17681e+04    8.57079e+02    8.16430e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51268e+04    1.17796e+05   -1.10805e+06    2.37742e+03    7.41589e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.56036e+05    1.03174e+05   -7.52862e+05   -8.91013e+05    2.06077e+02
+ Pressure (bar)   Constr. rmsd
+   -1.29955e+03    1.57149e-06
+
+           Step           Time
+         345000      690.00000
+
+Current ref_t for group Protein:    210.1
+Current ref_t for group Water_and_ions:    210.1
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.13809e+03    1.38773e+04    2.18780e+04    8.51179e+02    8.16015e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.47078e+04    1.14280e+05   -1.09904e+06    2.38060e+03    7.48086e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.50290e+05    1.05159e+05   -7.45131e+05   -8.91054e+05    2.10041e+02
+ Pressure (bar)   Constr. rmsd
+   -1.40769e+03    1.57149e-06
+
+           Step           Time
+         350000      700.00000
+
+Current ref_t for group Protein:    213.0
+Current ref_t for group Water_and_ions:    213.0
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.08238e+03    1.39187e+04    2.16992e+04    8.49797e+02    8.08774e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49208e+04    1.12563e+05   -1.09414e+06    2.42928e+03    7.43325e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.47155e+05    1.06650e+05   -7.40505e+05   -8.91106e+05    2.13019e+02
+ Pressure (bar)   Constr. rmsd
+   -1.15288e+03    1.57149e-06
+
+           Step           Time
+         355000      710.00000
+
+Current ref_t for group Protein:    215.9
+Current ref_t for group Water_and_ions:    215.9
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.32491e+03    1.39711e+04    2.19455e+04    7.91777e+02    8.08490e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.45327e+04    1.10793e+05   -1.08921e+06    2.45854e+03    7.49875e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.43807e+05    1.07111e+05   -7.36696e+05   -8.91148e+05    2.13939e+02
+ Pressure (bar)   Constr. rmsd
+   -1.42416e+03    1.57149e-06
+
+           Step           Time
+         360000      720.00000
+
+Current ref_t for group Protein:    218.8
+Current ref_t for group Water_and_ions:    218.8
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.15905e+03    1.39575e+04    2.17209e+04    7.92578e+02    8.21384e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50027e+04    1.09531e+05   -1.08467e+06    2.56576e+03    7.48234e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.40244e+05    1.08565e+05   -7.31680e+05   -8.91182e+05    2.16843e+02
+ Pressure (bar)   Constr. rmsd
+   -1.66184e+03    1.57149e-06
+
+           Step           Time
+         365000      730.00000
+
+Current ref_t for group Protein:    221.7
+Current ref_t for group Water_and_ions:    221.7
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.20024e+03    1.42338e+04    2.19077e+04    9.04470e+02    8.17176e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50523e+04    1.07900e+05   -1.07961e+06    2.50705e+03    7.63459e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.36100e+05    1.11192e+05   -7.24908e+05   -8.91216e+05    2.22092e+02
+ Pressure (bar)   Constr. rmsd
+   -1.24138e+03    1.57149e-06
+
+           Step           Time
+         370000      740.00000
+
+Current ref_t for group Protein:    224.6
+Current ref_t for group Water_and_ions:    224.6
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.11900e+03    1.42749e+04    2.18861e+04    8.98592e+02    8.18852e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50186e+04    1.06369e+05   -1.07330e+06    2.45632e+03    7.65774e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.31430e+05    1.11582e+05   -7.19848e+05   -8.91283e+05    2.22870e+02
+ Pressure (bar)   Constr. rmsd
+   -9.29550e+02    1.57149e-06
+
+           Step           Time
+         375000      750.00000
+
+Current ref_t for group Protein:    227.5
+Current ref_t for group Water_and_ions:    227.5
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.27693e+03    1.46504e+04    2.20529e+04    8.93973e+02    8.18009e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48946e+04    1.05330e+05   -1.06875e+06    2.57358e+03    7.51649e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.27385e+05    1.13676e+05   -7.13709e+05   -8.91321e+05    2.27052e+02
+ Pressure (bar)   Constr. rmsd
+   -1.03493e+03    1.57149e-06
+
+           Step           Time
+         380000      760.00000
+
+Current ref_t for group Protein:    230.4
+Current ref_t for group Water_and_ions:    230.4
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.42905e+03    1.46228e+04    2.20570e+04    8.90914e+02    8.13214e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48171e+04    1.04213e+05   -1.06438e+06    2.67955e+03    7.56233e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.23980e+05    1.14771e+05   -7.09209e+05   -8.91360e+05    2.29239e+02
+ Pressure (bar)   Constr. rmsd
+   -9.68021e+02    1.57149e-06
+
+           Step           Time
+         385000      770.00000
+
+Current ref_t for group Protein:    233.3
+Current ref_t for group Water_and_ions:    233.3
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.36730e+03    1.46924e+04    2.19562e+04    8.86471e+02    8.20137e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.47845e+04    1.03430e+05   -1.06234e+06    2.65862e+03    7.67692e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.22684e+05    1.15989e+05   -7.06695e+05   -8.91396e+05    2.31673e+02
+ Pressure (bar)   Constr. rmsd
+   -1.44684e+03    1.57149e-06
+
+           Step           Time
+         390000      780.00000
+
+Current ref_t for group Protein:    236.2
+Current ref_t for group Water_and_ions:    236.2
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.66742e+03    1.45754e+04    2.20097e+04    8.51097e+02    8.15932e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48329e+04    1.02445e+05   -1.05784e+06    2.67569e+03    7.59717e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.19030e+05    1.18035e+05   -7.00996e+05   -8.91455e+05    2.35758e+02
+ Pressure (bar)   Constr. rmsd
+   -9.02002e+02    1.57149e-06
+
+           Step           Time
+         395000      790.00000
+
+Current ref_t for group Protein:    239.1
+Current ref_t for group Water_and_ions:    239.1
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.57907e+03    1.48776e+04    2.21220e+04    8.70836e+02    8.26677e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51691e+04    1.00204e+05   -1.05123e+06    2.72598e+03    7.51322e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.13897e+05    1.19418e+05   -6.94479e+05   -8.91468e+05    2.38521e+02
+ Pressure (bar)   Constr. rmsd
+   -7.47531e+02    1.57149e-06
+
+           Step           Time
+         400000      800.00000
+
+Current ref_t for group Protein:    242.0
+Current ref_t for group Water_and_ions:    242.0
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.64522e+03    1.52327e+04    2.21544e+04    8.89383e+02    8.08099e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.46012e+04    9.93541e+04   -1.04714e+06    2.79348e+03    7.44029e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.10952e+05    1.20637e+05   -6.90315e+05   -8.91524e+05    2.40956e+02
+ Pressure (bar)   Constr. rmsd
+   -9.17215e+02    1.57149e-06
+
+           Step           Time
+         405000      810.00000
+
+Current ref_t for group Protein:    244.9
+Current ref_t for group Water_and_ions:    244.9
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.70398e+03    1.50032e+04    2.21213e+04    8.94732e+02    8.20984e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48332e+04    9.85060e+04   -1.04436e+06    2.80906e+03    7.55373e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.08720e+05    1.21588e+05   -6.87132e+05   -8.91579e+05    2.42856e+02
+ Pressure (bar)   Constr. rmsd
+   -8.93423e+02    1.57149e-06
+
+           Step           Time
+         410000      820.00000
+
+Current ref_t for group Protein:    247.8
+Current ref_t for group Water_and_ions:    247.8
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.47895e+03    1.54385e+04    2.21161e+04    8.69002e+02    8.28248e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.47100e+04    9.81834e+04   -1.04083e+06    2.81150e+03    7.65366e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.05291e+05    1.23535e+05   -6.81756e+05   -8.91624e+05    2.46744e+02
+ Pressure (bar)   Constr. rmsd
+   -8.80479e+02    1.57149e-06
+
+           Step           Time
+         415000      830.00000
+
+Current ref_t for group Protein:    250.7
+Current ref_t for group Water_and_ions:    250.7
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.48718e+03    1.53723e+04    2.21237e+04    9.32660e+02    8.28533e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.46329e+04    9.89512e+04   -1.03880e+06    2.77861e+03    7.68773e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.02547e+05    1.25027e+05   -6.77520e+05   -8.91660e+05    2.49724e+02
+ Pressure (bar)   Constr. rmsd
+   -7.64773e+02    1.57149e-06
+
+           Step           Time
+         420000      840.00000
+
+Current ref_t for group Protein:    253.6
+Current ref_t for group Water_and_ions:    253.6
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.71766e+03    1.55343e+04    2.20367e+04    9.44957e+02    8.25181e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48674e+04    9.60689e+04   -1.03302e+06    2.85283e+03    7.65319e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.99088e+05    1.26006e+05   -6.73082e+05   -8.91715e+05    2.51680e+02
+ Pressure (bar)   Constr. rmsd
+   -6.95614e+02    1.57149e-06
+
+           Step           Time
+         425000      850.00000
+
+Current ref_t for group Protein:    256.5
+Current ref_t for group Water_and_ions:    256.5
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.81853e+03    1.57441e+04    2.19578e+04    9.25804e+02    8.26861e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48503e+04    9.44918e+04   -1.02820e+06    2.86075e+03    7.65492e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.95629e+05    1.27250e+05   -6.68379e+05   -8.91708e+05    2.54165e+02
+ Pressure (bar)   Constr. rmsd
+   -1.05993e+03    1.57149e-06
+
+           Step           Time
+         430000      860.00000
+
+Current ref_t for group Protein:    259.4
+Current ref_t for group Water_and_ions:    259.4
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.85178e+03    1.55760e+04    2.21693e+04    9.90456e+02    8.36867e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48990e+04    9.29995e+04   -1.02502e+06    2.85103e+03    7.63671e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.93674e+05    1.30053e+05   -6.63622e+05   -8.91790e+05    2.59762e+02
+ Pressure (bar)   Constr. rmsd
+   -8.60618e+02    1.57149e-06
+
+           Step           Time
+         435000      870.00000
+
+Current ref_t for group Protein:    262.3
+Current ref_t for group Water_and_ions:    262.3
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.80996e+03    1.57097e+04    2.22432e+04    9.50978e+02    8.36613e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49884e+04    9.32937e+04   -1.02241e+06    2.96222e+03    7.70312e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.90382e+05    1.30375e+05   -6.60007e+05   -8.91808e+05    2.60407e+02
+ Pressure (bar)   Constr. rmsd
+   -7.79412e+02    1.57149e-06
+
+           Step           Time
+         440000      880.00000
+
+Current ref_t for group Protein:    265.2
+Current ref_t for group Water_and_ions:    265.2
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.83063e+03    1.62328e+04    2.22818e+04    1.02777e+03    8.24906e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50150e+04    9.12496e+04   -1.01737e+06    3.01688e+03    7.64512e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.86821e+05    1.32294e+05   -6.54528e+05   -8.91817e+05    2.64239e+02
+ Pressure (bar)   Constr. rmsd
+   -1.11273e+03    1.57149e-06
+
+           Step           Time
+         445000      890.00000
+
+Current ref_t for group Protein:    268.1
+Current ref_t for group Water_and_ions:    268.1
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    6.13269e+03    1.60264e+04    2.21925e+04    9.79299e+02    8.20940e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50473e+04    9.12899e+04   -1.01415e+06    3.05106e+03    7.62098e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.83602e+05    1.34551e+05   -6.49050e+05   -8.91909e+05    2.68748e+02
+ Pressure (bar)   Constr. rmsd
+   -5.31749e+02    1.57149e-06
+
+           Step           Time
+         450000      900.00000
+
+Current ref_t for group Protein:    271.0
+Current ref_t for group Water_and_ions:    271.0
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.97708e+03    1.62662e+04    2.23263e+04    1.02538e+03    8.32643e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.46299e+04    8.96829e+04   -1.01115e+06    3.00329e+03    7.71368e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.82202e+05    1.35806e+05   -6.46397e+05   -8.91946e+05    2.71253e+02
+ Pressure (bar)   Constr. rmsd
+   -8.84170e+02    1.57149e-06
+
+           Step           Time
+         455000      910.00000
+
+Current ref_t for group Protein:    273.9
+Current ref_t for group Water_and_ions:    273.9
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    6.39665e+03    1.65251e+04    2.23958e+04    1.02353e+03    8.23808e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48422e+04    9.02036e+04   -1.00935e+06    3.09268e+03    7.63765e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.78998e+05    1.36594e+05   -6.42404e+05   -8.91931e+05    2.72828e+02
+ Pressure (bar)   Constr. rmsd
+   -9.78014e+02    1.57149e-06
+
+           Step           Time
+         460000      920.00000
+
+Current ref_t for group Protein:    276.8
+Current ref_t for group Water_and_ions:    276.8
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    6.20018e+03    1.67254e+04    2.22299e+04    1.03704e+03    8.41340e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48778e+04    8.95073e+04   -1.00580e+06    3.04736e+03    7.73508e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.76029e+05    1.38815e+05   -6.37214e+05   -8.91977e+05    2.77265e+02
+ Pressure (bar)   Constr. rmsd
+   -5.30391e+02    1.57149e-06
+
+           Step           Time
+         465000      930.00000
+
+Current ref_t for group Protein:    279.7
+Current ref_t for group Water_and_ions:    279.7
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    5.96130e+03    1.67900e+04    2.24147e+04    1.03537e+03    8.31253e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.48704e+04    8.76348e+04   -1.00131e+06    3.03677e+03    7.71672e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.73534e+05    1.40122e+05   -6.33412e+05   -8.92033e+05    2.79874e+02
+ Pressure (bar)   Constr. rmsd
+   -5.43693e+02    1.57149e-06
+
+           Step           Time
+         470000      940.00000
+
+Current ref_t for group Protein:    282.6
+Current ref_t for group Water_and_ions:    282.6
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    6.26165e+03    1.66415e+04    2.23372e+04    9.95045e+02    8.34940e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.47946e+04    8.82796e+04   -9.98694e+05    3.20298e+03    7.67275e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.70159e+05    1.41309e+05   -6.28850e+05   -8.92013e+05    2.82245e+02
+ Pressure (bar)   Constr. rmsd
+   -4.16023e+02    1.57149e-06
+
+           Step           Time
+         475000      950.00000
+
+Current ref_t for group Protein:    285.5
+Current ref_t for group Water_and_ions:    285.5
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    6.23950e+03    1.66181e+04    2.22691e+04    9.71124e+02    8.22026e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49944e+04    8.74676e+04   -9.96641e+05    3.12883e+03    7.72107e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.69011e+05    1.42422e+05   -6.26589e+05   -8.92078e+05    2.84470e+02
+ Pressure (bar)   Constr. rmsd
+   -5.83329e+02    1.57149e-06
+
+           Step           Time
+         480000      960.00000
+
+Current ref_t for group Protein:    288.4
+Current ref_t for group Water_and_ions:    288.4
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    6.40178e+03    1.70711e+04    2.26078e+04    1.02551e+03    8.29960e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.46603e+04    8.70981e+04   -9.92555e+05    3.09409e+03    7.75646e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.64540e+05    1.43448e+05   -6.21092e+05   -8.92070e+05    2.86518e+02
+ Pressure (bar)   Constr. rmsd
+   -4.38450e+02    1.57149e-06
+
+           Step           Time
+         485000      970.00000
+
+Current ref_t for group Protein:    291.3
+Current ref_t for group Water_and_ions:    291.3
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    6.53337e+03    1.70864e+04    2.25058e+04    1.00440e+03    8.31624e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.43755e+04    8.67315e+04   -9.89366e+05    3.14647e+03    7.63928e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.62027e+05    1.45029e+05   -6.16998e+05   -8.92058e+05    2.89675e+02
+ Pressure (bar)   Constr. rmsd
+   -3.81105e+02    1.57149e-06
+
+           Step           Time
+         490000      980.00000
+
+Current ref_t for group Protein:    294.2
+Current ref_t for group Water_and_ions:    294.2
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    6.33136e+03    1.70854e+04    2.22126e+04    1.06813e+03    8.53589e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.51142e+04    8.47842e+04   -9.86175e+05    3.22353e+03    7.80614e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.60013e+05    1.47604e+05   -6.12410e+05   -8.92133e+05    2.94819e+02
+ Pressure (bar)   Constr. rmsd
+   -2.65355e+02    1.57149e-06
+
+           Step           Time
+         495000      990.00000
+
+Current ref_t for group Protein:    297.1
+Current ref_t for group Water_and_ions:    297.1
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    6.37389e+03    1.72561e+04    2.24548e+04    1.06099e+03    8.31896e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.50951e+04    8.54322e+04   -9.84553e+05    3.21276e+03    7.74252e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.57606e+05    1.48301e+05   -6.09304e+05   -8.92129e+05    2.96212e+02
+ Pressure (bar)   Constr. rmsd
+   -3.11567e+02    1.57149e-06
+
+           Step           Time
+         500000     1000.00000
+
+Writing checkpoint, step 500000 at Fri Aug 28 17:13:51 2026
+
+
+Current ref_t for group Protein:    300.0
+Current ref_t for group Water_and_ions:    300.0
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    6.59467e+03    1.75198e+04    2.25443e+04    1.08598e+03    8.47976e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49653e+04    8.34525e+04   -9.81158e+05    3.30541e+03    7.92374e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -7.55287e+05    1.50273e+05   -6.05014e+05   -8.92132e+05    3.00150e+02
+ Pressure (bar)   Constr. rmsd
+   -4.44814e+02    1.57149e-06
+
+
+Energy conservation over simulation part #1 of length 1000 ps, time 0 to 1000 ps
+  Conserved energy drift: -3.90e-05 kJ/mol/ps per atom
+
+Current ref_t for group Protein:    300.0
+Current ref_t for group Water_and_ions:    300.0
+
+	<======  ###############  ==>
+	<====  A V E R A G E S  ====>
+	<==  ###############  ======>
+
+	Statistics over 500001 steps using 501 frames
+
+   Energies (kJ/mol)
+           Bond          Angle    Proper Dih. Per. Imp. Dih.          LJ-14
+    4.01937e+03    1.14643e+04    2.13232e+04    6.84744e+02    7.97792e+03
+     Coulomb-14        LJ (SR)   Coulomb (SR)   Coul. recip. Position Rest.
+    7.49674e+04    1.22649e+05   -1.12951e+06    2.32168e+03    7.41370e+03
+      Potential    Kinetic En.   Total Energy  Conserved En.    Temperature
+   -8.76690e+05    7.72772e+04   -7.99413e+05   -8.90641e+05    1.54351e+02
+ Pressure (bar)   Constr. rmsd
+   -1.54371e+03    0.00000e+00
+
+   Total Virial (kJ/mol)
+    5.28836e+04    9.80037e+02   -3.14199e+02
+    9.80036e+02    5.28064e+04   -2.88371e+02
+   -3.14195e+02   -2.88358e+02    5.37146e+04
+
+   Pressure (bar)
+   -1.52981e+03   -5.63653e+01    2.13498e+01
+   -5.63652e+01   -1.52399e+03    1.63413e+01
+    2.13496e+01    1.63405e+01   -1.57734e+03
+
+      T-ProteinT-Water_and_ions
+    1.54595e+02    1.54300e+02
+
+
+	M E G A - F L O P S   A C C O U N T I N G
+
+ NB=Group-cutoff nonbonded kernels    NxN=N-by-N cluster Verlet kernels
+ RF=Reaction-Field  VdW=Van der Waals  QSTab=quadratic-spline table
+ W3=SPC/TIP3p  W4=TIP4p (single or pairs)
+ V&F=Potential and force  V=Potential only  F=Force only
+
+ Computing:                               M-Number         M-Flops  % Flops
+-----------------------------------------------------------------------------
+ Pair Search distance check           35120.820496      316087.384     0.0
+ NxN Ewald Elec. + LJ [F]          37393406.574976  2916685712.848    99.6
+ NxN Ewald Elec. + LJ [V&F]           37495.171712     4836877.151     0.2
+ 1,4 nonbonded interactions           10929.521859      983656.967     0.0
+ Shift-X                                290.373063        1742.238     0.0
+ Bonds                                 2162.004324      127558.255     0.0
+ Angles                                7590.015180     1275122.550     0.0
+ Propers                              11622.023244     2661443.323     0.1
+ Impropers                              887.001774      184496.369     0.0
+ Pos. Restr.                           2097.004194      104850.210     0.0
+ Virial                                  29.112108         524.018     0.0
+ Stop-CM                                290.431126        2904.311     0.0
+ Calc-Ekin                              580.746126       15680.145     0.0
+ Lincs                                    0.008168           0.490     0.0
+ Lincs-Mat                                0.042072           0.168     0.0
+ Constraint-V                             0.057839           0.521     0.0
+ Settle                                   0.033114          12.252     0.0
+-----------------------------------------------------------------------------
+ Total                                              2927196669.202   100.0
+-----------------------------------------------------------------------------
+
+
+      R E A L   C Y C L E   A N D   T I M E   A C C O U N T I N G
+
+On 1 MPI rank, each using 24 OpenMP threads
+
+ Activity:              Num   Num      Call    Wall time         Giga-Cycles
+                        Ranks Threads  Count      (s)         total sum    %
+--------------------------------------------------------------------------------
+ Neighbor search           1   24       5001      18.918       1087.557   2.9
+ Launch PP GPU ops.        1   24     995001      55.327       3180.606   8.4
+ Force                     1   24     500001      83.673       4810.131  12.6
+ PME GPU mesh              1   24     500001      28.815       1656.528   4.4
+ Wait GPU NB local         1   24     500001       0.425         24.424   0.1
+ Wait GPU state copy       1   24    1025003     460.076      26448.577  69.5
+ NB X/F buffer ops.        1   24        501       0.056          3.241   0.0
+ Write traj.               1   24        101       0.690         39.652   0.1
+ Constraints               1   24          2       0.001          0.031   0.0
+ GPU constr. setup         1   24          1       0.002          0.111   0.0
+ Kinetic energy            1   24      10001       0.639         36.744   0.1
+ Rest                                             13.378        769.076   2.0
+--------------------------------------------------------------------------------
+ Total                                           662.000      38056.678 100.0
+--------------------------------------------------------------------------------
+ Breakdown of PME mesh activities
+--------------------------------------------------------------------------------
+ Wait PME GPU gather       1   24     500001       0.378         21.717   0.1
+ Reduce GPU PME F          1   24     500001       0.047          2.715   0.0
+ Launch PME GPU ops.       1   24    4000026      27.472       1579.301   4.1
+--------------------------------------------------------------------------------
+
+               Core t (s)   Wall t (s)        (%)
+       Time:    15888.000      662.000     2400.0
+                 (ns/day)    (hour/ns)
+Performance:      130.514        0.184
+Finished mdrun on rank 0 Fri Aug 28 17:13:51 2026
+

@@ -1,0 +1,2 @@
+﻿Metric_Name,Target_System,Last_20ns_Equil_Mean_Std,Full_100ns_Mean_Std,Min_Value,Max_Value,Scientific_Assessment
+8_Radius_of_Gyration_Rg_(nm),Complex,2.3138 ± 0.0046,2.3057 ± 0.0069,2.2835,2.3280,STABLE

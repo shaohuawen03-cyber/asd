@@ -1,0 +1,2 @@
+system,metric,mean,std,full_traj_mean,full_traj_std,min,max,status,n_points
+Complex,8_Radius_of_Gyration_Rg_(nm),2.313756886113886,0.004599497094359015,2.3057243665266944,0.006937910180669044,2.283536,2.327978,STABLE,1001
