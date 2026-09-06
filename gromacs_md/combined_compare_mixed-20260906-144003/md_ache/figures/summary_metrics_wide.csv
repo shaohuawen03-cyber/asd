@@ -1,0 +1,14 @@
+metric,AChE,Peptide
+1_Backbone_RMSD_(nm),0.1896864325674326,-
+2_Backbone_RMSF_Avg_(nm),0.0834820754716981,-
+3_Solvent_Accessible_Surface_Area_SASA_(nm2),212.24505694305694,-
+4_Hydrogen_Bonds_(Count),389.86413586413585,-
+6_DSSP_Bend_Content_(%),13.017922077922076,-
+6_DSSP_Coil_Content_(%),22.82983016983017,-
+6_DSSP_Helix_Content_(%),33.44478521478521,-
+6_DSSP_Sheet_Content_(%),17.353546453546453,-
+6_DSSP_Turn_Content_(%),13.353916083916085,-
+6p_Peptide_DSSP_Coil_(%),-,43.10156843156844
+6p_Peptide_DSSP_Helix_(%),-,54.50035964035963
+6p_Peptide_DSSP_Sheet_(%),-,0.0
+8_Radius_of_Gyration_Rg_(nm),2.3045136443556444,-
